@@ -1,8 +1,13 @@
 
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
+import { useEffect } from "react";
 
 export function Layout() {
+  useEffect(() => {
+    console.log("Layout component mounted");
+  }, []);
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
