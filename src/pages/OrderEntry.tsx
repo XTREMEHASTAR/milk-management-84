@@ -29,7 +29,6 @@ const OrderEntry = () => {
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [orderGrid, setOrderGrid] = useState<OrderGridCell[]>([]);
   const [customerTotals, setCustomerTotals] = useState<Record<string, { quantity: number, amount: number }>>({});
-  const [productTotals, setProductTotals] = useState<Record<string, number>>({});
   
   // Initialize the grid with empty cells for each customer/product combination
   useEffect(() => {
@@ -51,7 +50,6 @@ const OrderEntry = () => {
   // Calculate totals when orderGrid changes
   useEffect(() => {
     const newCustomerTotals: Record<string, { quantity: number, amount: number }> = {};
-    const newProductTotals: Record<string, number> = {};
     
     orderGrid.forEach(cell => {
       if (cell.quantity && !isNaN(Number(cell.quantity))) {
@@ -67,18 +65,10 @@ const OrderEntry = () => {
         if (product) {
           newCustomerTotals[cell.customerId].amount += quantity * product.price;
         }
-        
-        // Add to product totals
-        if (!newProductTotals[cell.productId]) {
-          newProductTotals[cell.productId] = 0;
-        }
-        
-        newProductTotals[cell.productId] += quantity;
       }
     });
     
     setCustomerTotals(newCustomerTotals);
-    setProductTotals(newProductTotals);
   }, [orderGrid, products]);
   
   const handleCellChange = (customerId: string, productId: string, value: string) => {
@@ -134,26 +124,23 @@ const OrderEntry = () => {
   
   const exportToCSV = () => {
     // Generate CSV content
-    let csvContent = "Customer,";
-    products.forEach(product => {
-      csvContent += `${product.name},`;
+    let csvContent = "Product,";
+    customers.forEach(customer => {
+      csvContent += `${customer.name},`;
     });
     csvContent += "Total Quantity,Total Amount\n";
     
-    customers.forEach(customer => {
-      csvContent += `${customer.name},`;
+    products.forEach(product => {
+      csvContent += `${product.name},`;
       
-      products.forEach(product => {
-        csvContent += `${getCellValue(customer.id, product.id) || "0"},`;
+      let productTotal = 0;
+      customers.forEach(customer => {
+        const cellValue = getCellValue(customer.id, product.id);
+        csvContent += `${cellValue || "0"},`;
+        productTotal += cellValue ? Number(cellValue) : 0;
       });
       
-      const customerTotal = customerTotals[customer.id] || { quantity: 0, amount: 0 };
-      csvContent += `${customerTotal.quantity},${customerTotal.amount}\n`;
-    });
-    
-    csvContent += "Total,";
-    products.forEach(product => {
-      csvContent += `${productTotals[product.id] || 0},`;
+      csvContent += `${productTotal},\n`;
     });
     
     // Calculate grand totals
@@ -165,7 +152,7 @@ const OrderEntry = () => {
       (sum, customer) => sum + customer.amount, 0
     );
     
-    csvContent += `${grandTotalQuantity},${grandTotalAmount}\n`;
+    csvContent += `Total,,${grandTotalQuantity},${grandTotalAmount}\n`;
     
     // Create a download link
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -218,13 +205,12 @@ const OrderEntry = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="header-cell">Products / Customers</TableHead>
+                    <TableHead className="header-cell">Products</TableHead>
                     {customers.map(customer => (
                       <TableHead key={customer.id} className="header-cell text-center">
                         {customer.name}
                       </TableHead>
                     ))}
-                    <TableHead className="header-cell text-center">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -243,9 +229,6 @@ const OrderEntry = () => {
                           />
                         </TableCell>
                       ))}
-                      <TableCell className="total-cell text-center font-semibold">
-                        {productTotals[product.id] || 0}
-                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow>
@@ -255,11 +238,6 @@ const OrderEntry = () => {
                         {customerTotals[customer.id]?.quantity || 0}
                       </TableCell>
                     ))}
-                    <TableCell className="total-cell text-center">
-                      {Object.values(customerTotals).reduce(
-                        (sum, customer) => sum + customer.quantity, 0
-                      )}
-                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="amount-cell font-semibold">Total Amount (₹)</TableCell>
@@ -268,11 +246,6 @@ const OrderEntry = () => {
                         {customerTotals[customer.id]?.amount || 0}
                       </TableCell>
                     ))}
-                    <TableCell className="amount-cell text-center">
-                      {Object.values(customerTotals).reduce(
-                        (sum, customer) => sum + customer.amount, 0
-                      )}
-                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
