@@ -1,6 +1,6 @@
 
 import { Outlet } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
+import Sidebar from "./Sidebar";
 import { useEffect, useState } from "react";
 
 // Create a simple error boundary component
