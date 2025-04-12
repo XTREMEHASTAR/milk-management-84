@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { 
   Customer, Product, Order, Payment, 
@@ -69,7 +68,6 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  // Load data from localStorage or use initial data
   const [customers, setCustomers] = useState<Customer[]>(() => {
     const saved = localStorage.getItem("customers");
     return saved ? JSON.parse(saved) : initialCustomers;
@@ -120,7 +118,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Save data to localStorage when it changes
   useEffect(() => {
     localStorage.setItem("customers", JSON.stringify(customers));
   }, [customers]);
@@ -161,7 +158,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("stockEntries", JSON.stringify(stockEntries));
   }, [stockEntries]);
 
-  // Customer CRUD operations
   const addCustomer = (customer: Omit<Customer, "id">) => {
     const newCustomer = {
       ...customer,
@@ -182,7 +178,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCustomers(customers.filter((customer) => customer.id !== id));
   };
 
-  // Product CRUD operations
   const addProduct = (product: Omit<Product, "id">) => {
     const newProduct = {
       ...product,
@@ -211,7 +206,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setProducts(products.filter((product) => product.id !== id));
   };
 
-  // Order CRUD operations
   const addOrder = (order: Omit<Order, "id">) => {
     const newOrder = {
       ...order,
@@ -232,7 +226,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setOrders(orders.filter((order) => order.id !== id));
   };
 
-  // Payment CRUD operations
   const addPayment = (payment: Omit<Payment, "id">) => {
     const newPayment = {
       ...payment,
@@ -240,7 +233,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
     setPayments([...payments, newPayment]);
     
-    // Update customer's outstanding balance
     const customer = customers.find(c => c.id === payment.customerId);
     if (customer) {
       updateCustomer(customer.id, {
@@ -260,7 +252,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       )
     );
     
-    // Update customer's outstanding balance if amount changed
     if (oldPayment && paymentData.amount && oldPayment.amount !== paymentData.amount) {
       const customer = customers.find(c => c.id === oldPayment.customerId);
       if (customer) {
@@ -278,7 +269,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const payment = payments.find(p => p.id === id);
     
     if (payment) {
-      // Restore customer's outstanding balance
       const customer = customers.find(c => c.id === payment.customerId);
       if (customer) {
         updateCustomer(customer.id, {
@@ -290,7 +280,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setPayments(payments.filter((payment) => payment.id !== id));
   };
 
-  // Expense CRUD operations
   const addExpense = (expense: Omit<Expense, "id">) => {
     const newExpense = {
       ...expense,
@@ -311,7 +300,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setExpenses(expenses.filter((expense) => expense.id !== id));
   };
 
-  // Supplier CRUD operations
   const addSupplier = (supplier: Omit<Supplier, "id">) => {
     const newSupplier = {
       ...supplier,
@@ -332,7 +320,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setSuppliers(suppliers.filter((supplier) => supplier.id !== id));
   };
 
-  // Supplier Payment CRUD operations
   const addSupplierPayment = (payment: Omit<SupplierPayment, "id">) => {
     const newPayment = {
       ...payment,
@@ -340,7 +327,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
     setSupplierPayments([...supplierPayments, newPayment]);
     
-    // Update supplier's outstanding balance if applicable
     const supplier = suppliers.find(s => s.id === payment.supplierId);
     if (supplier && supplier.outstandingBalance !== undefined) {
       updateSupplier(supplier.id, {
@@ -358,7 +344,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       )
     );
     
-    // Update supplier's outstanding balance if amount changed
     if (oldPayment && paymentData.amount && oldPayment.amount !== paymentData.amount) {
       const supplier = suppliers.find(s => s.id === oldPayment.supplierId);
       if (supplier && supplier.outstandingBalance !== undefined) {
@@ -374,7 +359,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const payment = supplierPayments.find(p => p.id === id);
     
     if (payment) {
-      // Restore supplier's outstanding balance if applicable
       const supplier = suppliers.find(s => s.id === payment.supplierId);
       if (supplier && supplier.outstandingBalance !== undefined) {
         updateSupplier(supplier.id, {
@@ -385,8 +369,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     setSupplierPayments(supplierPayments.filter((payment) => payment.id !== id));
   };
-  
-  // Customer Product Rate operations
+
   const addCustomerProductRate = (rate: Omit<CustomerProductRate, "id">) => {
     const newRate = {
       ...rate,
@@ -420,12 +403,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return customRate.rate;
     }
     
-    // Return default product price if no custom rate is set
     const product = products.find(p => p.id === productId);
     return product ? product.price : 0;
   };
-  
-  // Stock Record operations
+
   const addStockRecord = (record: Omit<StockRecord, "id">) => {
     const newRecord = {
       ...record,
@@ -446,40 +427,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setStockRecords(stockRecords.filter((record) => record.id !== id));
   };
   
-  // Stock Entry operations
   const addStockEntry = (entry: StockEntry) => {
     setStockEntries([...stockEntries, entry]);
     
-    // Update each product's stock received
     entry.items.forEach(item => {
-      // Find the latest stock record for this product
       const latestRecord = [...stockRecords]
         .filter(record => record.productId === item.productId)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
       
       if (latestRecord) {
-        // Add a new record with updated received amount
+        const closingStock = latestRecord.closingStock + item.quantity;
         addStockRecord({
           date: entry.date,
           productId: item.productId,
           openingStock: latestRecord.closingStock,
           received: item.quantity,
           dispatched: 0,
+          closingStock: closingStock,
           minStockLevel: latestRecord.minStockLevel
         });
       } else {
-        // No previous record, create a new one
         addStockRecord({
           date: entry.date,
           productId: item.productId,
           openingStock: 0,
           received: item.quantity,
-          dispatched: 0
+          dispatched: 0,
+          closingStock: item.quantity
         });
       }
     });
     
-    // Update supplier's outstanding balance if applicable
     const supplier = suppliers.find(s => s.id === entry.supplierId);
     if (supplier) {
       const newBalance = (supplier.outstandingBalance || 0) + entry.totalAmount;
@@ -490,8 +468,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateStockEntry = (id: string, entryData: Partial<StockEntry>) => {
-    // This is complex as it may affect stock records
-    // Simplified implementation
     setStockEntries(
       stockEntries.map((entry) =>
         entry.id === id ? { ...entry, ...entryData } : entry
@@ -500,8 +476,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteStockEntry = (id: string) => {
-    // This is complex as it may affect stock records
-    // Simplified implementation
     setStockEntries(stockEntries.filter((entry) => entry.id !== id));
   };
 

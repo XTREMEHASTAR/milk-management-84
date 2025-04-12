@@ -14,6 +14,7 @@ import InvoiceGenerator from "./pages/InvoiceGenerator";
 import CustomerRates from "./pages/CustomerRates";
 import SupplierPayments from "./pages/SupplierPayments";
 import StockManagement from "./pages/StockManagement";
+import CustomerLedgerReport from "./pages/CustomerLedgerReport";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -36,6 +37,7 @@ function App() {
             <Route path="customer-rates" element={<CustomerRates />} />
             <Route path="supplier-payments" element={<SupplierPayments />} />
             <Route path="stock-management" element={<StockManagement />} />
+            <Route path="customer-ledger" element={<CustomerLedgerReport />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

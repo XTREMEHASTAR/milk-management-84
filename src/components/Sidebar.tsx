@@ -15,9 +15,10 @@ import {
   Warehouse,
   Package,
   ShoppingBag,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import useMobile from "@/hooks/use-mobile";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface NavItem {
   title: string;
@@ -65,6 +66,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "Payments",
       href: "/payments",
       icon: CreditCard,
+    },
+    {
+      title: "Customer Ledger",
+      href: "/customer-ledger",
+      icon: FileSpreadsheet,
     },
     {
       title: "Track Sheet",

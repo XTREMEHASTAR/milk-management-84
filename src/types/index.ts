@@ -16,6 +16,7 @@ export interface Product {
   price: number;
   description: string;
   unit: string;
+  minStockLevel?: number;
 }
 
 export interface OrderItem {
@@ -103,4 +104,28 @@ export interface StockEntryItem {
   productId: string;
   quantity: number;
   rate: number;
+}
+
+export interface CustomerLedgerEntry {
+  date: string;
+  orderId?: string;
+  paymentId?: string;
+  productQuantities: {[productId: string]: number};
+  totalQuantity: number;
+  amountBilled: number;
+  paymentReceived: number;
+  closingBalance: number;
+  reference?: string;
+}
+
+export interface CustomerLedgerReport {
+  customerId: string;
+  startDate: string;
+  endDate: string;
+  openingBalance: number;
+  entries: CustomerLedgerEntry[];
+  totalProductQuantities: {[productId: string]: number};
+  totalAmountBilled: number;
+  totalPaymentReceived: number;
+  closingBalance: number;
 }
