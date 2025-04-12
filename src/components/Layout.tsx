@@ -2,6 +2,7 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { useEffect, useState } from "react";
+import useMobile from "@/hooks/use-mobile";
 
 // Create a simple error boundary component
 const ErrorFallback = ({ error }: { error: Error }) => {
@@ -23,6 +24,8 @@ const ErrorFallback = ({ error }: { error: Error }) => {
 
 export function Layout() {
   const [error, setError] = useState<Error | null>(null);
+  const isMobile = useMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   useEffect(() => {
     console.log("Layout component mounted");
@@ -50,7 +53,7 @@ export function Layout() {
     console.log("Rendering Layout component");
     return (
       <div className="flex h-screen overflow-hidden">
-        <Sidebar />
+        <Sidebar isOpen={isMobile ? sidebarOpen : true} onClose={() => setSidebarOpen(false)} />
         <div className="flex-1 overflow-auto p-6">
           <Outlet />
         </div>
