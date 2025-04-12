@@ -11,6 +11,9 @@ import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import TrackSheet from "./pages/TrackSheet";
 import InvoiceGenerator from "./pages/InvoiceGenerator";
+import CustomerRates from "./pages/CustomerRates";
+import SupplierPayments from "./pages/SupplierPayments";
+import StockManagement from "./pages/StockManagement";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -30,6 +33,9 @@ function App() {
             <Route path="reports" element={<Reports />} />
             <Route path="track-sheet" element={<TrackSheet />} />
             <Route path="invoice-generator" element={<InvoiceGenerator />} />
+            <Route path="customer-rates" element={<CustomerRates />} />
+            <Route path="supplier-payments" element={<SupplierPayments />} />
+            <Route path="stock-management" element={<StockManagement />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

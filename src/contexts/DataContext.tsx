@@ -2,7 +2,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { 
   Customer, Product, Order, Payment, 
-  Expense, Supplier, SupplierPayment 
+  Expense, Supplier, SupplierPayment, CustomerProductRate,
+  StockRecord, StockEntry
 } from "@/types";
 import { 
   initialCustomers, initialProducts, initialOrders, 
@@ -17,6 +18,9 @@ interface DataContextType {
   expenses: Expense[];
   suppliers: Supplier[];
   supplierPayments: SupplierPayment[];
+  customerProductRates: CustomerProductRate[];
+  stockRecords: StockRecord[];
+  stockEntries: StockEntry[];
   
   addCustomer: (customer: Omit<Customer, "id">) => void;
   updateCustomer: (id: string, customerData: Partial<Customer>) => void;
@@ -25,6 +29,7 @@ interface DataContextType {
   addProduct: (product: Omit<Product, "id">) => void;
   updateProduct: (id: string, productData: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
+  updateProductMinStock: (id: string, minStockLevel: number) => void;
   
   addOrder: (order: Omit<Order, "id">) => void;
   updateOrder: (id: string, orderData: Partial<Order>) => void;
@@ -45,6 +50,20 @@ interface DataContextType {
   addSupplierPayment: (payment: Omit<SupplierPayment, "id">) => void;
   updateSupplierPayment: (id: string, paymentData: Partial<SupplierPayment>) => void;
   deleteSupplierPayment: (id: string) => void;
+  
+  addCustomerProductRate: (rate: Omit<CustomerProductRate, "id">) => void;
+  updateCustomerProductRate: (id: string, rateData: Partial<CustomerProductRate>) => void;
+  deleteCustomerProductRate: (id: string) => void;
+  getCustomerProductRates: (customerId: string) => CustomerProductRate[];
+  getProductRateForCustomer: (customerId: string, productId: string) => number;
+  
+  addStockRecord: (record: Omit<StockRecord, "id">) => void;
+  updateStockRecord: (id: string, recordData: Partial<StockRecord>) => void;
+  deleteStockRecord: (id: string) => void;
+  
+  addStockEntry: (entry: StockEntry) => void;
+  updateStockEntry: (id: string, entryData: Partial<StockEntry>) => void;
+  deleteStockEntry: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -85,6 +104,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem("supplierPayments");
     return saved ? JSON.parse(saved) : [];
   });
+  
+  const [customerProductRates, setCustomerProductRates] = useState<CustomerProductRate[]>(() => {
+    const saved = localStorage.getItem("customerProductRates");
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [stockRecords, setStockRecords] = useState<StockRecord[]>(() => {
+    const saved = localStorage.getItem("stockRecords");
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [stockEntries, setStockEntries] = useState<StockEntry[]>(() => {
+    const saved = localStorage.getItem("stockEntries");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Save data to localStorage when it changes
   useEffect(() => {
@@ -114,6 +148,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("supplierPayments", JSON.stringify(supplierPayments));
   }, [supplierPayments]);
+  
+  useEffect(() => {
+    localStorage.setItem("customerProductRates", JSON.stringify(customerProductRates));
+  }, [customerProductRates]);
+  
+  useEffect(() => {
+    localStorage.setItem("stockRecords", JSON.stringify(stockRecords));
+  }, [stockRecords]);
+  
+  useEffect(() => {
+    localStorage.setItem("stockEntries", JSON.stringify(stockEntries));
+  }, [stockEntries]);
 
   // Customer CRUD operations
   const addCustomer = (customer: Omit<Customer, "id">) => {
@@ -149,6 +195,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setProducts(
       products.map((product) =>
         product.id === id ? { ...product, ...productData } : product
+      )
+    );
+  };
+  
+  const updateProductMinStock = (id: string, minStockLevel: number) => {
+    setProducts(
+      products.map((product) =>
+        product.id === id ? { ...product, minStockLevel } : product
       )
     );
   };
@@ -285,18 +339,170 @@ export function DataProvider({ children }: { children: ReactNode }) {
       id: `sp${Date.now()}`
     };
     setSupplierPayments([...supplierPayments, newPayment]);
+    
+    // Update supplier's outstanding balance if applicable
+    const supplier = suppliers.find(s => s.id === payment.supplierId);
+    if (supplier && supplier.outstandingBalance !== undefined) {
+      updateSupplier(supplier.id, {
+        outstandingBalance: supplier.outstandingBalance - payment.amount
+      });
+    }
   };
 
   const updateSupplierPayment = (id: string, paymentData: Partial<SupplierPayment>) => {
+    const oldPayment = supplierPayments.find(p => p.id === id);
+    
     setSupplierPayments(
       supplierPayments.map((payment) =>
         payment.id === id ? { ...payment, ...paymentData } : payment
       )
     );
+    
+    // Update supplier's outstanding balance if amount changed
+    if (oldPayment && paymentData.amount && oldPayment.amount !== paymentData.amount) {
+      const supplier = suppliers.find(s => s.id === oldPayment.supplierId);
+      if (supplier && supplier.outstandingBalance !== undefined) {
+        const difference = paymentData.amount - oldPayment.amount;
+        updateSupplier(supplier.id, {
+          outstandingBalance: supplier.outstandingBalance - difference
+        });
+      }
+    }
   };
 
   const deleteSupplierPayment = (id: string) => {
+    const payment = supplierPayments.find(p => p.id === id);
+    
+    if (payment) {
+      // Restore supplier's outstanding balance if applicable
+      const supplier = suppliers.find(s => s.id === payment.supplierId);
+      if (supplier && supplier.outstandingBalance !== undefined) {
+        updateSupplier(supplier.id, {
+          outstandingBalance: supplier.outstandingBalance + payment.amount
+        });
+      }
+    }
+    
     setSupplierPayments(supplierPayments.filter((payment) => payment.id !== id));
+  };
+  
+  // Customer Product Rate operations
+  const addCustomerProductRate = (rate: Omit<CustomerProductRate, "id">) => {
+    const newRate = {
+      ...rate,
+      id: `cpr${Date.now()}`
+    };
+    setCustomerProductRates([...customerProductRates, newRate]);
+  };
+
+  const updateCustomerProductRate = (id: string, rateData: Partial<CustomerProductRate>) => {
+    setCustomerProductRates(
+      customerProductRates.map((rate) =>
+        rate.id === id ? { ...rate, ...rateData } : rate
+      )
+    );
+  };
+
+  const deleteCustomerProductRate = (id: string) => {
+    setCustomerProductRates(customerProductRates.filter((rate) => rate.id !== id));
+  };
+  
+  const getCustomerProductRates = (customerId: string) => {
+    return customerProductRates.filter(rate => rate.customerId === customerId);
+  };
+  
+  const getProductRateForCustomer = (customerId: string, productId: string) => {
+    const customRate = customerProductRates.find(
+      rate => rate.customerId === customerId && rate.productId === productId
+    );
+    
+    if (customRate) {
+      return customRate.rate;
+    }
+    
+    // Return default product price if no custom rate is set
+    const product = products.find(p => p.id === productId);
+    return product ? product.price : 0;
+  };
+  
+  // Stock Record operations
+  const addStockRecord = (record: Omit<StockRecord, "id">) => {
+    const newRecord = {
+      ...record,
+      id: `sr${Date.now()}`
+    };
+    setStockRecords([...stockRecords, newRecord]);
+  };
+
+  const updateStockRecord = (id: string, recordData: Partial<StockRecord>) => {
+    setStockRecords(
+      stockRecords.map((record) =>
+        record.id === id ? { ...record, ...recordData } : record
+      )
+    );
+  };
+
+  const deleteStockRecord = (id: string) => {
+    setStockRecords(stockRecords.filter((record) => record.id !== id));
+  };
+  
+  // Stock Entry operations
+  const addStockEntry = (entry: StockEntry) => {
+    setStockEntries([...stockEntries, entry]);
+    
+    // Update each product's stock received
+    entry.items.forEach(item => {
+      // Find the latest stock record for this product
+      const latestRecord = [...stockRecords]
+        .filter(record => record.productId === item.productId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+      
+      if (latestRecord) {
+        // Add a new record with updated received amount
+        addStockRecord({
+          date: entry.date,
+          productId: item.productId,
+          openingStock: latestRecord.closingStock,
+          received: item.quantity,
+          dispatched: 0,
+          minStockLevel: latestRecord.minStockLevel
+        });
+      } else {
+        // No previous record, create a new one
+        addStockRecord({
+          date: entry.date,
+          productId: item.productId,
+          openingStock: 0,
+          received: item.quantity,
+          dispatched: 0
+        });
+      }
+    });
+    
+    // Update supplier's outstanding balance if applicable
+    const supplier = suppliers.find(s => s.id === entry.supplierId);
+    if (supplier) {
+      const newBalance = (supplier.outstandingBalance || 0) + entry.totalAmount;
+      updateSupplier(supplier.id, {
+        outstandingBalance: newBalance
+      });
+    }
+  };
+
+  const updateStockEntry = (id: string, entryData: Partial<StockEntry>) => {
+    // This is complex as it may affect stock records
+    // Simplified implementation
+    setStockEntries(
+      stockEntries.map((entry) =>
+        entry.id === id ? { ...entry, ...entryData } : entry
+      )
+    );
+  };
+
+  const deleteStockEntry = (id: string) => {
+    // This is complex as it may affect stock records
+    // Simplified implementation
+    setStockEntries(stockEntries.filter((entry) => entry.id !== id));
   };
 
   const value = {
@@ -307,6 +513,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     expenses,
     suppliers,
     supplierPayments,
+    customerProductRates,
+    stockRecords,
+    stockEntries,
     
     addCustomer,
     updateCustomer,
@@ -315,6 +524,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addProduct,
     updateProduct,
     deleteProduct,
+    updateProductMinStock,
     
     addOrder,
     updateOrder,
@@ -334,7 +544,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     addSupplierPayment,
     updateSupplierPayment,
-    deleteSupplierPayment
+    deleteSupplierPayment,
+    
+    addCustomerProductRate,
+    updateCustomerProductRate,
+    deleteCustomerProductRate,
+    getCustomerProductRates,
+    getProductRateForCustomer,
+    
+    addStockRecord,
+    updateStockRecord,
+    deleteStockRecord,
+    
+    addStockEntry,
+    updateStockEntry,
+    deleteStockEntry
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

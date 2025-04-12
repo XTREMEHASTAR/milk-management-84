@@ -8,12 +8,13 @@ import {
   ClipboardList,
   CreditCard,
   BarChart3,
-  Settings,
-  LucideIcon,
   FileText,
   TruckIcon,
   DollarSign,
-  PackageIcon,
+  Tag,
+  Warehouse,
+  Package,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useMobile from "@/hooks/use-mobile";
@@ -21,7 +22,7 @@ import useMobile from "@/hooks/use-mobile";
 interface NavItem {
   title: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
 }
 
 interface SidebarProps {
@@ -56,6 +57,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       icon: Users,
     },
     {
+      title: "Custom Rates",
+      href: "/customer-rates",
+      icon: Tag,
+    },
+    {
       title: "Payments",
       href: "/payments",
       icon: CreditCard,
@@ -69,6 +75,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "Expenses",
       href: "/expenses",
       icon: DollarSign,
+    },
+    {
+      title: "Supplier Payments",
+      href: "/supplier-payments",
+      icon: ShoppingBag,
+    },
+    {
+      title: "Stock Management",
+      href: "/stock-management",
+      icon: Package,
     },
     {
       title: "Reports",
