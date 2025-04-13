@@ -2,7 +2,7 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { useEffect, useState } from "react";
-import useMobile from "@/hooks/use-mobile";
+import { useMobile } from "@/hooks/use-mobile";
 
 // Create a simple error boundary component
 const ErrorFallback = ({ error }: { error: Error }) => {

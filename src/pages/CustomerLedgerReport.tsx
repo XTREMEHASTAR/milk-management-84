@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Customer, Order, Payment, Product, CustomerLedgerEntry, CustomerLedgerReport } from "@/types";
+import { Customer, Order, Payment, Product, CustomerLedgerEntry, CustomerLedgerReport as CustomerLedgerReportType } from "@/types";
 import { FileText, Printer, Download, Calendar, CalendarDays, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
