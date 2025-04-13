@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
@@ -26,14 +27,14 @@ export default function StockManagement() {
     items: {productId: string; quantity: number; rate: number}[];
   }>({
     date: format(new Date(), "yyyy-MM-dd"),
-    supplierId: "default",
+    supplierId: "",
     items: []
   });
   
   const [stockRecordDialogOpen, setStockRecordDialogOpen] = useState(false);
   const [newStockRecord, setNewStockRecord] = useState<Omit<StockRecord, "id" | "closingStock">>({
     date: format(new Date(), "yyyy-MM-dd"),
-    productId: "default",
+    productId: "",
     openingStock: 0,
     received: 0,
     dispatched: 0,
@@ -102,7 +103,7 @@ export default function StockManagement() {
     
     setNewStockEntry({
       date: format(new Date(), "yyyy-MM-dd"),
-      supplierId: "default",
+      supplierId: "",
       items: []
     });
     
@@ -127,7 +128,7 @@ export default function StockManagement() {
     
     setNewStockRecord({
       date: format(new Date(), "yyyy-MM-dd"),
-      productId: "default",
+      productId: "",
       openingStock: 0,
       received: 0,
       dispatched: 0,
@@ -228,14 +229,13 @@ export default function StockManagement() {
                   <div>
                     <Label htmlFor="entry-supplier">Supplier</Label>
                     <Select 
-                      value={newStockEntry.supplierId || "default"} 
+                      value={newStockEntry.supplierId || undefined} 
                       onValueChange={(value) => setNewStockEntry({...newStockEntry, supplierId: value})}
                     >
                       <SelectTrigger id="entry-supplier">
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="default" className="hidden">Select a supplier</SelectItem>
                         {suppliers.map(supplier => (
                           <SelectItem key={supplier.id} value={supplier.id}>
                             {supplier.name}
@@ -265,14 +265,13 @@ export default function StockManagement() {
                           <div className="flex-1">
                             <Label>Product</Label>
                             <Select 
-                              value={item.productId || "default"} 
+                              value={item.productId || undefined} 
                               onValueChange={(value) => updateStockEntryItem(index, "productId", value)}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select product" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="default" className="hidden">Select a product</SelectItem>
                                 {products.map(product => (
                                   <SelectItem key={product.id} value={product.id}>
                                     {product.name}
@@ -363,14 +362,13 @@ export default function StockManagement() {
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="record-product" className="col-span-1">Product</Label>
                   <Select 
-                    value={newStockRecord.productId || "default"} 
+                    value={newStockRecord.productId || undefined} 
                     onValueChange={(value) => setNewStockRecord({...newStockRecord, productId: value})}
                   >
                     <SelectTrigger id="record-product" className="col-span-3">
                       <SelectValue placeholder="Select product" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default" className="hidden">Select a product</SelectItem>
                       {products.map(product => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name}
@@ -459,7 +457,7 @@ export default function StockManagement() {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="min-stock-product" className="col-span-1">Product</Label>
                 <Select 
-                  value={minStockProduct.id} 
+                  value={minStockProduct.id || undefined} 
                   onValueChange={(value) => setMinStockProduct({...minStockProduct, id: value})}
                 >
                   <SelectTrigger id="min-stock-product" className="col-span-3">
