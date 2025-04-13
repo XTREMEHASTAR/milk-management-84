@@ -41,7 +41,7 @@ const CustomerLedgerReport = () => {
   const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
   const [endDate, setEndDate] = useState<Date>(endOfMonth(new Date()));
   const [reportType, setReportType] = useState<"monthly" | "quarterly" | "yearly">("monthly");
-  const [ledgerReport, setLedgerReport] = useState<CustomerLedgerReport | null>(null);
+  const [ledgerReport, setLedgerReport] = useState<CustomerLedgerReportType | null>(null);
 
   // Function to generate ledger report for a specific customer and date range
   const generateReport = () => {
@@ -179,7 +179,7 @@ const CustomerLedgerReport = () => {
     const totalPaymentReceived = entries.reduce((sum, entry) => sum + entry.paymentReceived, 0);
     
     // Set the ledger report
-    const report: CustomerLedgerReport = {
+    const report: CustomerLedgerReportType = {
       customerId: selectedCustomerId,
       startDate: formattedStartDate,
       endDate: formattedEndDate,
@@ -592,7 +592,7 @@ const CustomerLedgerReport = () => {
                     return null;
                   })}
                   <TableCell>
-                    {Object.values(ledgerReport.totalProductQuantities).reduce((sum, qty) => sum + qty, 0)}
+                    {Object.values(ledgerReport.totalProductQuantities).reduce((sum, qty) => sum + Number(qty), 0)}
                   </TableCell>
                   <TableCell>₹{ledgerReport.totalAmountBilled.toFixed(2)}</TableCell>
                   <TableCell>₹{ledgerReport.totalPaymentReceived.toFixed(2)}</TableCell>

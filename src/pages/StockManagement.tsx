@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
@@ -10,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Product, StockRecord, StockEntry, Supplier } from "@/types";
+import { Product, StockRecord, StockEntry, Supplier, StockEntryItem } from "@/types";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from "lucide-react";
