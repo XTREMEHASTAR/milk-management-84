@@ -19,7 +19,6 @@ export default function StockManagement() {
   const [activeTab, setActiveTab] = useState("daily");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   
-  // Stock entry dialog state
   const [stockEntryDialogOpen, setStockEntryDialogOpen] = useState(false);
   const [newStockEntry, setNewStockEntry] = useState<{
     date: string;
@@ -27,33 +26,29 @@ export default function StockManagement() {
     items: {productId: string; quantity: number; rate: number}[];
   }>({
     date: format(new Date(), "yyyy-MM-dd"),
-    supplierId: "",
+    supplierId: "default",
     items: []
   });
   
-  // Daily stock record dialog state
   const [stockRecordDialogOpen, setStockRecordDialogOpen] = useState(false);
   const [newStockRecord, setNewStockRecord] = useState<Omit<StockRecord, "id" | "closingStock">>({
     date: format(new Date(), "yyyy-MM-dd"),
-    productId: "",
+    productId: "default",
     openingStock: 0,
     received: 0,
     dispatched: 0,
     minStockLevel: 0
   });
   
-  // Filters
   const [productFilter, setProductFilter] = useState("");
   const [dateRangeFilter, setDateRangeFilter] = useState({
     from: format(new Date(new Date().setDate(new Date().getDate() - 7)), "yyyy-MM-dd"),
     to: format(new Date(), "yyyy-MM-dd")
   });
   
-  // Min stock settings dialog
   const [minStockDialogOpen, setMinStockDialogOpen] = useState(false);
   const [minStockProduct, setMinStockProduct] = useState<{id: string, level: number}>({id: "", level: 0});
 
-  // Add a product to stock entry
   const addProductToEntry = () => {
     setNewStockEntry(prev => ({
       ...prev,
@@ -61,7 +56,6 @@ export default function StockManagement() {
     }));
   };
   
-  // Remove a product from stock entry
   const removeProductFromEntry = (index: number) => {
     setNewStockEntry(prev => ({
       ...prev,
@@ -69,7 +63,6 @@ export default function StockManagement() {
     }));
   };
   
-  // Update a stock entry item
   const updateStockEntryItem = (index: number, field: keyof StockEntryItem, value: string | number) => {
     setNewStockEntry(prev => {
       const items = [...prev.items];
@@ -78,14 +71,12 @@ export default function StockManagement() {
     });
   };
   
-  // Calculate total for stock entry
   const calculateStockEntryTotal = () => {
     return newStockEntry.items.reduce((total, item) => {
       return total + (item.quantity * item.rate);
     }, 0);
   };
   
-  // Submit new stock entry
   const handleNewStockEntry = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -94,7 +85,6 @@ export default function StockManagement() {
       return;
     }
     
-    // Check if all items have valid data
     const validItems = newStockEntry.items.every(item => 
       item.productId && item.quantity > 0 && item.rate > 0
     );
@@ -104,17 +94,15 @@ export default function StockManagement() {
       return;
     }
     
-    // Add stock entry
     addStockEntry({
       ...newStockEntry,
       id: `se${Date.now()}`,
       totalAmount: calculateStockEntryTotal()
     });
     
-    // Reset form
     setNewStockEntry({
       date: format(new Date(), "yyyy-MM-dd"),
-      supplierId: "",
+      supplierId: "default",
       items: []
     });
     
@@ -122,7 +110,6 @@ export default function StockManagement() {
     toast.success("Stock entry recorded successfully");
   };
   
-  // Submit new stock record
   const handleNewStockRecord = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -131,19 +118,16 @@ export default function StockManagement() {
       return;
     }
     
-    // Calculate closing stock
     const closingStock = newStockRecord.openingStock + newStockRecord.received - newStockRecord.dispatched;
     
-    // Add stock record
     addStockRecord({
       ...newStockRecord,
       closingStock
     });
     
-    // Reset form
     setNewStockRecord({
       date: format(new Date(), "yyyy-MM-dd"),
-      productId: "",
+      productId: "default",
       openingStock: 0,
       received: 0,
       dispatched: 0,
@@ -154,7 +138,6 @@ export default function StockManagement() {
     toast.success("Stock record added successfully");
   };
   
-  // Save minimum stock level
   const saveMinStockLevel = () => {
     if (!minStockProduct.id || minStockProduct.level < 0) {
       toast.error("Please select a product and enter a valid minimum stock level");
@@ -166,17 +149,14 @@ export default function StockManagement() {
     toast.success("Minimum stock level updated");
   };
   
-  // Helper to get product by ID
   const getProductById = (id: string) => {
     return products.find(p => p.id === id);
   };
   
-  // Helper to get supplier by ID
   const getSupplierById = (id: string) => {
     return suppliers.find(s => s.id === id);
   };
   
-  // Filter stock records
   const filteredStockRecords = stockRecords.filter(record => {
     const matchesProduct = !productFilter || record.productId === productFilter;
     const recordDate = new Date(record.date);
@@ -191,12 +171,10 @@ export default function StockManagement() {
     return matchesProduct && matchesDateRange;
   });
   
-  // Get stock records for a specific date
   const getStockRecordsForDate = (date: string) => {
     return stockRecords.filter(record => record.date === date);
   };
   
-  // Check if a product is below minimum stock level
   const isProductBelowMinStock = (productId: string) => {
     const latestRecord = [...stockRecords]
       .filter(record => record.productId === productId)
@@ -207,7 +185,6 @@ export default function StockManagement() {
     return latestRecord.closingStock < latestRecord.minStockLevel;
   };
   
-  // Get latest closing stock for a product
   const getLatestClosingStock = (productId: string) => {
     const latestRecord = [...stockRecords]
       .filter(record => record.productId === productId)
@@ -251,13 +228,14 @@ export default function StockManagement() {
                   <div>
                     <Label htmlFor="entry-supplier">Supplier</Label>
                     <Select 
-                      value={newStockEntry.supplierId} 
+                      value={newStockEntry.supplierId || "default"} 
                       onValueChange={(value) => setNewStockEntry({...newStockEntry, supplierId: value})}
                     >
                       <SelectTrigger id="entry-supplier">
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="default" className="hidden">Select a supplier</SelectItem>
                         {suppliers.map(supplier => (
                           <SelectItem key={supplier.id} value={supplier.id}>
                             {supplier.name}
@@ -287,13 +265,14 @@ export default function StockManagement() {
                           <div className="flex-1">
                             <Label>Product</Label>
                             <Select 
-                              value={item.productId} 
+                              value={item.productId || "default"} 
                               onValueChange={(value) => updateStockEntryItem(index, "productId", value)}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select product" />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="default" className="hidden">Select a product</SelectItem>
                                 {products.map(product => (
                                   <SelectItem key={product.id} value={product.id}>
                                     {product.name}
@@ -384,13 +363,14 @@ export default function StockManagement() {
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="record-product" className="col-span-1">Product</Label>
                   <Select 
-                    value={newStockRecord.productId} 
+                    value={newStockRecord.productId || "default"} 
                     onValueChange={(value) => setNewStockRecord({...newStockRecord, productId: value})}
                   >
                     <SelectTrigger id="record-product" className="col-span-3">
                       <SelectValue placeholder="Select product" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="default" className="hidden">Select a product</SelectItem>
                       {products.map(product => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name}
