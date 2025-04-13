@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
@@ -344,7 +343,7 @@ export default function SupplierPayments() {
                   <SelectValue placeholder="All Suppliers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Suppliers</SelectItem>
+                  <SelectItem value="all">All Suppliers</SelectItem>
                   {suppliers.map(supplier => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
