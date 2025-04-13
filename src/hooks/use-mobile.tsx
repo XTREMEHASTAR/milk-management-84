@@ -3,7 +3,7 @@ import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
 
-export default function useMobile() {
+export function useMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
 
   React.useEffect(() => {
