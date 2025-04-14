@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import { 
@@ -46,6 +45,7 @@ const Products = () => {
     sku: "",
     description: "",
     price: 0,
+    unit: "Liter",
     minStockLevel: 0,
   });
 
@@ -62,6 +62,7 @@ const Products = () => {
       category: "",
       sku: "",
       description: "",
+      unit: "Liter",
       price: 0,
       minStockLevel: 0,
     });
@@ -92,8 +93,8 @@ const Products = () => {
 
   const exportToCSV = () => {
     const csvContent = [
-      ["ID", "Name", "SKU", "Category", "Price", "Min Stock Level"],
-      ...filteredProducts.map(p => [p.id, p.name, p.sku, p.category, p.price.toString(), p.minStockLevel?.toString() || "0"])
+      ["ID", "Name", "SKU", "Category", "Price", "Unit", "Min Stock Level"],
+      ...filteredProducts.map(p => [p.id, p.name, p.sku, p.category, p.price.toString(), p.unit, p.minStockLevel?.toString() || "0"])
     ].map(e => e.join(",")).join("\n");
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -168,6 +169,14 @@ const Products = () => {
                   />
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="unit">Unit</Label>
+                  <Input 
+                    id="unit" 
+                    value={newProduct.unit}
+                    onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
+                  />
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="minStock">Minimum Stock Level</Label>
                   <Input 
                     id="minStock" 
@@ -224,6 +233,7 @@ const Products = () => {
                 <TableHead>SKU</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">Unit</TableHead>
                 <TableHead className="text-right">Min Stock</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -242,6 +252,7 @@ const Products = () => {
                     <TableCell>{product.sku}</TableCell>
                     <TableCell>{product.category}</TableCell>
                     <TableCell className="text-right">₹{product.price.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{product.unit}</TableCell>
                     <TableCell className="text-right">{product.minStockLevel || 0}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -317,6 +328,14 @@ const Products = () => {
                   type="number"
                   value={currentProduct.price}
                   onChange={(e) => setCurrentProduct({...currentProduct, price: Number(e.target.value)})}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-unit">Unit</Label>
+                <Input 
+                  id="edit-unit" 
+                  value={currentProduct.unit}
+                  onChange={(e) => setCurrentProduct({...currentProduct, unit: e.target.value})}
                 />
               </div>
               <div className="grid gap-2">

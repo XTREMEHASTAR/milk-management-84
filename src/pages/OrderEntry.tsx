@@ -275,7 +275,9 @@ const OrderEntry = () => {
       name: productName.trim(),
       price: Number(productPrice),
       description: productDescription.trim() || productCategory.trim(),
-      unit: productUnit.trim() || "L"
+      unit: productUnit.trim() || "L",
+      category: productCategory.trim() || "Other",
+      sku: `${productName.trim().substring(0, 4).toUpperCase()}-${Date.now().toString().substring(9)}`
     };
 
     if (editingProduct) {
