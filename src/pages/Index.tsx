@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { BarChart, Calendar, CreditCard, Milk, Truck, Users, DollarSign } from "lucide-react";
+import { BarChart, Calendar, CreditCard, Milk, Truck, Users, DollarSign, Settings, Database } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -117,6 +117,14 @@ const Index = () => {
                 >
                   <Truck className="mr-2 h-4 w-4" />
                   View Track Sheet
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate("/master")}
+                >
+                  <Database className="mr-2 h-4 w-4" />
+                  Master Module
                 </Button>
               </CardContent>
             </Card>

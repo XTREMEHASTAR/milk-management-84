@@ -15,6 +15,8 @@ import CustomerRates from "./pages/CustomerRates";
 import SupplierPayments from "./pages/SupplierPayments";
 import StockManagement from "./pages/StockManagement";
 import CustomerLedgerReport from "./pages/CustomerLedgerReport";
+import Master from "./pages/Master";
+import Products from "./pages/Products";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -38,6 +40,8 @@ function App() {
             <Route path="supplier-payments" element={<SupplierPayments />} />
             <Route path="stock-management" element={<StockManagement />} />
             <Route path="customer-ledger" element={<CustomerLedgerReport />} />
+            <Route path="master" element={<Master />} />
+            <Route path="products" element={<Products />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

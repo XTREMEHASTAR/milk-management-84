@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,8 @@ import {
   Package,
   ShoppingBag,
   FileSpreadsheet,
+  Database,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
@@ -90,6 +93,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: "Stock Management",
       href: "/stock-management",
       icon: Package,
+    },
+    {
+      title: "Master Module",
+      href: "/master",
+      icon: Database,
     },
     {
       title: "Reports",
