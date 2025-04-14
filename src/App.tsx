@@ -6,12 +6,15 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import OrderEntry from "./pages/OrderEntry";
 import Customers from "./pages/Customers";
+import CustomerDirectory from "./pages/CustomerDirectory";
 import Payments from "./pages/Payments";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import TrackSheet from "./pages/TrackSheet";
 import InvoiceGenerator from "./pages/InvoiceGenerator";
 import CustomerRates from "./pages/CustomerRates";
+import ProductRates from "./pages/ProductRates";
+import BulkRates from "./pages/BulkRates";
 import SupplierPayments from "./pages/SupplierPayments";
 import StockManagement from "./pages/StockManagement";
 import CustomerLedgerReport from "./pages/CustomerLedgerReport";
@@ -36,12 +39,15 @@ function App() {
             <Route index element={<Index />} />
             <Route path="order-entry" element={<OrderEntry />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="customer-directory" element={<CustomerDirectory />} />
             <Route path="payments" element={<Payments />} />
             <Route path="expenses" element={<Expenses />} />
             <Route path="reports" element={<Reports />} />
             <Route path="track-sheet" element={<TrackSheet />} />
             <Route path="invoice-generator" element={<InvoiceGenerator />} />
             <Route path="customer-rates" element={<CustomerRates />} />
+            <Route path="product-rates" element={<ProductRates />} />
+            <Route path="bulk-rates" element={<BulkRates />} />
             <Route path="supplier-payments" element={<SupplierPayments />} />
             <Route path="stock-management" element={<StockManagement />} />
             <Route path="customer-ledger" element={<CustomerLedgerReport />} />
