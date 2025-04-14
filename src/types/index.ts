@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -16,6 +15,8 @@ export interface Product {
   price: number;
   description: string;
   unit: string;
+  sku: string;
+  category: string;
   minStockLevel?: number;
 }
 
