@@ -17,6 +17,11 @@ import StockManagement from "./pages/StockManagement";
 import CustomerLedgerReport from "./pages/CustomerLedgerReport";
 import Master from "./pages/Master";
 import Products from "./pages/Products";
+import Suppliers from "./pages/Suppliers";
+import SupplierLedger from "./pages/SupplierLedger";
+import PurchaseHistory from "./pages/PurchaseHistory";
+import StockSettings from "./pages/StockSettings";
+import ProductCategories from "./pages/ProductCategories";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -42,6 +47,11 @@ function App() {
             <Route path="customer-ledger" element={<CustomerLedgerReport />} />
             <Route path="master" element={<Master />} />
             <Route path="products" element={<Products />} />
+            <Route path="suppliers" element={<Suppliers />} />
+            <Route path="supplier-ledger" element={<SupplierLedger />} />
+            <Route path="purchase-history" element={<PurchaseHistory />} />
+            <Route path="stock-settings" element={<StockSettings />} />
+            <Route path="product-categories" element={<ProductCategories />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
