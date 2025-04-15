@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -18,10 +18,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Download, Printer } from "lucide-react";
+import { Download, FileDown, FilePdf, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { Order, OrderItem } from "@/types";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface TrackItem {
   customerId: string;
@@ -38,6 +40,7 @@ const TrackSheet = () => {
   const [trackDate, setTrackDate] = useState<Date>(new Date());
   const [trackItems, setTrackItems] = useState<TrackItem[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   // Find order for the selected date
   useEffect(() => {
@@ -152,6 +155,84 @@ const TrackSheet = () => {
     link.click();
   };
 
+  const exportToPDF = () => {
+    if (!selectedOrder) {
+      toast.error("No order data available for the selected date");
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Add title and date
+    doc.setFontSize(18);
+    doc.text("Daily Delivery Track Sheet", 14, 22);
+    
+    doc.setFontSize(12);
+    doc.text(`Date: ${format(trackDate, "dd MMMM yyyy")}`, 14, 30);
+    
+    // Prepare table data
+    const tableColumn = ["Customer"];
+    products.forEach(product => {
+      tableColumn.push(product.name);
+    });
+    tableColumn.push("Total Qty");
+    tableColumn.push("Amount (₹)");
+    
+    const tableRows = trackItems.map(item => {
+      const row = [item.customerName];
+      
+      products.forEach(product => {
+        row.push(item.products[product.id]?.toString() || "-");
+      });
+      
+      row.push(item.totalQuantity.toString());
+      row.push(`₹${item.totalAmount}`);
+      
+      return row;
+    });
+    
+    // Add totals row
+    const totalsRow = ["TOTAL"];
+    
+    products.forEach(product => {
+      const total = trackItems.reduce(
+        (sum, item) => sum + (item.products[product.id] || 0),
+        0
+      );
+      totalsRow.push(total.toString());
+    });
+    
+    const grandTotalQuantity = trackItems.reduce(
+      (sum, item) => sum + item.totalQuantity,
+      0
+    );
+    
+    const grandTotalAmount = trackItems.reduce(
+      (sum, item) => sum + item.totalAmount,
+      0
+    );
+    
+    totalsRow.push(grandTotalQuantity.toString());
+    totalsRow.push(`₹${grandTotalAmount}`);
+    
+    tableRows.push(totalsRow);
+    
+    // Generate the PDF table
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 40,
+      styles: { fontSize: 10, cellPadding: 3 },
+      headStyles: { fillColor: [75, 58, 172], textColor: [255, 255, 255] },
+      footStyles: { fillColor: [240, 240, 245], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 245, 250] },
+    });
+    
+    // Save the PDF
+    doc.save(`track-sheet-${format(trackDate, "yyyy-MM-dd")}.pdf`);
+    toast.success("PDF exported successfully");
+  };
+
   const printTrackSheet = () => {
     if (!selectedOrder) {
       toast.error("No order data available for the selected date");
@@ -172,8 +253,12 @@ const TrackSheet = () => {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={exportToCSV}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
+            <FileDown className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={exportToPDF} className="bg-purple-700 text-white hover:bg-purple-800 hover:text-white border-none">
+            <FilePdf className="mr-2 h-4 w-4" />
+            Export PDF
           </Button>
           <Button variant="outline" onClick={printTrackSheet}>
             <Printer className="mr-2 h-4 w-4" />
@@ -182,14 +267,14 @@ const TrackSheet = () => {
         </div>
       </div>
 
-      <Card className="print:shadow-none print:border-none">
+      <Card className="print:shadow-none print:border-none bg-gradient-to-br from-blue-900/90 to-purple-900/90 text-white border-0 shadow-lg">
         <CardHeader className="print:py-2">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="print:text-xl">
+              <CardTitle className="print:text-xl text-white">
                 Delivery Track Sheet - {format(trackDate, "dd MMMM yyyy")}
               </CardTitle>
-              <CardDescription className="print:hidden">
+              <CardDescription className="print:hidden text-gray-300">
                 Daily milk delivery track sheet for delivery personnel
               </CardDescription>
             </div>
@@ -201,52 +286,52 @@ const TrackSheet = () => {
         <CardContent>
           {!selectedOrder ? (
             <div className="text-center py-10 print:hidden">
-              <p className="text-muted-foreground mb-4">
+              <p className="text-gray-300 mb-4">
                 No order data available for the selected date
               </p>
-              <Button onClick={() => window.location.href = "/order-entry"}>
+              <Button onClick={() => window.location.href = "/order-entry"} className="bg-purple-600 hover:bg-purple-700 text-white border-none">
                 Create Order for This Date
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" ref={tableRef}>
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-purple-800/50">
                   <TableRow>
-                    <TableHead className="w-[200px]">Customer</TableHead>
+                    <TableHead className="w-[200px] text-white">Customer</TableHead>
                     {products.map((product) => (
                       <TableHead
                         key={product.id}
-                        className="text-center whitespace-nowrap"
+                        className="text-center whitespace-nowrap text-white"
                       >
                         {product.name}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center">Total Qty</TableHead>
-                    <TableHead className="text-center print:hidden">Amount (₹)</TableHead>
+                    <TableHead className="text-center text-white">Total Qty</TableHead>
+                    <TableHead className="text-center print:hidden text-white">Amount (₹)</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="bg-purple-900/30">
                   {trackItems.map((item) => (
-                    <TableRow key={item.customerId}>
-                      <TableCell className="font-medium">
+                    <TableRow key={item.customerId} className="border-t border-purple-700/50 hover:bg-purple-800/30">
+                      <TableCell className="font-medium text-white">
                         {item.customerName}
                       </TableCell>
                       {products.map((product) => (
-                        <TableCell key={product.id} className="text-center">
+                        <TableCell key={product.id} className="text-center text-gray-300">
                           {item.products[product.id] || "-"}
                         </TableCell>
                       ))}
-                      <TableCell className="text-center font-semibold">
+                      <TableCell className="text-center font-semibold text-white">
                         {item.totalQuantity}
                       </TableCell>
-                      <TableCell className="text-center font-semibold print:hidden">
+                      <TableCell className="text-center font-semibold print:hidden text-gray-300">
                         ₹{item.totalAmount}
                       </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="bg-muted/50">
-                    <TableCell className="font-bold">TOTAL</TableCell>
+                  <TableRow className="bg-purple-800/50 border-none">
+                    <TableCell className="font-bold text-white">TOTAL</TableCell>
                     {products.map((product) => {
                       const total = trackItems.reduce(
                         (sum, item) => sum + (item.products[product.id] || 0),
@@ -255,19 +340,19 @@ const TrackSheet = () => {
                       return (
                         <TableCell
                           key={product.id}
-                          className="text-center font-semibold"
+                          className="text-center font-semibold text-white"
                         >
                           {total || "-"}
                         </TableCell>
                       );
                     })}
-                    <TableCell className="text-center font-bold">
+                    <TableCell className="text-center font-bold text-white">
                       {trackItems.reduce(
                         (sum, item) => sum + item.totalQuantity,
                         0
                       )}
                     </TableCell>
-                    <TableCell className="text-center font-bold print:hidden">
+                    <TableCell className="text-center font-bold print:hidden text-white">
                       ₹
                       {trackItems.reduce(
                         (sum, item) => sum + item.totalAmount,
@@ -283,14 +368,14 @@ const TrackSheet = () => {
       </Card>
       
       <div className="print:hidden">
-        <Card>
+        <Card className="bg-gradient-to-r from-indigo-900/80 to-blue-900/80 text-white border-0 shadow-md">
           <CardHeader>
-            <CardTitle>Instructions</CardTitle>
+            <CardTitle className="text-white">Instructions</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc pl-5 space-y-2">
+            <ul className="list-disc pl-5 space-y-2 text-gray-300">
               <li>Select a date to view the track sheet for that day.</li>
-              <li>Use the Export button to download as CSV or the Print button to print.</li>
+              <li>Use the Export button to download as CSV/PDF or the Print button to print.</li>
               <li>Track sheets show all customer orders for the selected date.</li>
               <li>If no data is available, create an order for the selected date first.</li>
             </ul>

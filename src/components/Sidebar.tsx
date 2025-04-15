@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ import {
   UserRound,
   Truck,
   Receipt,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
@@ -165,21 +167,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           icon: DollarSign,
         },
         {
-          title: "Reports",
-          href: "/reports",
-          icon: BarChart3,
-        },
-      ]
-    },
-    {
-      title: "Finances",
-      items: [
-        {
-          title: "Payments",
-          href: "/payments",
-          icon: CreditCard,
-        },
-        {
           title: "Outstanding",
           href: "/outstanding",
           icon: DollarSign,
@@ -187,7 +174,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {
           title: "Reports",
           href: "/reports",
-          icon: FileText,
+          icon: BarChart3,
         },
       ]
     },
@@ -217,13 +204,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
           onClick={onClose}
         ></div>
       )}
       <div
         className={cn(
-          "fixed z-50 flex h-full flex-col border-r bg-background p-4 transition-all duration-300 md:relative md:z-0",
+          "fixed z-50 flex h-full flex-col border-r border-purple-800/50 bg-gradient-to-b from-indigo-900 to-purple-900 p-4 transition-all duration-300 md:relative md:z-0",
           isMobile
             ? isOpen
               ? "translate-x-0"
@@ -232,12 +219,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       >
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-lg font-semibold">Milk Center Management</h1>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center">
+              <span className="text-white font-bold">M</span>
+            </div>
+            <h1 className="text-lg font-semibold text-white">Milk Center</h1>
+          </div>
+          {isMobile && (
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-purple-800/50">
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
         </div>
-        <nav className="space-y-1.5 flex-1 overflow-auto">
+        <nav className="space-y-1.5 flex-1 overflow-auto scrollbar-thin scrollbar-thumb-indigo-600 scrollbar-track-transparent pr-1">
           {navGroups.map((group, index) => (
             <div key={index} className="mb-4">
-              <h3 className="text-xs uppercase tracking-wider text-muted-foreground ml-2 mb-1">
+              <h3 className="text-xs uppercase tracking-wider text-indigo-300 ml-2 mb-1 opacity-80">
                 {group.title}
               </h3>
               {group.items.map((item) => (
@@ -249,9 +246,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start",
+                      "w-full justify-start text-gray-300 hover:text-white hover:bg-purple-800/50",
                       location.pathname === item.href &&
-                        "bg-accent text-accent-foreground"
+                        "bg-purple-800/70 text-white"
                     )}
                   >
                     <item.icon className="mr-2 h-4 w-4" />
@@ -262,6 +259,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           ))}
         </nav>
+        <div className="pt-4 border-t border-purple-800/30">
+          <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-purple-800/50">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Button>
+        </div>
       </div>
     </>
   );
