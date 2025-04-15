@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -169,6 +168,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           title: "Reports",
           href: "/reports",
           icon: BarChart3,
+        },
+      ]
+    },
+    {
+      title: "Finances",
+      items: [
+        {
+          title: "Payments",
+          href: "/payments",
+          icon: CreditCard,
+        },
+        {
+          title: "Outstanding",
+          href: "/outstanding",
+          icon: DollarSign,
+        },
+        {
+          title: "Reports",
+          href: "/reports",
+          icon: FileText,
         },
       ]
     },

@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Layout } from "./components/Layout";
@@ -25,6 +24,8 @@ import SupplierLedger from "./pages/SupplierLedger";
 import PurchaseHistory from "./pages/PurchaseHistory";
 import StockSettings from "./pages/StockSettings";
 import ProductCategories from "./pages/ProductCategories";
+import OutstandingAmounts from "./pages/OutstandingAmounts";
+import CustomerStatement from "./pages/CustomerStatement";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -58,6 +59,8 @@ function App() {
             <Route path="purchase-history" element={<PurchaseHistory />} />
             <Route path="stock-settings" element={<StockSettings />} />
             <Route path="product-categories" element={<ProductCategories />} />
+            <Route path="outstanding" element={<OutstandingAmounts />} />
+            <Route path="customer-statement/:customerId" element={<CustomerStatement />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
