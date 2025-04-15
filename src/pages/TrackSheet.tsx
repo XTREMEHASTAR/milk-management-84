@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Download, FileDown, FilePdf, Printer } from "lucide-react";
+import { Download, FileDown, FileText, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { Order, OrderItem } from "@/types";
 import { toast } from "sonner";
@@ -257,7 +256,7 @@ const TrackSheet = () => {
             Export CSV
           </Button>
           <Button variant="outline" onClick={exportToPDF} className="bg-purple-700 text-white hover:bg-purple-800 hover:text-white border-none">
-            <FilePdf className="mr-2 h-4 w-4" />
+            <FileText className="mr-2 h-4 w-4" />
             Export PDF
           </Button>
           <Button variant="outline" onClick={printTrackSheet}>
