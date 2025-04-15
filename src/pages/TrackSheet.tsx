@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,20 @@ const TrackSheet = () => {
     doc.setFontSize(12);
     doc.text(`Date: ${format(trackDate, "dd MMMM yyyy")}`, 14, 30);
     
+    // Create a gradient background for the title area (lighter version for PDF)
+    doc.setFillColor(220, 220, 240);
+    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
+    
+    // Add a logo or business name with styling
+    doc.setTextColor(75, 58, 172);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text("Milk Delivery App", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    
     // Prepare table data
     const tableColumn = ["Customer"];
     products.forEach(product => {
@@ -216,7 +231,7 @@ const TrackSheet = () => {
     
     tableRows.push(totalsRow);
     
-    // Generate the PDF table
+    // Generate the PDF table with styling that matches the UI
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -225,7 +240,22 @@ const TrackSheet = () => {
       headStyles: { fillColor: [75, 58, 172], textColor: [255, 255, 255] },
       footStyles: { fillColor: [240, 240, 245], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 245, 250] },
+      theme: 'grid'
     });
+    
+    // Add footer with date and page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Generated on: ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.width / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+    }
     
     // Save the PDF
     doc.save(`track-sheet-${format(trackDate, "yyyy-MM-dd")}.pdf`);

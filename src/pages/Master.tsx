@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, Truck, Tag, Database, Settings } from "lucide-react";
+import { 
+  Package, Users, Truck, Tag, Database, 
+  Settings, Calendar, UserCog, MessageSquare, PaintBucket 
+} from "lucide-react";
 
 const Master = () => {
   const navigate = useNavigate();
@@ -267,56 +270,74 @@ const Master = () => {
 
         <TabsContent value="settings" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
+            <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Financial Year</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-white">Financial Year</CardTitle>
+                <CardDescription className="text-gray-300">
                   Manage financial year settings
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-gray-300 mb-4">
                   Configure financial year start/end and perform year closing
                 </p>
-                <Button onClick={() => navigate("/financial-year")} className="w-full">
-                  <Settings className="mr-2 h-4 w-4" />
+                <Button onClick={() => navigate("/financial-year")} className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20">
+                  <Calendar className="mr-2 h-4 w-4" />
                   Financial Year
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Communication</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-white">Communication</CardTitle>
+                <CardDescription className="text-gray-300">
                   Configure notification settings
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-gray-300 mb-4">
                   Set up WhatsApp, SMS, and email notification templates
                 </p>
-                <Button onClick={() => navigate("/communication")} className="w-full">
-                  <Settings className="mr-2 h-4 w-4" />
+                <Button onClick={() => navigate("/communication")} className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20">
+                  <MessageSquare className="mr-2 h-4 w-4" />
                   Communication
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>User Access</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-white">User Access</CardTitle>
+                <CardDescription className="text-gray-300">
                   Manage user roles and permissions
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-gray-300 mb-4">
                   Control who can access different parts of the system
                 </p>
-                <Button onClick={() => navigate("/user-access")} className="w-full">
-                  <Settings className="mr-2 h-4 w-4" />
+                <Button onClick={() => navigate("/user-access")} className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20">
+                  <UserCog className="mr-2 h-4 w-4" />
                   User Access
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-white">Theme & UI</CardTitle>
+                <CardDescription className="text-gray-300">
+                  Customize application appearance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-300 mb-4">
+                  Change theme colors, fonts, and UI preferences
+                </p>
+                <Button onClick={() => navigate("/settings")} className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20">
+                  <PaintBucket className="mr-2 h-4 w-4" />
+                  Theme Settings
                 </Button>
               </CardContent>
             </Card>

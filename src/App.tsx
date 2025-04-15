@@ -27,6 +27,10 @@ import StockSettings from "./pages/StockSettings";
 import ProductCategories from "./pages/ProductCategories";
 import OutstandingAmounts from "./pages/OutstandingAmounts";
 import CustomerStatement from "./pages/CustomerStatement";
+import FinancialYear from "./pages/FinancialYear";
+import UserAccess from "./pages/UserAccess";
+import Communication from "./pages/Communication";
+import Settings from "./pages/Settings";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -62,6 +66,10 @@ function App() {
             <Route path="product-categories" element={<ProductCategories />} />
             <Route path="outstanding" element={<OutstandingAmounts />} />
             <Route path="customer-statement/:customerId" element={<CustomerStatement />} />
+            <Route path="financial-year" element={<FinancialYear />} />
+            <Route path="user-access" element={<UserAccess />} />
+            <Route path="communication" element={<Communication />} />
+            <Route path="settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
