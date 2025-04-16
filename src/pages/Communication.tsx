@@ -3,603 +3,527 @@ import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Mail, 
+  MessageSquare, 
+  Send, 
+  Users, 
+  CheckCircle, 
+  Clock, 
+  Calendar, 
+  Bell, 
+  UploadCloud, 
+  Search
+} from "lucide-react";
+import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Mail, Phone, Send, PlusCircle, Save, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
-
-interface Template {
-  id: string;
-  name: string;
-  subject: string;
-  content: string;
-  variables: string[];
-}
-
-const emailTemplates: Template[] = [
-  {
-    id: "e1",
-    name: "Payment Receipt",
-    subject: "Payment Receipt - {{date}}",
-    content: "Dear {{customer_name}},\n\nThank you for your payment of {{amount}} received on {{date}}. Your current outstanding balance is {{balance}}.\n\nRegards,\nYour Business",
-    variables: ["customer_name", "amount", "date", "balance"],
-  },
-  {
-    id: "e2",
-    name: "Monthly Statement",
-    subject: "Monthly Statement - {{month}}",
-    content: "Dear {{customer_name}},\n\nPlease find attached your monthly statement for {{month}}. Your current outstanding balance is {{balance}}.\n\nRegards,\nYour Business",
-    variables: ["customer_name", "month", "balance"],
-  },
-];
-
-const smsTemplates: Template[] = [
-  {
-    id: "s1",
-    name: "Payment Confirmation",
-    subject: "",
-    content: "Thank you {{customer_name}} for your payment of {{amount}}. Your current balance is {{balance}}.",
-    variables: ["customer_name", "amount", "balance"],
-  },
-  {
-    id: "s2",
-    name: "Payment Reminder",
-    subject: "",
-    content: "Dear {{customer_name}}, your payment of {{amount}} is due on {{date}}. Please make the payment to avoid any inconvenience.",
-    variables: ["customer_name", "amount", "date"],
-  },
-];
-
-const whatsappTemplates: Template[] = [
-  {
-    id: "w1",
-    name: "Delivery Confirmation",
-    subject: "",
-    content: "Hello {{customer_name}},\n\nYour order has been delivered. Total: {{amount}}. Please let us know if you have any feedback.\n\nRegards,\nYour Business",
-    variables: ["customer_name", "amount"],
-  },
-  {
-    id: "w2",
-    name: "Order Confirmation",
-    subject: "",
-    content: "Hello {{customer_name}},\n\nYour order for {{product_list}} has been received and will be delivered on {{date}}.\n\nRegards,\nYour Business",
-    variables: ["customer_name", "product_list", "date"],
-  },
-];
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const Communication = () => {
-  const [activeTab, setActiveTab] = useState("email");
-  const [emailSettings, setEmailSettings] = useState({
-    enabled: true,
-    smtpServer: "smtp.example.com",
-    smtpPort: "587",
-    smtpUsername: "user@example.com",
-    smtpPassword: "******",
-    fromEmail: "business@example.com",
-    fromName: "Your Business",
-  });
-  
-  const [smsSettings, setSmsSettings] = useState({
-    enabled: true,
-    provider: "twilio",
-    apiKey: "********",
-    apiSecret: "********",
-    fromNumber: "+1234567890",
-  });
-  
-  const [whatsappSettings, setWhatsappSettings] = useState({
-    enabled: true,
-    provider: "twilio",
-    apiKey: "********",
-    apiSecret: "********",
-    fromNumber: "+1234567890",
-  });
-  
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [activeTemplates, setActiveTemplates] = useState<Template[]>(emailTemplates);
-  
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setSelectedTemplate(null);
-    
-    switch (value) {
-      case "email":
-        setActiveTemplates(emailTemplates);
-        break;
-      case "sms":
-        setActiveTemplates(smsTemplates);
-        break;
-      case "whatsapp":
-        setActiveTemplates(whatsappTemplates);
-        break;
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailContent, setEmailContent] = useState("");
+  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+  const [emailTemplate, setEmailTemplate] = useState("");
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+
+  // Dummy customer data
+  const customers = [
+    { id: "1", name: "John Doe", email: "john@example.com", phone: "+1234567890" },
+    { id: "2", name: "Jane Smith", email: "jane@example.com", phone: "+1234567891" },
+    { id: "3", name: "Robert Johnson", email: "robert@example.com", phone: "+1234567892" },
+    { id: "4", name: "Emily Davis", email: "emily@example.com", phone: "+1234567893" },
+    { id: "5", name: "Michael Wilson", email: "michael@example.com", phone: "+1234567894" },
+  ];
+
+  // Dummy email templates
+  const emailTemplates = [
+    { id: "1", name: "Payment Reminder", subject: "Payment Reminder for Invoice #[INVOICE_NUMBER]" },
+    { id: "2", name: "Order Confirmation", subject: "Your Order #[ORDER_NUMBER] has been confirmed" },
+    { id: "3", name: "Monthly Statement", subject: "Your Monthly Statement for [MONTH]" },
+    { id: "4", name: "Seasonal Greetings", subject: "Season's Greetings from Fresh Milk Network" },
+  ];
+
+  const handleSelectAll = () => {
+    if (selectedCustomers.length === customers.length) {
+      setSelectedCustomers([]);
+    } else {
+      setSelectedCustomers(customers.map(c => c.id));
     }
   };
-  
-  const handleSelectTemplate = (template: Template) => {
-    setSelectedTemplate(template);
-  };
-  
-  const handleSaveSettings = () => {
-    toast.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} settings saved successfully`);
-  };
-  
-  const handleSaveTemplate = () => {
-    if (selectedTemplate) {
-      toast.success(`Template "${selectedTemplate.name}" saved successfully`);
+
+  const handleSelectCustomer = (customerId: string) => {
+    if (selectedCustomers.includes(customerId)) {
+      setSelectedCustomers(selectedCustomers.filter(id => id !== customerId));
+    } else {
+      setSelectedCustomers([...selectedCustomers, customerId]);
     }
   };
-  
-  const handleTestSend = () => {
-    if (selectedTemplate) {
-      toast.success(`Test message sent using template "${selectedTemplate.name}"`);
+
+  const handleLoadTemplate = (templateId: string) => {
+    const template = emailTemplates.find(t => t.id === templateId);
+    if (template) {
+      setEmailSubject(template.subject);
+      setEmailTemplate(templateId);
+      toast.success(`Template "${template.name}" loaded`);
     }
+  };
+
+  const handleSendEmail = () => {
+    if (selectedCustomers.length === 0) {
+      toast.error("Please select at least one recipient");
+      return;
+    }
+
+    if (!emailSubject.trim()) {
+      toast.error("Please enter an email subject");
+      return;
+    }
+
+    if (!emailContent.trim()) {
+      toast.error("Please enter email content");
+      return;
+    }
+
+    toast.success(`Email sent to ${selectedCustomers.length} customer(s)`);
+    // Reset form
+    setEmailContent("");
+    setEmailSubject("");
+    setSelectedCustomers([]);
+    setEmailTemplate("");
+    setScheduleEnabled(false);
+  };
+
+  const handleSendSMS = () => {
+    if (selectedCustomers.length === 0) {
+      toast.error("Please select at least one recipient");
+      return;
+    }
+
+    if (!emailContent.trim()) {
+      toast.error("Please enter SMS content");
+      return;
+    }
+
+    toast.success(`SMS sent to ${selectedCustomers.length} customer(s)`);
+    // Reset form
+    setEmailContent("");
+    setSelectedCustomers([]);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Communication Settings</h1>
-        <p className="text-muted-foreground">
-          Configure email, SMS, and WhatsApp notification settings
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Communication Center</h1>
+        <p className="text-muted-foreground">Manage communications with your customers</p>
       </div>
 
-      <Tabs defaultValue="email" value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="email" className="flex items-center">
-            <Mail className="mr-2 h-4 w-4" />
-            Email
+      <Tabs defaultValue="email" className="space-y-4">
+        <TabsList className="grid grid-cols-3 w-full max-w-md">
+          <TabsTrigger value="email" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" /> Email
           </TabsTrigger>
-          <TabsTrigger value="sms" className="flex items-center">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            SMS
+          <TabsTrigger value="sms" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" /> SMS
           </TabsTrigger>
-          <TabsTrigger value="whatsapp" className="flex items-center">
-            <Phone className="mr-2 h-4 w-4" />
-            WhatsApp
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" /> History
           </TabsTrigger>
         </TabsList>
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Templates List */}
-          <Card className="lg:col-span-1 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <MessageSquare className="mr-2 h-5 w-5" />
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Templates
-              </CardTitle>
-              <CardDescription className="text-gray-300">
-                Manage message templates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                variant="outline"
-                className="w-full mb-4 bg-white/10 hover:bg-white/20 text-white"
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add New Template
-              </Button>
-
-              <div className="space-y-2 mt-2">
-                {activeTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    className={`p-3 rounded-md cursor-pointer ${
-                      selectedTemplate?.id === template.id
-                        ? "bg-white/20"
-                        : "bg-white/10 hover:bg-white/15"
-                    }`}
-                    onClick={() => handleSelectTemplate(template)}
-                  >
-                    <div className="font-medium">{template.name}</div>
-                    <div className="text-xs text-gray-300 mt-1 line-clamp-2">
-                      {template.content.substring(0, 60)}...
+        <TabsContent value="email" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2 card-gradient">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Mail className="h-5 w-5" /> 
+                  Compose Email
+                </CardTitle>
+                <CardDescription className="text-gray-300">
+                  Create and send emails to your customers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="template" className="text-white">Template:</Label>
+                      <Select value={emailTemplate} onValueChange={handleLoadTemplate}>
+                        <SelectTrigger className="w-[220px] bg-white/10 text-white border-gray-600">
+                          <SelectValue placeholder="Select template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {emailTemplates.map(template => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">
+                          Manage Templates
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Email Templates</DialogTitle>
+                          <DialogDescription>
+                            Manage your email templates for quick communications.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <div className="space-y-4">
+                            {emailTemplates.map(template => (
+                              <div key={template.id} className="flex items-center justify-between p-2 border rounded-md">
+                                <div>
+                                  <p className="font-medium">{template.name}</p>
+                                  <p className="text-sm text-muted-foreground">{template.subject}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="ghost">Edit</Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline">Add New Template</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Template Editor */}
-          <Card className="lg:col-span-2 card-gradient">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                {selectedTemplate ? (
-                  <>Edit Template: {selectedTemplate.name}</>
-                ) : (
-                  <>Template Editor</>
-                )}
-              </CardTitle>
-              <CardDescription className="text-gray-300">
-                {selectedTemplate
-                  ? "Modify the template content and settings"
-                  : "Select a template to edit"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedTemplate ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="template-name" className="text-white">Template Name</Label>
-                      <Input
-                        id="template-name"
-                        value={selectedTemplate.name}
-                        onChange={(e) => {
-                          setSelectedTemplate({
-                            ...selectedTemplate,
-                            name: e.target.value,
-                          });
-                        }}
-                        className="bg-white/10 border-white/20 text-white"
-                      />
-                    </div>
-                    {activeTab === "email" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="template-subject" className="text-white">Email Subject</Label>
+                  
+                  <div>
+                    <Label htmlFor="subject" className="text-white">Subject:</Label>
+                    <Input 
+                      id="subject" 
+                      value={emailSubject} 
+                      onChange={e => setEmailSubject(e.target.value)}
+                      placeholder="Enter email subject" 
+                      className="bg-white/10 text-white border-gray-600 mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="content" className="text-white">Email Content:</Label>
+                    <Textarea 
+                      id="content" 
+                      value={emailContent} 
+                      onChange={e => setEmailContent(e.target.value)} 
+                      placeholder="Write your email content here..."
+                      className="min-h-[200px] bg-white/10 text-white border-gray-600 mt-1"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="schedule"
+                      checked={scheduleEnabled}
+                      onCheckedChange={setScheduleEnabled}
+                    />
+                    <Label htmlFor="schedule" className="text-white">Schedule for later</Label>
+                    
+                    {scheduleEnabled && (
+                      <div className="flex items-center ml-4 space-x-2">
                         <Input
-                          id="template-subject"
-                          value={selectedTemplate.subject}
-                          onChange={(e) => {
-                            setSelectedTemplate({
-                              ...selectedTemplate,
-                              subject: e.target.value,
-                            });
-                          }}
-                          className="bg-white/10 border-white/20 text-white"
+                          type="datetime-local"
+                          className="bg-white/10 text-white border-gray-600"
                         />
                       </div>
                     )}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="template-content" className="text-white">Message Content</Label>
-                    <Textarea
-                      id="template-content"
-                      value={selectedTemplate.content}
-                      onChange={(e) => {
-                        setSelectedTemplate({
-                          ...selectedTemplate,
-                          content: e.target.value,
-                        });
-                      }}
-                      rows={8}
-                      className="bg-white/10 border-white/20 text-white"
-                    />
-                    <p className="text-xs text-gray-300 mt-1">
-                      Use variables in double curly braces like {{"{{"}}variable_name{{"}}"}}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-white">Available Variables</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedTemplate.variables.map((variable) => (
-                        <div
-                          key={variable}
-                          className="bg-white/10 text-white text-xs px-2 py-1 rounded"
-                        >
-                          {{"{{"}}{{variable}}{{"}}"}}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between mt-4">
+                  
+                  <Button 
+                    onClick={handleSendEmail}
+                    className="w-full mt-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {scheduleEnabled ? "Schedule Email" : "Send Email"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-gray-900 to-gray-800 text-white border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" /> 
+                  Recipients
+                </CardTitle>
+                <CardDescription className="text-gray-300">
+                  Select customers to send to
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-3">
                     <Button 
-                      onClick={handleSaveTemplate} 
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Template
-                    </Button>
-                    
-                    <Button 
-                      onClick={handleTestSend} 
-                      variant="outline"
+                      onClick={handleSelectAll}
+                      variant="outline" 
+                      size="sm"
                       className="bg-white/10 hover:bg-white/20 text-white"
                     >
-                      <Send className="mr-2 h-4 w-4" />
-                      Test Send
+                      {selectedCustomers.length === customers.length ? "Deselect All" : "Select All"}
                     </Button>
+                    
+                    <div className="relative w-28">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Search" className="pl-8 bg-white/10 border-gray-600 text-white" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-black/20 rounded-md p-2 max-h-[300px] overflow-y-auto scrollbar-thin">
+                    {customers.map(customer => (
+                      <div 
+                        key={customer.id}
+                        onClick={() => handleSelectCustomer(customer.id)}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer mb-1 ${
+                          selectedCustomers.includes(customer.id) 
+                            ? "bg-blue-500/20" 
+                            : "hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-400 to-cyan-500 flex items-center justify-center text-white font-medium">
+                            {customer.name.charAt(0)}
+                          </div>
+                          <div className="ml-3">
+                            <p className="font-medium">{customer.name}</p>
+                            <p className="text-xs text-gray-400">{customer.email}</p>
+                          </div>
+                        </div>
+                        
+                        {selectedCustomers.includes(customer.id) && (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-4 pt-2 border-t border-gray-700">
+                    <p className="text-sm text-white">
+                      <span className="font-medium">{selectedCustomers.length}</span> of {customers.length} customers selected
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <MessageSquare className="h-16 w-16 mb-4 text-white/60" />
-                  <h3 className="text-xl font-medium text-white mb-2">No Template Selected</h3>
-                  <p className="text-white/60 mb-6">
-                    Please select a template from the list to edit or create a new one.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <TabsContent value="email" className="mt-6">
-          <Card className="bg-gradient-to-br from-indigo-900/80 to-purple-900/80 text-white border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Mail className="mr-2 h-5 w-5" />
-                Email Configuration
-              </CardTitle>
-              <CardDescription className="text-gray-300">
-                Configure your email server settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2 mb-4">
-                <Switch 
-                  id="email-enabled" 
-                  checked={emailSettings.enabled}
-                  onCheckedChange={(checked) => setEmailSettings({...emailSettings, enabled: checked})}
-                />
-                <Label htmlFor="email-enabled" className="text-white">Enable email notifications</Label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="space-y-2">
-                  <Label htmlFor="smtp-server" className="text-white">SMTP Server</Label>
-                  <Input
-                    id="smtp-server"
-                    value={emailSettings.smtpServer}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpServer: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!emailSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="smtp-port" className="text-white">SMTP Port</Label>
-                  <Input
-                    id="smtp-port"
-                    value={emailSettings.smtpPort}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpPort: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!emailSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="smtp-username" className="text-white">SMTP Username</Label>
-                  <Input
-                    id="smtp-username"
-                    value={emailSettings.smtpUsername}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpUsername: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!emailSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="smtp-password" className="text-white">SMTP Password</Label>
-                  <Input
-                    id="smtp-password"
-                    type="password"
-                    value={emailSettings.smtpPassword}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpPassword: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!emailSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="from-email" className="text-white">From Email</Label>
-                  <Input
-                    id="from-email"
-                    value={emailSettings.fromEmail}
-                    onChange={(e) => setEmailSettings({...emailSettings, fromEmail: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!emailSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="from-name" className="text-white">From Name</Label>
-                  <Input
-                    id="from-name"
-                    value={emailSettings.fromName}
-                    onChange={(e) => setEmailSettings({...emailSettings, fromName: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!emailSettings.enabled}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <Button 
-                  onClick={handleSaveSettings} 
-                  className="bg-purple-600 hover:bg-purple-700"
-                  disabled={!emailSettings.enabled}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Email Settings
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  className="bg-white/10 hover:bg-white/20 text-white"
-                  disabled={!emailSettings.enabled}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Test Connection
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="sms" className="mt-6">
-          <Card className="bg-gradient-to-br from-indigo-900/80 to-purple-900/80 text-white border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <MessageSquare className="mr-2 h-5 w-5" />
-                SMS Configuration
-              </CardTitle>
-              <CardDescription className="text-gray-300">
-                Configure your SMS gateway settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2 mb-4">
-                <Switch 
-                  id="sms-enabled" 
-                  checked={smsSettings.enabled}
-                  onCheckedChange={(checked) => setSmsSettings({...smsSettings, enabled: checked})}
-                />
-                <Label htmlFor="sms-enabled" className="text-white">Enable SMS notifications</Label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="space-y-2">
-                  <Label htmlFor="sms-provider" className="text-white">SMS Provider</Label>
-                  <Input
-                    id="sms-provider"
-                    value={smsSettings.provider}
-                    onChange={(e) => setSmsSettings({...smsSettings, provider: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!smsSettings.enabled}
+        <TabsContent value="sms" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2 bg-gradient-to-br from-gray-900 to-gray-800 text-white border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" /> 
+                  Compose SMS
+                </CardTitle>
+                <CardDescription className="text-gray-300">
+                  Create and send SMS messages to your customers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="sms-content" className="text-white">Message Content:</Label>
+                  <Textarea 
+                    id="sms-content" 
+                    value={emailContent} 
+                    onChange={e => setEmailContent(e.target.value)} 
+                    placeholder="Write your SMS content here (160 characters max for standard SMS)"
+                    className="min-h-[150px] bg-white/10 text-white border-gray-600 mt-1"
                   />
+                  <div className="flex justify-between mt-1">
+                    <p className="text-xs text-gray-400">
+                      {emailContent.length} / 160 characters
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Messages: {Math.ceil(emailContent.length / 160) || 1}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sms-from" className="text-white">From Number</Label>
-                  <Input
-                    id="sms-from"
-                    value={smsSettings.fromNumber}
-                    onChange={(e) => setSmsSettings({...smsSettings, fromNumber: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!smsSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sms-api-key" className="text-white">API Key</Label>
-                  <Input
-                    id="sms-api-key"
-                    value={smsSettings.apiKey}
-                    onChange={(e) => setSmsSettings({...smsSettings, apiKey: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!smsSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sms-api-secret" className="text-white">API Secret</Label>
-                  <Input
-                    id="sms-api-secret"
-                    type="password"
-                    value={smsSettings.apiSecret}
-                    onChange={(e) => setSmsSettings({...smsSettings, apiSecret: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!smsSettings.enabled}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <Button 
-                  onClick={handleSaveSettings} 
-                  className="bg-purple-600 hover:bg-purple-700"
-                  disabled={!smsSettings.enabled}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save SMS Settings
-                </Button>
                 
                 <Button 
-                  variant="outline"
-                  className="bg-white/10 hover:bg-white/20 text-white"
-                  disabled={!smsSettings.enabled}
+                  onClick={handleSendSMS}
+                  className="w-full mt-2 bg-green-600 hover:bg-green-700"
                 >
                   <Send className="mr-2 h-4 w-4" />
-                  Send Test SMS
+                  Send SMS
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" /> 
+                  Recipients
+                </CardTitle>
+                <CardDescription className="text-gray-300">
+                  Select customers to send to
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <Button 
+                      onClick={handleSelectAll}
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white/10 hover:bg-white/20 text-white"
+                    >
+                      {selectedCustomers.length === customers.length ? "Deselect All" : "Select All"}
+                    </Button>
+                    
+                    <div className="relative w-28">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Search" className="pl-8 bg-white/10 border-gray-600 text-white" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-black/20 rounded-md p-2 max-h-[300px] overflow-y-auto scrollbar-thin">
+                    {customers.map(customer => (
+                      <div 
+                        key={customer.id}
+                        onClick={() => handleSelectCustomer(customer.id)}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer mb-1 ${
+                          selectedCustomers.includes(customer.id) 
+                            ? "bg-blue-500/20" 
+                            : "hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-400 to-cyan-500 flex items-center justify-center text-white font-medium">
+                            {customer.name.charAt(0)}
+                          </div>
+                          <div className="ml-3">
+                            <p className="font-medium">{customer.name}</p>
+                            <p className="text-xs text-gray-400">{customer.phone}</p>
+                          </div>
+                        </div>
+                        
+                        {selectedCustomers.includes(customer.id) && (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-4 pt-2 border-t border-gray-700">
+                    <p className="text-sm text-white">
+                      <span className="font-medium">{selectedCustomers.length}</span> of {customers.length} customers selected
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="whatsapp" className="mt-6">
-          <Card className="bg-gradient-to-br from-indigo-900/80 to-purple-900/80 text-white border-0 shadow-lg">
+        <TabsContent value="history" className="space-y-4">
+          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 text-white border-0 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Phone className="mr-2 h-5 w-5" />
-                WhatsApp Configuration
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" /> 
+                Communication History
               </CardTitle>
               <CardDescription className="text-gray-300">
-                Configure your WhatsApp Business API settings
+                View past emails and SMS sent to your customers
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2 mb-4">
-                <Switch 
-                  id="whatsapp-enabled" 
-                  checked={whatsappSettings.enabled}
-                  onCheckedChange={(checked) => setWhatsappSettings({...whatsappSettings, enabled: checked})}
-                />
-                <Label htmlFor="whatsapp-enabled" className="text-white">Enable WhatsApp notifications</Label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp-provider" className="text-white">WhatsApp Provider</Label>
-                  <Input
-                    id="whatsapp-provider"
-                    value={whatsappSettings.provider}
-                    onChange={(e) => setWhatsappSettings({...whatsappSettings, provider: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!whatsappSettings.enabled}
-                  />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-2">
+                    <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">
+                      All
+                    </Button>
+                    <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">
+                      Email
+                    </Button>
+                    <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white">
+                      SMS
+                    </Button>
+                  </div>
+                  
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search history" className="pl-8 w-[200px] bg-white/10 border-gray-600 text-white" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp-from" className="text-white">From Number</Label>
-                  <Input
-                    id="whatsapp-from"
-                    value={whatsappSettings.fromNumber}
-                    onChange={(e) => setWhatsappSettings({...whatsappSettings, fromNumber: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!whatsappSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp-api-key" className="text-white">API Key</Label>
-                  <Input
-                    id="whatsapp-api-key"
-                    value={whatsappSettings.apiKey}
-                    onChange={(e) => setWhatsappSettings({...whatsappSettings, apiKey: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!whatsappSettings.enabled}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp-api-secret" className="text-white">API Secret</Label>
-                  <Input
-                    id="whatsapp-api-secret"
-                    type="password"
-                    value={whatsappSettings.apiSecret}
-                    onChange={(e) => setWhatsappSettings({...whatsappSettings, apiSecret: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white"
-                    disabled={!whatsappSettings.enabled}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <Button 
-                  onClick={handleSaveSettings} 
-                  className="bg-purple-600 hover:bg-purple-700"
-                  disabled={!whatsappSettings.enabled}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save WhatsApp Settings
-                </Button>
                 
-                <Button 
-                  variant="outline"
-                  className="bg-white/10 hover:bg-white/20 text-white"
-                  disabled={!whatsappSettings.enabled}
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Test Message
-                </Button>
+                <div className="rounded-md overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-black/20">
+                      <tr>
+                        <th className="py-3 px-4 text-left text-sm text-white font-medium">Date & Time</th>
+                        <th className="py-3 px-4 text-left text-sm text-white font-medium">Type</th>
+                        <th className="py-3 px-4 text-left text-sm text-white font-medium">Recipients</th>
+                        <th className="py-3 px-4 text-left text-sm text-white font-medium">Subject/Content</th>
+                        <th className="py-3 px-4 text-left text-sm text-white font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      <tr className="bg-white/5 hover:bg-white/10">
+                        <td className="py-3 px-4 text-sm text-white">2025-04-15 09:30</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                            <Mail className="h-3 w-3 mr-1" /> Email
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-white">12 customers</td>
+                        <td className="py-3 px-4 text-sm text-white">Payment Reminder - April</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                            <CheckCircle className="h-3 w-3 mr-1" /> Sent
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="bg-white/5 hover:bg-white/10">
+                        <td className="py-3 px-4 text-sm text-white">2025-04-14 14:15</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">
+                            <MessageSquare className="h-3 w-3 mr-1" /> SMS
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-white">5 customers</td>
+                        <td className="py-3 px-4 text-sm text-white">Order delivery notification</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                            <CheckCircle className="h-3 w-3 mr-1" /> Sent
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="bg-white/5 hover:bg-white/10">
+                        <td className="py-3 px-4 text-sm text-white">2025-04-10 11:45</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                            <Mail className="h-3 w-3 mr-1" /> Email
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-white">All customers</td>
+                        <td className="py-3 px-4 text-sm text-white">Monthly newsletter</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400">
+                            <Clock className="h-3 w-3 mr-1" /> Scheduled
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </CardContent>
           </Card>

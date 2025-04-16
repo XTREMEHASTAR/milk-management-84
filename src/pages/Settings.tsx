@@ -1,791 +1,762 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Settings as SettingsIcon, 
+  Palette, 
+  Bell, 
+  Globe, 
+  User, 
+  Shield, 
+  Database,
+  HardDrive,
+  FileJson,
+  Download,
+  UploadCloud,
+  RefreshCw,
+  Sun,
+  Moon
+} from "lucide-react";
 import { toast } from "sonner";
 import { 
-  PaintBucket, Laptop, Moon, Sun, Globe, 
-  Save, RefreshCw, Building, Check, CircleDollarSign, Database
-} from "lucide-react";
-
-interface ThemeSettings {
-  mode: "dark" | "light" | "system";
-  primaryColor: string;
-  accentColor: string;
-  backgroundColor: string;
-  backgroundImageUrl: string;
-  customCss: string;
-}
-
-interface BusinessSettings {
-  businessName: string;
-  address: string;
-  phone: string;
-  email: string;
-  website: string;
-  gstin: string;
-  logo: string;
-}
-
-interface CurrencySettings {
-  currency: string;
-  currencySymbol: string;
-  decimalPlaces: number;
-}
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState<"theme" | "business" | "currency" | "backup">("theme");
-  
-  const [themeSettings, setThemeSettings] = useState<ThemeSettings>({
-    mode: "dark",
-    primaryColor: "#8B5CF6",
-    accentColor: "#EC4899",
-    backgroundColor: "#1A1A2E",
-    backgroundImageUrl: "",
-    customCss: "",
-  });
-  
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
-    businessName: "Milk Delivery Business",
-    address: "123 Main Street, City, State - 123456",
-    phone: "+1234567890",
-    email: "contact@milk-delivery.com",
-    website: "www.milk-delivery.com",
-    gstin: "GSTIN1234567890",
-    logo: "",
-  });
-  
-  const [currencySettings, setCurrencySettings] = useState({
-    currency: "INR",
-    currencySymbol: "₹",
-    decimalPlaces: 2,
-  });
-  
-  const [backupSettings, setBackupSettings] = useState({
-    autoBackup: true,
-    backupFrequency: "daily",
-    backupLocation: "local",
-    lastBackup: "2025-04-14 10:30:25",
-  });
+  const [darkMode, setDarkMode] = useState(true);
+  const [accentColor, setAccentColor] = useState("teal");
+  const [fontFamily, setFontFamily] = useState("inter");
+  const [borderRadius, setBorderRadius] = useState("medium");
+  const [desktopNotifications, setDesktopNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [backupFrequency, setBackupFrequency] = useState("daily");
+  const [exportFormat, setExportFormat] = useState("json");
+  const [apiKey, setApiKey] = useState("sk_live_51HZGu0JbMwZGgTV36i0tDFYLx5MHl");
+  const [language, setLanguage] = useState("english");
+  const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
+  const [currencySymbol, setCurrencySymbol] = useState("₹");
+  const [backupDate, setBackupDate] = useState<Date>(new Date());
 
-  // Apply theme changes in real-time
-  useEffect(() => {
-    // Update CSS variables for theming
-    document.documentElement.style.setProperty('--primary', themeSettings.primaryColor);
-    document.documentElement.style.setProperty('--accent', themeSettings.accentColor);
-    
-    // Apply dark/light mode
-    if (themeSettings.mode === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else if (themeSettings.mode === 'light') {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Apply custom background if provided
-    if (themeSettings.backgroundImageUrl) {
-      document.body.style.backgroundImage = `url(${themeSettings.backgroundImageUrl})`;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center';
-    } else {
-      document.body.style.backgroundImage = 'none';
-      document.body.style.backgroundColor = themeSettings.backgroundColor;
-    }
-  }, [themeSettings]);
-
-  const handleThemeChange = (mode: "dark" | "light" | "system") => {
-    setThemeSettings({ ...themeSettings, mode });
-    toast.success(`Theme mode changed to ${mode}`);
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+    toast.success(`Theme set to ${!darkMode ? "Dark" : "Light"} Mode`);
   };
 
-  const handleColorChange = (color: string, type: "primary" | "accent" | "background") => {
-    if (type === "primary") {
-      setThemeSettings({ ...themeSettings, primaryColor: color });
-    } else if (type === "accent") {
-      setThemeSettings({ ...themeSettings, accentColor: color });
-    } else if (type === "background") {
-      setThemeSettings({ ...themeSettings, backgroundColor: color });
-    }
+  const saveSettings = () => {
+    toast.success("Settings saved successfully");
   };
 
-  const handleSaveTheme = () => {
-    // Save theme settings to localStorage
-    localStorage.setItem("themeSettings", JSON.stringify(themeSettings));
-    toast.success("Theme settings saved successfully");
+  const resetSettings = () => {
+    toast.success("Settings reset to defaults");
+    setAccentColor("teal");
+    setFontFamily("inter");
+    setBorderRadius("medium");
+    setDesktopNotifications(true);
+    setEmailNotifications(true);
+    setBackupFrequency("daily");
+    setExportFormat("json");
+    setLanguage("english");
+    setDateFormat("DD/MM/YYYY");
+    setCurrencySymbol("₹");
   };
 
-  const handleSaveBusinessSettings = () => {
-    // Save business settings to localStorage
-    localStorage.setItem("businessSettings", JSON.stringify(businessSettings));
-    toast.success("Business settings saved successfully");
+  const exportData = () => {
+    toast.success(`Data exported in ${exportFormat.toUpperCase()} format`);
   };
 
-  const handleSaveCurrencySettings = () => {
-    // Save currency settings to localStorage
-    localStorage.setItem("currencySettings", JSON.stringify(currencySettings));
-    toast.success("Currency settings saved successfully");
-  };
-
-  const handleBackup = () => {
-    // Simulate backup process
-    toast.success("Backup created successfully");
-    setBackupSettings({
-      ...backupSettings,
-      lastBackup: new Date().toLocaleString(),
-    });
+  const runBackup = () => {
+    toast.success("Backup completed successfully");
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Configure application settings and preferences
-        </p>
+        <p className="text-muted-foreground">Configure your application preferences and settings</p>
       </div>
 
-      <div className="flex space-x-6 overflow-x-auto pb-2 mb-4 scrollbar-thin">
-        <Card 
-          className={`w-40 shrink-0 cursor-pointer transition-all duration-200 ${
-            activeTab === "theme" 
-              ? "bg-gradient-to-br from-indigo-900 to-purple-900 text-white border-0 shadow-lg transform -translate-y-1" 
-              : "bg-muted/30 hover:bg-muted/40 border border-border"
-          }`}
-          onClick={() => setActiveTab("theme")}
-        >
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <PaintBucket className="h-10 w-10 mb-2" />
-            <p className="font-medium">Theme Settings</p>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className={`w-40 shrink-0 cursor-pointer transition-all duration-200 ${
-            activeTab === "business" 
-              ? "bg-gradient-to-br from-indigo-900 to-purple-900 text-white border-0 shadow-lg transform -translate-y-1" 
-              : "bg-muted/30 hover:bg-muted/40 border border-border"
-          }`}
-          onClick={() => setActiveTab("business")}
-        >
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <Building className="h-10 w-10 mb-2" />
-            <p className="font-medium">Business</p>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className={`w-40 shrink-0 cursor-pointer transition-all duration-200 ${
-            activeTab === "currency" 
-              ? "bg-gradient-to-br from-indigo-900 to-purple-900 text-white border-0 shadow-lg transform -translate-y-1" 
-              : "bg-muted/30 hover:bg-muted/40 border border-border"
-          }`}
-          onClick={() => setActiveTab("currency")}
-        >
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <CircleDollarSign className="h-10 w-10 mb-2" />
-            <p className="font-medium">Currency</p>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className={`w-40 shrink-0 cursor-pointer transition-all duration-200 ${
-            activeTab === "backup" 
-              ? "bg-gradient-to-br from-indigo-900 to-purple-900 text-white border-0 shadow-lg transform -translate-y-1" 
-              : "bg-muted/30 hover:bg-muted/40 border border-border"
-          }`}
-          onClick={() => setActiveTab("backup")}
-        >
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <Database className="h-10 w-10 mb-2" />
-            <p className="font-medium">Backup & Restore</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="appearance" className="space-y-4">
+        <TabsList className="grid w-full max-w-4xl grid-cols-4">
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" /> Appearance
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Notifications
+          </TabsTrigger>
+          <TabsTrigger value="localization" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" /> Localization
+          </TabsTrigger>
+          <TabsTrigger value="backups" className="flex items-center gap-2">
+            <Database className="h-4 w-4" /> Backups & Data
+          </TabsTrigger>
+        </TabsList>
 
-      {activeTab === "theme" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="card-gradient">
-            <CardHeader>
-              <CardTitle className="text-white">
-                <div className="flex items-center">
-                  <PaintBucket className="h-5 w-5 mr-2" />
-                  Appearance
+        <TabsContent value="appearance" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="dark-ui-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" /> 
+                  Theme Settings
+                </CardTitle>
+                <CardDescription>
+                  Customize how your application looks
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      {darkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                      <Label htmlFor="dark-mode">Dark Mode</Label>
+                    </div>
+                    <Switch
+                      id="dark-mode"
+                      checked={darkMode}
+                      onCheckedChange={toggleTheme}
+                    />
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Label htmlFor="accent-color">Accent Color</Label>
+                    <div className="grid grid-cols-5 gap-2 mt-1">
+                      {["teal", "blue", "purple", "pink", "amber"].map(color => (
+                        <button
+                          key={color}
+                          onClick={() => setAccentColor(color)}
+                          className={`w-full h-10 rounded-md transition-all ${
+                            accentColor === color ? "ring-2 ring-white scale-110" : ""
+                          }`}
+                          style={{ 
+                            background: getColorValue(color),
+                            boxShadow: accentColor === color ? `0 0 12px ${getColorValue(color)}` : 'none'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Label htmlFor="font-family">Font Family</Label>
+                    <Select value={fontFamily} onValueChange={setFontFamily}>
+                      <SelectTrigger id="font-family" className="dark-select mt-1">
+                        <SelectValue placeholder="Select font family" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inter">Inter</SelectItem>
+                        <SelectItem value="roboto">Roboto</SelectItem>
+                        <SelectItem value="poppins">Poppins</SelectItem>
+                        <SelectItem value="system">System Font</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Label htmlFor="border-radius">Border Radius</Label>
+                    <Select value={borderRadius} onValueChange={setBorderRadius}>
+                      <SelectTrigger id="border-radius" className="dark-select mt-1">
+                        <SelectValue placeholder="Select border radius" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">Small</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="large">Large</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="dark-ui-card glow-teal">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" /> 
+                  Interface Settings
+                </CardTitle>
+                <CardDescription>
+                  Customize your workspace
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="compact-mode">Compact Mode</Label>
+                    <Switch id="compact-mode" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="animations">UI Animations</Label>
+                    <Switch id="animations" defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="sound-effects">Sound Effects</Label>
+                    <Switch id="sound-effects" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-tooltips">Show Tooltips</Label>
+                    <Switch id="show-tooltips" defaultChecked />
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Label htmlFor="default-view">Default View</Label>
+                    <Select defaultValue="dashboard">
+                      <SelectTrigger id="default-view" className="dark-select mt-1">
+                        <SelectValue placeholder="Select default view" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dashboard">Dashboard</SelectItem>
+                        <SelectItem value="order-entry">Order Entry</SelectItem>
+                        <SelectItem value="customers">Customers</SelectItem>
+                        <SelectItem value="reports">Reports</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Label htmlFor="sidebar-position">Sidebar Position</Label>
+                    <Select defaultValue="left">
+                      <SelectTrigger id="sidebar-position" className="dark-select mt-1">
+                        <SelectValue placeholder="Select sidebar position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left</SelectItem>
+                        <SelectItem value="right">Right</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card className="dark-ui-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" /> 
+                Preview Panel
               </CardTitle>
-              <CardDescription className="text-gray-300">
-                Customize the look and feel of the application
+              <CardDescription>
+                See your theme changes in real-time
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <Label className="text-white">Theme Mode</Label>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`${
-                      themeSettings.mode === "light"
-                        ? "bg-white text-black"
-                        : "bg-white/10 text-white hover:bg-white/20"
-                    }`}
-                    onClick={() => handleThemeChange("light")}
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div 
+                  className="p-4 rounded-xl text-center"
+                  style={{ 
+                    background: darkMode ? "#1a1e23" : "#ffffff",
+                    color: darkMode ? "#ffffff" : "#1a1e23",
+                    borderRadius: getBorderRadiusValue(borderRadius),
+                    fontFamily: getFontFamilyValue(fontFamily),
+                    border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+                    boxShadow: `0 4px 20px ${darkMode ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.1)"}`,
+                  }}
+                >
+                  <div 
+                    className="w-12 h-12 mx-auto rounded-full mb-2 flex items-center justify-center text-xl font-bold"
+                    style={{ 
+                      background: getColorValue(accentColor),
+                      boxShadow: `0 0 15px ${getColorValue(accentColor)}40`
+                    }}
                   >
-                    <Sun className="h-4 w-4 mr-2" />
-                    Light
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`${
-                      themeSettings.mode === "dark"
-                        ? "bg-purple-600 text-white"
-                        : "bg-white/10 text-white hover:bg-white/20"
-                    }`}
-                    onClick={() => handleThemeChange("dark")}
-                  >
-                    <Moon className="h-4 w-4 mr-2" />
-                    Dark
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`${
-                      themeSettings.mode === "system"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white/10 text-white hover:bg-white/20"
-                    }`}
-                    onClick={() => handleThemeChange("system")}
-                  >
-                    <Laptop className="h-4 w-4 mr-2" />
-                    System
-                  </Button>
+                    A
+                  </div>
+                  <h3 className="font-bold mb-1">Card Title</h3>
+                  <p className="text-sm opacity-70">Card description text</p>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-white">Primary Color</Label>
-                <div className="grid grid-cols-6 gap-2">
-                  {["#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"].map(
-                    (color) => (
-                      <div
-                        key={color}
-                        className={`w-10 h-10 rounded-full cursor-pointer ${
-                          themeSettings.primaryColor === color
-                            ? "ring-2 ring-offset-2 ring-white"
-                            : ""
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => handleColorChange(color, "primary")}
+                
+                <div 
+                  className="p-4 rounded-xl"
+                  style={{ 
+                    background: darkMode ? "#1a1e23" : "#ffffff",
+                    color: darkMode ? "#ffffff" : "#1a1e23",
+                    borderRadius: getBorderRadiusValue(borderRadius),
+                    fontFamily: getFontFamilyValue(fontFamily),
+                    border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+                    boxShadow: `0 4px 20px ${darkMode ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.1)"}`,
+                  }}
+                >
+                  <h3 className="font-bold mb-2">Form Example</h3>
+                  <div className="space-y-2">
+                    <input 
+                      type="text" 
+                      placeholder="Input field"
+                      className="w-full p-2 text-sm rounded-md"
+                      style={{ 
+                        background: darkMode ? "rgba(0,0,0,0.2)" : "#f1f5f9",
+                        border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+                        borderRadius: getBorderRadiusValue(borderRadius),
+                        color: darkMode ? "#ffffff" : "#1a1e23",
+                      }}
+                    />
+                    <button
+                      className="w-full p-2 text-sm rounded-md text-white"
+                      style={{ 
+                        background: getColorValue(accentColor),
+                        borderRadius: getBorderRadiusValue(borderRadius),
+                      }}
+                    >
+                      Button
+                    </button>
+                  </div>
+                </div>
+                
+                <div 
+                  className="p-4 rounded-xl"
+                  style={{ 
+                    background: darkMode ? "#1a1e23" : "#ffffff",
+                    color: darkMode ? "#ffffff" : "#1a1e23",
+                    borderRadius: getBorderRadiusValue(borderRadius),
+                    fontFamily: getFontFamilyValue(fontFamily),
+                    border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+                    boxShadow: `0 4px 20px ${darkMode ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.1)"}`,
+                  }}
+                >
+                  <h3 className="font-bold mb-2">Progress</h3>
+                  <div className="space-y-3">
+                    <div className="w-full bg-gray-700 rounded-full h-2.5">
+                      <div 
+                        className="h-2.5 rounded-full" 
+                        style={{ 
+                          width: "70%", 
+                          background: getColorValue(accentColor),
+                        }}
                       ></div>
-                    )
-                  )}
-                </div>
-                <Input
-                  type="text"
-                  value={themeSettings.primaryColor}
-                  onChange={(e) =>
-                    handleColorChange(e.target.value, "primary")
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-white">Accent Color</Label>
-                <div className="grid grid-cols-6 gap-2">
-                  {["#EC4899", "#8B5CF6", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"].map(
-                    (color) => (
-                      <div
-                        key={color}
-                        className={`w-10 h-10 rounded-full cursor-pointer ${
-                          themeSettings.accentColor === color
-                            ? "ring-2 ring-offset-2 ring-white"
-                            : ""
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => handleColorChange(color, "accent")}
-                      ></div>
-                    )
-                  )}
-                </div>
-                <Input
-                  type="text"
-                  value={themeSettings.accentColor}
-                  onChange={(e) =>
-                    handleColorChange(e.target.value, "accent")
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-
-              <Button onClick={handleSaveTheme} className="w-full bg-purple-600 hover:bg-purple-700">
-                <Save className="mr-2 h-4 w-4" />
-                Save Theme Settings
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-white">
-                <div className="flex items-center">
-                  <Globe className="h-5 w-5 mr-2" />
-                  Background & Custom CSS
-                </div>
-              </CardTitle>
-              <CardDescription className="text-gray-300">
-                Configure background and advanced styling
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <Label className="text-white">Background Color</Label>
-                <div className="grid grid-cols-6 gap-2">
-                  {["#1A1A2E", "#0F172A", "#262626", "#052e16", "#1E1B4B", "#450A0A"].map(
-                    (color) => (
-                      <div
-                        key={color}
-                        className={`w-10 h-10 rounded-full cursor-pointer ${
-                          themeSettings.backgroundColor === color
-                            ? "ring-2 ring-offset-2 ring-white"
-                            : ""
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => handleColorChange(color, "background")}
-                      ></div>
-                    )
-                  )}
-                </div>
-                <Input
-                  type="text"
-                  value={themeSettings.backgroundColor}
-                  onChange={(e) =>
-                    handleColorChange(e.target.value, "background")
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-white">Background Image URL</Label>
-                <Input
-                  type="text"
-                  value={themeSettings.backgroundImageUrl}
-                  onChange={(e) =>
-                    setThemeSettings({
-                      ...themeSettings,
-                      backgroundImageUrl: e.target.value,
-                    })
-                  }
-                  placeholder="Enter image URL (optional)"
-                  className="bg-white/10 border-white/20 text-white"
-                />
-                <p className="text-xs text-gray-300">
-                  Leave empty to use background color instead
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-white">Custom CSS (Advanced)</Label>
-                <Textarea
-                  value={themeSettings.customCss}
-                  onChange={(e) =>
-                    setThemeSettings({
-                      ...themeSettings,
-                      customCss: e.target.value,
-                    })
-                  }
-                  placeholder=".my-custom-class { color: white; }"
-                  className="bg-white/10 border-white/20 text-white h-32"
-                />
-                <p className="text-xs text-gray-300">
-                  Add custom CSS styles (for advanced users)
-                </p>
-              </div>
-
-              <div className="p-4 bg-white/10 rounded-md">
-                <h3 className="font-medium mb-2 text-white">Theme Preview</h3>
-                <div className="flex space-x-2 mb-2">
-                  <div
-                    className="w-8 h-8 rounded-full"
-                    style={{ backgroundColor: themeSettings.primaryColor }}
-                  ></div>
-                  <div
-                    className="w-8 h-8 rounded-full"
-                    style={{ backgroundColor: themeSettings.accentColor }}
-                  ></div>
-                  <div
-                    className="w-8 h-8 rounded-full"
-                    style={{ backgroundColor: themeSettings.backgroundColor }}
-                  ></div>
-                </div>
-                <div className="flex space-x-2">
-                  <Button size="sm" style={{ backgroundColor: themeSettings.primaryColor }}>
-                    Primary
-                  </Button>
-                  <Button size="sm" style={{ backgroundColor: themeSettings.accentColor }}>
-                    Accent
-                  </Button>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Label</span>
+                      <span 
+                        style={{ color: getColorValue(accentColor) }}
+                      >70%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        </TabsContent>
 
-      {activeTab === "business" && (
-        <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-white">
-              <div className="flex items-center">
-                <Building className="h-5 w-5 mr-2" />
-                Business Information
-              </div>
-            </CardTitle>
-            <CardDescription className="text-gray-300">
-              Configure your business details for invoices and reports
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-white">Business Name</Label>
-                <Input
-                  value={businessSettings.businessName}
-                  onChange={(e) =>
-                    setBusinessSettings({
-                      ...businessSettings,
-                      businessName: e.target.value,
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-white">GST/Tax Number</Label>
-                <Input
-                  value={businessSettings.gstin}
-                  onChange={(e) =>
-                    setBusinessSettings({
-                      ...businessSettings,
-                      gstin: e.target.value,
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Business Address</Label>
-              <Textarea
-                value={businessSettings.address}
-                onChange={(e) =>
-                  setBusinessSettings({
-                    ...businessSettings,
-                    address: e.target.value,
-                  })
-                }
-                className="bg-white/10 border-white/20 text-white"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-white">Phone Number</Label>
-                <Input
-                  value={businessSettings.phone}
-                  onChange={(e) =>
-                    setBusinessSettings({
-                      ...businessSettings,
-                      phone: e.target.value,
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-white">Email Address</Label>
-                <Input
-                  value={businessSettings.email}
-                  onChange={(e) =>
-                    setBusinessSettings({
-                      ...businessSettings,
-                      email: e.target.value,
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-white">Website</Label>
-                <Input
-                  value={businessSettings.website}
-                  onChange={(e) =>
-                    setBusinessSettings({
-                      ...businessSettings,
-                      website: e.target.value,
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-white">Logo URL</Label>
-                <Input
-                  value={businessSettings.logo}
-                  onChange={(e) =>
-                    setBusinessSettings({
-                      ...businessSettings,
-                      logo: e.target.value,
-                    })
-                  }
-                  placeholder="Enter logo URL"
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-            </div>
-
-            <Button onClick={handleSaveBusinessSettings} className="w-full bg-purple-600 hover:bg-purple-700">
-              <Save className="mr-2 h-4 w-4" />
-              Save Business Information
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {activeTab === "currency" && (
-        <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-white">
-              <div className="flex items-center">
-                <CircleDollarSign className="h-5 w-5 mr-2" />
-                Currency Settings
-              </div>
-            </CardTitle>
-            <CardDescription className="text-gray-300">
-              Configure currency and number formatting
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-white">Currency</Label>
-                <Select
-                  value={currencySettings.currency}
-                  onValueChange={(value) =>
-                    setCurrencySettings({
-                      ...currencySettings,
-                      currency: value,
-                      currencySymbol: value === "INR" ? "₹" : value === "USD" ? "$" : "€",
-                    })
-                  }
-                >
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INR">Indian Rupee (INR)</SelectItem>
-                    <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                    <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                    <SelectItem value="GBP">British Pound (GBP)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-white">Currency Symbol</Label>
-                <Input
-                  value={currencySettings.currencySymbol}
-                  onChange={(e) =>
-                    setCurrencySettings({
-                      ...currencySettings,
-                      currencySymbol: e.target.value,
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-white">Decimal Places</Label>
-                <Select
-                  value={currencySettings.decimalPlaces.toString()}
-                  onValueChange={(value) =>
-                    setCurrencySettings({
-                      ...currencySettings,
-                      decimalPlaces: parseInt(value),
-                    })
-                  }
-                >
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                    <SelectValue placeholder="Select number of decimal places" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/10 rounded-md mt-4">
-              <h3 className="font-medium mb-2 text-white">Format Preview</h3>
-              <div className="grid grid-cols-2 gap-2 text-white">
-                <div>Format:</div>
+        <TabsContent value="notifications" className="space-y-4">
+          <Card className="dark-ui-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" /> 
+                Notification Settings
+              </CardTitle>
+              <CardDescription>
+                Configure how you receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
                 <div>
-                  {currencySettings.currencySymbol}
-                  {(1234.56789).toFixed(currencySettings.decimalPlaces)}
+                  <h3 className="font-semibold mb-2">Desktop Notifications</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="desktop-notifications">Enable Desktop Notifications</Label>
+                      <Switch
+                        id="desktop-notifications"
+                        checked={desktopNotifications}
+                        onCheckedChange={setDesktopNotifications}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="sound-notifications">Notification Sounds</Label>
+                      <Switch id="sound-notifications" defaultChecked />
+                    </div>
+                  </div>
                 </div>
-                <div>Currency Code:</div>
-                <div>{currencySettings.currency}</div>
-              </div>
-            </div>
-
-            <Button onClick={handleSaveCurrencySettings} className="w-full bg-purple-600 hover:bg-purple-700">
-              <Save className="mr-2 h-4 w-4" />
-              Save Currency Settings
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {activeTab === "backup" && (
-        <Card className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-white">
-              <div className="flex items-center">
-                <Database className="h-5 w-5 mr-2" />
-                Backup & Restore
-              </div>
-            </CardTitle>
-            <CardDescription className="text-gray-300">
-              Manage data backup and recovery options
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white/10 rounded-md">
-              <div>
-                <h3 className="font-medium text-white">Auto Backup</h3>
-                <p className="text-sm text-gray-300">
-                  Automatically create backups of your data
-                </p>
-              </div>
-              <Switch
-                checked={backupSettings.autoBackup}
-                onCheckedChange={(checked) =>
-                  setBackupSettings({ ...backupSettings, autoBackup: checked })
-                }
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-white">Backup Frequency</Label>
-                <Select
-                  value={backupSettings.backupFrequency}
-                  onValueChange={(value) =>
-                    setBackupSettings({
-                      ...backupSettings,
-                      backupFrequency: value,
-                    })
-                  }
-                  disabled={!backupSettings.autoBackup}
-                >
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-white">Backup Location</Label>
-                <Select
-                  value={backupSettings.backupLocation}
-                  onValueChange={(value) =>
-                    setBackupSettings({
-                      ...backupSettings,
-                      backupLocation: value,
-                    })
-                  }
-                >
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="local">Local Storage</SelectItem>
-                    <SelectItem value="download">Download File</SelectItem>
-                    <SelectItem value="cloud">Cloud Storage</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/10 rounded-md">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium text-white">Last Backup</h3>
-                  <p className="text-sm text-gray-300">
-                    {backupSettings.lastBackup || "No backup yet"}
-                  </p>
+                
+                <div className="border-t border-gray-700 pt-4">
+                  <h3 className="font-semibold mb-2">Email Notifications</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="email-notifications">Enable Email Notifications</Label>
+                      <Switch
+                        id="email-notifications"
+                        checked={emailNotifications}
+                        onCheckedChange={setEmailNotifications}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="daily-summary">Daily Summary Email</Label>
+                      <Switch id="daily-summary" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="payment-alerts">Payment Alerts</Label>
+                      <Switch id="payment-alerts" defaultChecked />
+                    </div>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
+                
+                <div className="border-t border-gray-700 pt-4">
+                  <h3 className="font-semibold mb-2">Notification Events</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="new-order">New Order</Label>
+                      <Switch id="new-order" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="payment-received">Payment Received</Label>
+                      <Switch id="payment-received" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="low-stock">Low Stock Alert</Label>
+                      <Switch id="low-stock" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="system-updates">System Updates</Label>
+                      <Switch id="system-updates" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="localization" className="space-y-4">
+          <Card className="dark-ui-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" /> 
+                Localization Settings
+              </CardTitle>
+              <CardDescription>
+                Configure language and regional preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="language">Language</Label>
+                    <Select value={language} onValueChange={setLanguage}>
+                      <SelectTrigger id="language" className="dark-select mt-1">
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="english">English</SelectItem>
+                        <SelectItem value="hindi">Hindi</SelectItem>
+                        <SelectItem value="gujarati">Gujarati</SelectItem>
+                        <SelectItem value="marathi">Marathi</SelectItem>
+                        <SelectItem value="tamil">Tamil</SelectItem>
+                        <SelectItem value="telugu">Telugu</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="date-format">Date Format</Label>
+                    <Select value={dateFormat} onValueChange={setDateFormat}>
+                      <SelectTrigger id="date-format" className="dark-select mt-1">
+                        <SelectValue placeholder="Select date format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="time-format">Time Format</Label>
+                    <Select defaultValue="12hour">
+                      <SelectTrigger id="time-format" className="dark-select mt-1">
+                        <SelectValue placeholder="Select time format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="12hour">12-hour (AM/PM)</SelectItem>
+                        <SelectItem value="24hour">24-hour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select defaultValue="inr">
+                      <SelectTrigger id="currency" className="dark-select mt-1">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inr">Indian Rupee (₹)</SelectItem>
+                        <SelectItem value="usd">US Dollar ($)</SelectItem>
+                        <SelectItem value="eur">Euro (€)</SelectItem>
+                        <SelectItem value="gbp">British Pound (£)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="currency-symbol">Currency Symbol</Label>
+                    <Input 
+                      id="currency-symbol" 
+                      value={currencySymbol}
+                      onChange={(e) => setCurrencySymbol(e.target.value)}
+                      className="dark-input mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="first-day-week">First Day of Week</Label>
+                    <Select defaultValue="monday">
+                      <SelectTrigger id="first-day-week" className="dark-select mt-1">
+                        <SelectValue placeholder="Select first day" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sunday">Sunday</SelectItem>
+                        <SelectItem value="monday">Monday</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="backups" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="dark-ui-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" /> 
+                  Backup Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure automatic backup options
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="auto-backup">Automatic Backups</Label>
+                    <Switch id="auto-backup" defaultChecked />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="backup-frequency">Backup Frequency</Label>
+                    <Select value={backupFrequency} onValueChange={setBackupFrequency}>
+                      <SelectTrigger id="backup-frequency" className="dark-select mt-1">
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="backup-time">Next Scheduled Backup</Label>
+                    <div className="mt-1">
+                      <DatePicker date={backupDate} setDate={setBackupDate} />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="retention-period">Retention Period</Label>
+                    <Select defaultValue="30days">
+                      <SelectTrigger id="retention-period" className="dark-select mt-1">
+                        <SelectValue placeholder="Select retention period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7days">7 Days</SelectItem>
+                        <SelectItem value="30days">30 Days</SelectItem>
+                        <SelectItem value="90days">90 Days</SelectItem>
+                        <SelectItem value="365days">1 Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Button 
+                    onClick={runBackup}
+                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <HardDrive className="mr-2 h-4 w-4" />
+                    Run Backup Now
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="dark-ui-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileJson className="h-5 w-5" /> 
+                  Data Export & Import
+                </CardTitle>
+                <CardDescription>
+                  Export or import your data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="export-format">Export Format</Label>
+                    <Select value={exportFormat} onValueChange={setExportFormat}>
+                      <SelectTrigger id="export-format" className="dark-select mt-1">
+                        <SelectValue placeholder="Select export format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="json">JSON</SelectItem>
+                        <SelectItem value="csv">CSV</SelectItem>
+                        <SelectItem value="excel">Excel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="export-data">Export Options</Label>
+                    <div className="space-y-2 mt-1">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="include-orders">Include Orders</Label>
+                        <Switch id="include-orders" defaultChecked />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="include-customers">Include Customers</Label>
+                        <Switch id="include-customers" defaultChecked />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="include-products">Include Products</Label>
+                        <Switch id="include-products" defaultChecked />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={exportData}
+                    className="w-full mt-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Data
+                  </Button>
+                  
+                  <div className="pt-2 border-t border-gray-700">
+                    <Label htmlFor="import-data">Import Data</Label>
+                    <div className="mt-2">
+                      <Label 
+                        htmlFor="file-upload" 
+                        className="flex items-center justify-center gap-2 p-4 border border-dashed border-gray-600 rounded-md cursor-pointer hover:bg-gray-800/50"
+                      >
+                        <UploadCloud className="h-5 w-5" />
+                        <span>Click to upload file</span>
+                        <input id="file-upload" type="file" className="hidden" />
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card className="dark-ui-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5" /> 
+                Reset Options
+              </CardTitle>
+              <CardDescription>
+                Reset your settings or application data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={resetSettings}
                   className="bg-white/10 hover:bg-white/20 text-white"
-                  onClick={handleBackup}
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Create Backup Now
+                  Reset to Default Settings
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  className="bg-white/10 hover:bg-white/20 text-white"
+                >
+                  Clear Application Cache
+                </Button>
+                
+                <Button 
+                  variant="destructive"
+                  onClick={() => toast.error("This action cannot be undone", {
+                    description: "You would need to confirm with admin rights to proceed."
+                  })}
+                >
+                  Reset All Data
                 </Button>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  <Database className="mr-2 h-4 w-4" />
-                  Export All Data
-                </Button>
-              </div>
-              <div>
-                <Button variant="outline" className="w-full bg-white/10 hover:bg-white/20 text-white">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Restore From Backup
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-4 bg-amber-500/20 border border-amber-500/30 rounded-md">
-              <h3 className="flex items-center font-medium text-amber-400 mb-2">
-                <Check className="h-4 w-4 mr-2" />
-                Data Safety Tips
-              </h3>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-amber-300/80">
-                <li>Regular backups prevent data loss</li>
-                <li>Export your data before major changes</li>
-                <li>Store backups in multiple locations</li>
-                <li>Test your backup restore process periodically</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      <div className="flex justify-end space-x-4">
+        <Button variant="outline" onClick={resetSettings}>
+          Reset Settings
+        </Button>
+        <Button onClick={saveSettings}>
+          Save Settings
+        </Button>
+      </div>
     </div>
   );
 };
+
+// Helper functions to handle theme preview
+function getColorValue(color: string): string {
+  const colorMap: Record<string, string> = {
+    teal: "#38bd95",
+    blue: "#3b82f6",
+    purple: "#a855f7",
+    pink: "#ec4899",
+    amber: "#f59e0b"
+  };
+  return colorMap[color] || colorMap.teal;
+}
+
+function getBorderRadiusValue(size: string): string {
+  const radiusMap: Record<string, string> = {
+    small: "0.375rem",
+    medium: "0.75rem",
+    large: "1rem"
+  };
+  return radiusMap[size] || radiusMap.medium;
+}
+
+function getFontFamilyValue(font: string): string {
+  const fontMap: Record<string, string> = {
+    inter: "Inter, sans-serif",
+    roboto: "Roboto, sans-serif",
+    poppins: "Poppins, sans-serif",
+    system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif"
+  };
+  return fontMap[font] || fontMap.inter;
+}
 
 export default Settings;

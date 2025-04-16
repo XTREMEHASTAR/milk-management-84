@@ -7,13 +7,13 @@ import { useMobile } from "@/hooks/use-mobile";
 // Create a simple error boundary component
 const ErrorFallback = ({ error }: { error: Error }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 to-purple-900">
-      <div className="text-center p-6 bg-white/10 backdrop-blur-md rounded-lg shadow-xl max-w-md text-white">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#131519] to-[#1e2227]">
+      <div className="text-center p-6 bg-black/30 backdrop-blur-md rounded-lg shadow-xl max-w-md text-white">
         <h2 className="text-2xl font-bold text-red-400 mb-4">Layout Error</h2>
         <p className="text-gray-200 mb-4">{error.message}</p>
         <button 
           onClick={() => window.location.reload()} 
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-[#38bd95] text-white px-4 py-2 rounded-lg hover:bg-[#2ca884] transition-colors"
         >
           Try again
         </button>
@@ -52,7 +52,7 @@ export function Layout() {
   try {
     console.log("Rendering Layout component");
     return (
-      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-blue-900 via-purple-900 to-purple-800">
+      <div className="flex h-screen overflow-hidden bg-[#0c0d10]">
         <Sidebar isOpen={isMobile ? sidebarOpen : true} onClose={() => setSidebarOpen(false)} />
         <div className="flex-1 overflow-auto p-6">
           <Outlet />
