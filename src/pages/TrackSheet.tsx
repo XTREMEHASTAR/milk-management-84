@@ -244,7 +244,7 @@ const TrackSheet = () => {
     });
     
     // Add footer with date and page numbers
-    const pageCount = doc.internal.getNumberOfPages();
+    const pageCount = doc.internal.pages.length - 1;
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
