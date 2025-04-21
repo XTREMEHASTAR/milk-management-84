@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -8,6 +7,9 @@ export interface Customer {
   outstandingBalance: number;
   lastPaymentDate?: string;
   lastPaymentAmount?: number;
+  area?: string;
+  vehicleId?: string;
+  salesmanId?: string;
 }
 
 export interface Product {
