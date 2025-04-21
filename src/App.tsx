@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Layout } from "./components/Layout";
@@ -32,6 +31,9 @@ import UserAccess from "./pages/UserAccess";
 import Communication from "./pages/Communication";
 import Settings from "./pages/Settings";
 import SupplierRates from "./pages/SupplierRates";
+import SupplierRateSetting from "./pages/SupplierRateSetting";
+import VehicleList from "./pages/VehicleList";
+import SalesmanList from "./pages/SalesmanList";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -72,6 +74,9 @@ function App() {
             <Route path="user-access" element={<UserAccess />} />
             <Route path="communication" element={<Communication />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="supplier-rate-setting" element={<SupplierRateSetting />} />
+            <Route path="vehicle-list" element={<VehicleList />} />
+            <Route path="salesman-list" element={<SalesmanList />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

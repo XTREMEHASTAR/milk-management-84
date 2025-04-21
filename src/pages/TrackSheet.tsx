@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -55,7 +54,6 @@ const TrackSheet = () => {
   const [selectedSalesman, setSelectedSalesman] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
-  // Find order for the selected date
   useEffect(() => {
     const dateString = format(trackDate, "yyyy-MM-dd");
     const order = orders.find((o) => o.date === dateString) || null;
@@ -71,7 +69,6 @@ const TrackSheet = () => {
   const generateTrackItems = (order: Order) => {
     const items: TrackItem[] = [];
 
-    // Filter items based on vehicle or salesman if selected
     let filteredItems = order.items;
     if (groupBy === "vehicle" && selectedVehicle) {
       if (order.vehicleId !== selectedVehicle) {
@@ -87,7 +84,6 @@ const TrackSheet = () => {
       }
     }
 
-    // Group items by customer
     const customerItems: Record<string, OrderItem[]> = {};
     filteredItems.forEach((item) => {
       if (!customerItems[item.customerId]) {
@@ -96,7 +92,6 @@ const TrackSheet = () => {
       customerItems[item.customerId].push(item);
     });
 
-    // Create track items for each customer
     Object.entries(customerItems).forEach(([customerId, orderItems]) => {
       const customer = customers.find((c) => c.id === customerId);
       if (!customer) return;
@@ -124,7 +119,6 @@ const TrackSheet = () => {
       });
     });
 
-    // Sort by customer name
     items.sort((a, b) => a.customerName.localeCompare(b.customerName));
     
     setTrackItems(items);
@@ -136,7 +130,6 @@ const TrackSheet = () => {
       return;
     }
 
-    // Generate CSV content
     let csvContent = "Customer,";
     products.forEach((product) => {
       csvContent += `${product.name},`;
@@ -153,16 +146,6 @@ const TrackSheet = () => {
       csvContent += `${item.totalQuantity},${item.totalAmount}\n`;
     });
 
-    // Calculate totals
-    csvContent += "TOTAL,";
-    products.forEach((product) => {
-      const total = trackItems.reduce(
-        (sum, item) => sum + (item.products[product.id] || 0),
-        0
-      );
-      csvContent += `${total},`;
-    });
-
     const grandTotalQuantity = trackItems.reduce(
       (sum, item) => sum + item.totalQuantity,
       0
@@ -173,9 +156,8 @@ const TrackSheet = () => {
       0
     );
     
-    csvContent += `${grandTotalQuantity},${grandTotalAmount}\n`;
+    csvContent += `TOTAL,${grandTotalQuantity},${grandTotalAmount}\n`;
 
-    // Create a download link
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -192,24 +174,20 @@ const TrackSheet = () => {
 
     const doc = new jsPDF();
     
-    // Add title and date
     doc.setFontSize(18);
     doc.text("Daily Delivery Track Sheet", 14, 22);
     
     doc.setFontSize(12);
     doc.text(`Date: ${format(trackDate, "dd MMMM yyyy")}`, 14, 30);
     
-    // Create a gradient background for the title area (lighter version for PDF)
-    doc.setFillColor(16, 185, 129); // Teal color
+    doc.setFillColor(16, 185, 129);
     doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
     
-    // Add a logo or business name with styling
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
     doc.text("Milk Delivery App", doc.internal.pageSize.width / 2, 15, { align: 'center' });
     
-    // Add vehicle or salesman info if applicable
     if (groupBy === "vehicle" && selectedVehicle) {
       const vehicle = vehicles.find(v => v.id === selectedVehicle);
       if (vehicle) {
@@ -224,11 +202,9 @@ const TrackSheet = () => {
       }
     }
     
-    // Reset text color
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
     
-    // Prepare table data
     const tableColumn = ["Customer"];
     products.forEach(product => {
       tableColumn.push(product.name);
@@ -249,7 +225,6 @@ const TrackSheet = () => {
       return row;
     });
     
-    // Add totals row
     const totalsRow = ["TOTAL"];
     
     products.forEach(product => {
@@ -275,7 +250,6 @@ const TrackSheet = () => {
     
     tableRows.push(totalsRow);
     
-    // Generate the PDF table with styling that matches the UI
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -287,8 +261,7 @@ const TrackSheet = () => {
       theme: 'grid'
     });
     
-    // Add footer with date and page numbers
-    const pageCount = doc.internal.pages.length - 1;
+    const pageCount = doc.internal && doc.internal.getNumberOfPages ? doc.internal.getNumberOfPages() : 1;
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
@@ -301,7 +274,6 @@ const TrackSheet = () => {
       );
     }
     
-    // Save the PDF
     doc.save(`track-sheet-${format(trackDate, "yyyy-MM-dd")}.pdf`);
     toast.success("PDF exported successfully");
   };
@@ -429,7 +401,6 @@ const TrackSheet = () => {
             </div>
           </div>
           
-          {/* Vehicle or Salesman info for print view */}
           {groupBy === "vehicle" && selectedVehicle && (
             <div className="hidden print:block mt-2">
               <p className="text-sm">

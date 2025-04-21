@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -155,6 +154,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           title: "Purchase History",
           href: "/purchase-history",
           icon: ShoppingBag,
+        },
+        {
+          title: "Supplier Rate Setting",
+          href: "/supplier-rate-setting",
+          icon: Tag,
         },
       ]
     },

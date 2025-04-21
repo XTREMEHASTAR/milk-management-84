@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -320,306 +319,111 @@ const OrderEntry = () => {
   };
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#181A20] min-h-screen px-2 py-6 rounded-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Order Entry</h1>
-          <p className="text-muted-foreground">
-            Create and manage daily milk orders
-          </p>
+          <h1 className="text-4xl font-bold tracking-tight text-white mb-1" style={{letterSpacing: '-1px'}}>Daily Milk<br/>Order Entry</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={exportToCSV}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={saveOrder}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Order
-          </Button>
+          <Button variant="default" className="bg-[#1cd7b6] text-white">Export</Button>
+          <Button variant="default" className="bg-[#1cd7b6] text-white">Save Order</Button>
         </div>
       </div>
-      
-      <Card>
+
+      <Card className="bg-[#181A20] rounded-2xl shadow-lg border-0 mt-8">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Daily Milk Order Entry</CardTitle>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
             <div className="flex items-center gap-2">
-              <DatePicker date={orderDate} setDate={setOrderDate} />
-              
-              {/* Add Customer Dialog */}
-              <Dialog open={isAddingCustomer} onOpenChange={setIsAddingCustomer}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Customer
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingCustomer ? "Edit Customer" : "Add New Customer"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingCustomer 
-                        ? "Update customer details below"
-                        : "Add customer details to create a new customer."
-                      }
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Customer Name *</Label>
-                      <Input 
-                        id="name" 
-                        value={customerName} 
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Enter customer name"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="phone">Contact Number</Label>
-                      <Input 
-                        id="phone" 
-                        value={customerPhone} 
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        placeholder="Enter contact number"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="address">Delivery Area</Label>
-                      <Input 
-                        id="address" 
-                        value={customerAddress} 
-                        onChange={(e) => setCustomerAddress(e.target.value)}
-                        placeholder="Enter delivery area"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline" onClick={resetCustomerForm}>
-                        Cancel
-                      </Button>
-                    </DialogClose>
-                    <Button onClick={handleAddCustomer}>
-                      {editingCustomer ? "Update Customer" : "Add Customer"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
-              {/* Add Product Dialog */}
-              <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <PackagePlus className="mr-2 h-4 w-4" />
-                    Add Product
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingProduct ? "Edit Product" : "Add New Product"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingProduct 
-                        ? "Update product details below"
-                        : "Add product details to create a new product."
-                      }
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="productName">Product Name *</Label>
-                      <Input 
-                        id="productName" 
-                        value={productName} 
-                        onChange={(e) => setProductName(e.target.value)}
-                        placeholder="Enter product name"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="productPrice">Unit Price (₹) *</Label>
-                      <Input 
-                        id="productPrice" 
-                        value={productPrice} 
-                        onChange={(e) => setProductPrice(e.target.value)}
-                        placeholder="Enter product price"
-                        type="number"
-                        step="0.01"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="productCategory">Category</Label>
-                      <Input 
-                        id="productCategory" 
-                        value={productCategory} 
-                        onChange={(e) => setProductCategory(e.target.value)}
-                        placeholder="e.g., Amul, Warna, Gokul"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="productUnit">Unit</Label>
-                      <Input 
-                        id="productUnit" 
-                        value={productUnit} 
-                        onChange={(e) => setProductUnit(e.target.value)}
-                        placeholder="e.g., L, ml, kg"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="productDescription">Description (Optional)</Label>
-                      <Textarea 
-                        id="productDescription" 
-                        value={productDescription} 
-                        onChange={(e) => setProductDescription(e.target.value)}
-                        placeholder="Enter product description"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline" onClick={resetProductForm}>
-                        Cancel
-                      </Button>
-                    </DialogClose>
-                    <Button onClick={handleAddProduct}>
-                      {editingProduct ? "Update Product" : "Add Product"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <DatePicker date={orderDate} setDate={setOrderDate} inputClass="bg-[#15181d] text-white rounded-lg border-none px-4 py-2 font-medium text-lg" />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsAddingCustomer(true)} variant="secondary" className="rounded-full px-4 py-2 font-medium"><UserPlus className="mr-2" /> Add Customer</Button>
+              <Button onClick={() => setIsAddingProduct(true)} variant="secondary" className="rounded-full px-4 py-2 font-medium"><PackagePlus className="mr-2" /> Add Product</Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            {customers.length === 0 || products.length === 0 ? (
-              <div className="p-4 text-center">
-                <p className="mb-2">You need to add customers and products first.</p>
-                <div className="flex gap-2 justify-center">
-                  <Button variant="outline" onClick={() => setIsAddingCustomer(true)}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Customers
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsAddingProduct(true)}>
-                    <PackagePlus className="mr-2 h-4 w-4" />
-                    Add Products
-                  </Button>
-                </div>
+          <div>
+            <div className="mb-10">
+              <h3 className="text-lg font-semibold text-white mb-2">Customers</h3>
+              <div className="flex flex-wrap gap-2">
+                {customers.map(customer => (
+                  <div key={customer.id} className="flex items-center px-5 py-2 bg-white text-gray-900 rounded-2xl shadow border border-gray-200 font-semibold text-base">
+                    <span>{customer.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-2 text-destructive hover:bg-red-100 rounded-full"
+                      onClick={() => handleDeleteCustomer(customer.id)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <div>
-                {/* Customers management section */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium mb-2">Customers</h3>
-                  <div className="flex flex-wrap gap-2 mb-4">
+            </div>
+            <div className="mb-10">
+              <h3 className="text-lg font-semibold text-white mb-2">Products</h3>
+              <div className="flex flex-wrap gap-2">
+                {products.map(product => (
+                  <div key={product.id} className="flex items-center px-5 py-2 bg-white text-gray-900 rounded-2xl shadow border border-gray-200 font-semibold text-base">
+                    <div>
+                      {product.name}
+                      <div className="text-xs text-gray-500">₹{product.price}/{product.unit}</div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-2 text-destructive hover:bg-red-100 rounded-full"
+                      onClick={() => handleDeleteProduct(product.id)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-x-auto bg-[#1F2227] rounded-xl shadow border-0 ring-0 px-2 py-3">
+              <Table className="text-white">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-white bg-transparent border-b-2 border-[#34343A] font-bold text-lg">Products</TableHead>
                     {customers.map(customer => (
-                      <div key={customer.id} className="flex items-center rounded-md bg-gray-100 px-3 py-2">
-                        <span className="mr-2">{customer.name}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 rounded-full"
-                          onClick={() => handleEditCustomer(customer)}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 rounded-full text-destructive"
-                          onClick={() => handleDeleteCustomer(customer.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      <TableHead key={customer.id} className="text-white text-center bg-transparent border-b-2 border-[#34343A] font-bold text-lg">{customer.name}</TableHead>
                     ))}
-                  </div>
-                </div>
-                
-                {/* Products management section */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium mb-2">Products</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
-                    {products.map(product => (
-                      <div key={product.id} className="flex items-center rounded-md bg-gray-100 px-3 py-2">
-                        <div className="flex-1">
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">₹{product.price}/{product.unit}</div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleEditProduct(product)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Order entry table */}
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="header-cell">Products</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map(product => (
+                    <TableRow key={product.id} className="border-b border-[#23252b]">
+                      <TableCell className="font-medium bg-transparent text-white">{product.name} (₹{product.price}/{product.unit})</TableCell>
                       {customers.map(customer => (
-                        <TableHead key={customer.id} className="header-cell text-center">
-                          {customer.name}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {products.map(product => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">
-                          {product.name} (₹{product.price}/{product.unit})
-                        </TableCell>
-                        {customers.map(customer => (
-                          <TableCell key={customer.id} className="table-cell p-0">
-                            <Input
-                              className="cell-input"
-                              type="text"
-                              value={getCellValue(customer.id, product.id)}
-                              onChange={(e) => handleCellChange(customer.id, product.id, e.target.value)}
-                            />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                    <TableRow>
-                      <TableCell className="total-cell font-semibold">Total Quantity</TableCell>
-                      {customers.map(customer => (
-                        <TableCell key={customer.id} className="total-cell text-center">
-                          {customerTotals[customer.id]?.quantity || 0}
+                        <TableCell key={customer.id} className="p-0 bg-[#181A20]">
+                          <Input
+                            className="bg-[#23252b] text-white focus:ring-2 focus:ring-[#1cd7b6] rounded-lg px-3 py-2"
+                            type="text"
+                            value={getCellValue(customer.id, product.id)}
+                            onChange={(e) => handleCellChange(customer.id, product.id, e.target.value)}
+                          />
                         </TableCell>
                       ))}
                     </TableRow>
-                    <TableRow>
-                      <TableCell className="amount-cell font-semibold">Total Amount (₹)</TableCell>
-                      {customers.map(customer => (
-                        <TableCell key={customer.id} className="amount-cell text-center">
-                          {customerTotals[customer.id]?.amount || 0}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                  ))}
+                  <TableRow>
+                    <TableCell className="font-semibold bg-transparent">Total Quantity</TableCell>
+                    {customers.map(customer => (
+                      <TableCell key={customer.id} className="text-center bg-transparent">{customerTotals[customer.id]?.quantity || 0}</TableCell>
+                    ))}
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold bg-transparent">Total Amount (₹)</TableCell>
+                    {customers.map(customer => (
+                      <TableCell key={customer.id} className="text-center bg-transparent">{customerTotals[customer.id]?.amount || 0}</TableCell>
+                    ))}
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>
