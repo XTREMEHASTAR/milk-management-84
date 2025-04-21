@@ -21,6 +21,7 @@ import {
   UserRound,
   Receipt,
   Menu,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
@@ -41,13 +42,15 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+type SidebarStyleType = "gradient" | "dark" | "navy" | "teal" | "custom";
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const isMobile = useMobile();
   const [open, setOpen] = useState(true);
   
   // This would come from your theme context or settings in a real app
-  const sidebarStyle = "gradient"; // Options: gradient, dark, navy, teal, custom
+  const sidebarStyle: SidebarStyleType = "gradient"; // Options: gradient, dark, navy, teal, custom
   const sidebarColor = "#3B365E"; // For custom color
   const accentColor = "#1cd7b6";
 
@@ -197,6 +200,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           href: "/salesman-list",
           icon: Users,
         },
+        {
+          title: "Area List",
+          href: "/area-list",
+          icon: MapPin,
+        }
       ]
     },
     {

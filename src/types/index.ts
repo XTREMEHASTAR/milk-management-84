@@ -152,6 +152,11 @@ export interface Vehicle {
   regNumber: string;
   type: string;
   driver?: string;
+  capacity?: number;
+  capacityUnit?: string;
+  driverContact?: string;
+  status: "active" | "maintenance";
+  notes?: string;
   isActive: boolean;
 }
 
@@ -160,13 +165,27 @@ export interface Salesman {
   name: string;
   phone: string;
   address?: string;
+  area?: string;
+  route?: string;
+  joinDate?: string;
+  commission?: number;
+  salaryType?: "commission" | "fixed";
+  salary?: number;
+  status?: "active" | "inactive";
+  isActive: boolean;
+}
+
+export interface Area {
+  id: string;
+  name: string;
+  description?: string;
   isActive: boolean;
 }
 
 export interface UISettings {
   theme: "light" | "dark" | "system";
   accentColor: string;
-  sidebarStyle: "default" | "compact" | "expanded" | "gradient";
+  sidebarStyle: "default" | "compact" | "expanded" | "gradient" | "dark" | "navy" | "teal" | "custom";
   sidebarColor: string;
   tableStyle: "default" | "bordered" | "striped";
 }
