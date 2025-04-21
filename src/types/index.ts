@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   name: string;
@@ -30,6 +31,8 @@ export interface Order {
   id: string;
   date: string;
   items: OrderItem[];
+  vehicleId?: string;
+  salesmanId?: string;
 }
 
 export interface Payment {
@@ -77,6 +80,16 @@ export interface CustomerProductRate {
   productId: string;
   rate: number;
   effectiveDate: string;
+}
+
+export interface SupplierProductRate {
+  id: string;
+  supplierId: string;
+  productId: string;
+  rate: number;
+  effectiveDate: string;
+  remarks?: string;
+  isActive: boolean;
 }
 
 export interface StockRecord {
@@ -129,4 +142,29 @@ export interface CustomerLedgerReport {
   totalAmountBilled: number;
   totalPaymentReceived: number;
   closingBalance: number;
+}
+
+export interface Vehicle {
+  id: string;
+  name: string;
+  regNumber: string;
+  type: string;
+  driver?: string;
+  isActive: boolean;
+}
+
+export interface Salesman {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string;
+  isActive: boolean;
+}
+
+export interface UISettings {
+  theme: "light" | "dark" | "system";
+  accentColor: string;
+  sidebarStyle: "default" | "compact" | "expanded" | "gradient";
+  sidebarColor: string;
+  tableStyle: "default" | "bordered" | "striped";
 }

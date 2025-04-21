@@ -18,9 +18,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Download, FileDown, FileText, Printer } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Download, FileDown, FileText, Printer, 
+  TruckIcon, UserIcon
+} from "lucide-react";
 import { format } from "date-fns";
-import { Order, OrderItem } from "@/types";
+import { Order, OrderItem, Vehicle, Salesman } from "@/types";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -36,10 +46,13 @@ interface TrackItem {
 }
 
 const TrackSheet = () => {
-  const { customers, products, orders } = useData();
+  const { customers, products, orders, vehicles, salesmen, uiSettings } = useData();
   const [trackDate, setTrackDate] = useState<Date>(new Date());
   const [trackItems, setTrackItems] = useState<TrackItem[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [groupBy, setGroupBy] = useState<"none" | "vehicle" | "salesman">("none");
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
+  const [selectedSalesman, setSelectedSalesman] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
   // Find order for the selected date
@@ -58,9 +71,25 @@ const TrackSheet = () => {
   const generateTrackItems = (order: Order) => {
     const items: TrackItem[] = [];
 
+    // Filter items based on vehicle or salesman if selected
+    let filteredItems = order.items;
+    if (groupBy === "vehicle" && selectedVehicle) {
+      if (order.vehicleId !== selectedVehicle) {
+        setTrackItems([]);
+        return;
+      }
+    }
+    
+    if (groupBy === "salesman" && selectedSalesman) {
+      if (order.salesmanId !== selectedSalesman) {
+        setTrackItems([]);
+        return;
+      }
+    }
+
     // Group items by customer
     const customerItems: Record<string, OrderItem[]> = {};
-    order.items.forEach((item) => {
+    filteredItems.forEach((item) => {
       if (!customerItems[item.customerId]) {
         customerItems[item.customerId] = [];
       }
@@ -171,14 +200,29 @@ const TrackSheet = () => {
     doc.text(`Date: ${format(trackDate, "dd MMMM yyyy")}`, 14, 30);
     
     // Create a gradient background for the title area (lighter version for PDF)
-    doc.setFillColor(220, 220, 240);
+    doc.setFillColor(16, 185, 129); // Teal color
     doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
     
     // Add a logo or business name with styling
-    doc.setTextColor(75, 58, 172);
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
     doc.text("Milk Delivery App", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    
+    // Add vehicle or salesman info if applicable
+    if (groupBy === "vehicle" && selectedVehicle) {
+      const vehicle = vehicles.find(v => v.id === selectedVehicle);
+      if (vehicle) {
+        doc.setFontSize(12);
+        doc.text(`Vehicle: ${vehicle.name} (${vehicle.regNumber})`, doc.internal.pageSize.width - 15, 30, { align: 'right' });
+      }
+    } else if (groupBy === "salesman" && selectedSalesman) {
+      const salesman = salesmen.find(s => s.id === selectedSalesman);
+      if (salesman) {
+        doc.setFontSize(12);
+        doc.text(`Salesman: ${salesman.name}`, doc.internal.pageSize.width - 15, 30, { align: 'right' });
+      }
+    }
     
     // Reset text color
     doc.setTextColor(0, 0, 0);
@@ -237,9 +281,9 @@ const TrackSheet = () => {
       body: tableRows,
       startY: 40,
       styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { fillColor: [75, 58, 172], textColor: [255, 255, 255] },
-      footStyles: { fillColor: [240, 240, 245], fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [245, 245, 250] },
+      headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255] },
+      footStyles: { fillColor: [240, 253, 244], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [243, 244, 246] },
       theme: 'grid'
     });
     
@@ -271,6 +315,30 @@ const TrackSheet = () => {
     window.print();
   };
 
+  const getBgColorClass = () => {
+    return uiSettings.theme === "dark" 
+      ? "bg-gradient-to-br from-teal-900/90 to-teal-800/90 text-white" 
+      : "bg-gradient-to-br from-teal-100 to-emerald-100 text-teal-900";
+  };
+
+  const getHeaderBgClass = () => {
+    return uiSettings.theme === "dark"
+      ? "bg-teal-800/50"
+      : "bg-teal-600/30";
+  };
+
+  const getTableBodyBgClass = () => {
+    return uiSettings.theme === "dark"
+      ? "bg-teal-900/30"
+      : "bg-teal-50/80"; 
+  };
+
+  const getFooterRowClass = () => {
+    return uiSettings.theme === "dark"
+      ? "bg-teal-800/50 border-none"
+      : "bg-teal-600/20 border-none";
+  };
+
   return (
     <div className="space-y-6 print:space-y-2">
       <div className="flex items-center justify-between print:hidden">
@@ -285,7 +353,7 @@ const TrackSheet = () => {
             <FileDown className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
-          <Button variant="outline" onClick={exportToPDF} className="bg-purple-700 text-white hover:bg-purple-800 hover:text-white border-none">
+          <Button variant="outline" onClick={exportToPDF} className="bg-teal-700 text-white hover:bg-teal-800 hover:text-white border-none">
             <FileText className="mr-2 h-4 w-4" />
             Export PDF
           </Button>
@@ -296,71 +364,152 @@ const TrackSheet = () => {
         </div>
       </div>
 
-      <Card className="print:shadow-none print:border-none bg-gradient-to-br from-blue-900/90 to-purple-900/90 text-white border-0 shadow-lg">
+      <Card className={`print:shadow-none print:border-none ${getBgColorClass()} border-0 shadow-lg rounded-xl`}>
         <CardHeader className="print:py-2">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="print:text-xl text-white">
+              <CardTitle className="print:text-xl text-inherit">
                 Delivery Track Sheet - {format(trackDate, "dd MMMM yyyy")}
               </CardTitle>
-              <CardDescription className="print:hidden text-gray-300">
+              <CardDescription className="print:hidden text-inherit/80">
                 Daily milk delivery track sheet for delivery personnel
               </CardDescription>
             </div>
-            <div className="print:hidden">
+            <div className="print:hidden flex items-center space-x-4">
               <DatePicker date={trackDate} setDate={setTrackDate} />
+              
+              <Select value={groupBy} onValueChange={(v: "none" | "vehicle" | "salesman") => setGroupBy(v)}>
+                <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
+                  <SelectValue placeholder="Group by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No grouping</SelectItem>
+                  <SelectItem value="vehicle">By Vehicle</SelectItem>
+                  <SelectItem value="salesman">By Salesman</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {groupBy === "vehicle" && (
+                <Select 
+                  value={selectedVehicle || ""} 
+                  onValueChange={setSelectedVehicle}
+                  disabled={vehicles.length === 0}
+                >
+                  <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
+                    <SelectValue placeholder="Select vehicle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map(vehicle => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              {groupBy === "salesman" && (
+                <Select 
+                  value={selectedSalesman || ""} 
+                  onValueChange={setSelectedSalesman}
+                  disabled={salesmen.length === 0}
+                >
+                  <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
+                    <SelectValue placeholder="Select salesman" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesmen.map(salesman => (
+                      <SelectItem key={salesman.id} value={salesman.id}>
+                        {salesman.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
+          
+          {/* Vehicle or Salesman info for print view */}
+          {groupBy === "vehicle" && selectedVehicle && (
+            <div className="hidden print:block mt-2">
+              <p className="text-sm">
+                <TruckIcon className="inline-block mr-1 h-4 w-4" />
+                {vehicles.find(v => v.id === selectedVehicle)?.name} ({vehicles.find(v => v.id === selectedVehicle)?.regNumber})
+              </p>
+            </div>  
+          )}
+          
+          {groupBy === "salesman" && selectedSalesman && (
+            <div className="hidden print:block mt-2">
+              <p className="text-sm">
+                <UserIcon className="inline-block mr-1 h-4 w-4" />
+                {salesmen.find(s => s.id === selectedSalesman)?.name}
+              </p>
+            </div>  
+          )}
         </CardHeader>
         <CardContent>
           {!selectedOrder ? (
             <div className="text-center py-10 print:hidden">
-              <p className="text-gray-300 mb-4">
+              <p className="text-inherit/80 mb-4">
                 No order data available for the selected date
               </p>
-              <Button onClick={() => window.location.href = "/order-entry"} className="bg-purple-600 hover:bg-purple-700 text-white border-none">
+              <Button onClick={() => window.location.href = "/order-entry"} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
                 Create Order for This Date
               </Button>
             </div>
+          ) : trackItems.length === 0 && (groupBy !== "none") ? (
+            <div className="text-center py-10 print:hidden">
+              <p className="text-inherit/80 mb-4">
+                No items found for the selected {groupBy === "vehicle" ? "vehicle" : "salesman"}
+              </p>
+              <Button onClick={() => {
+                setGroupBy("none");
+                setSelectedVehicle(null);
+                setSelectedSalesman(null);
+              }} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                Show All Items
+              </Button>
+            </div>
           ) : (
-            <div className="overflow-x-auto" ref={tableRef}>
+            <div className="overflow-x-auto rounded-lg" ref={tableRef}>
               <Table>
-                <TableHeader className="bg-purple-800/50">
+                <TableHeader className={getHeaderBgClass()}>
                   <TableRow>
-                    <TableHead className="w-[200px] text-white">Customer</TableHead>
+                    <TableHead className="w-[200px] text-inherit font-bold">Customer</TableHead>
                     {products.map((product) => (
                       <TableHead
                         key={product.id}
-                        className="text-center whitespace-nowrap text-white"
+                        className="text-center whitespace-nowrap text-inherit font-semibold"
                       >
                         {product.name}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center text-white">Total Qty</TableHead>
-                    <TableHead className="text-center print:hidden text-white">Amount (₹)</TableHead>
+                    <TableHead className="text-center text-inherit font-bold">Total Qty</TableHead>
+                    <TableHead className="text-center print:hidden text-inherit font-bold">Amount (₹)</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="bg-purple-900/30">
+                <TableBody className={getTableBodyBgClass()}>
                   {trackItems.map((item) => (
-                    <TableRow key={item.customerId} className="border-t border-purple-700/50 hover:bg-purple-800/30">
-                      <TableCell className="font-medium text-white">
+                    <TableRow key={item.customerId} className="border-t border-teal-700/20 hover:bg-teal-700/10">
+                      <TableCell className="font-medium text-inherit">
                         {item.customerName}
                       </TableCell>
                       {products.map((product) => (
-                        <TableCell key={product.id} className="text-center text-gray-300">
+                        <TableCell key={product.id} className="text-center text-inherit/80">
                           {item.products[product.id] || "-"}
                         </TableCell>
                       ))}
-                      <TableCell className="text-center font-semibold text-white">
+                      <TableCell className="text-center font-semibold text-inherit">
                         {item.totalQuantity}
                       </TableCell>
-                      <TableCell className="text-center font-semibold print:hidden text-gray-300">
+                      <TableCell className="text-center font-semibold print:hidden text-inherit/80">
                         ₹{item.totalAmount}
                       </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="bg-purple-800/50 border-none">
-                    <TableCell className="font-bold text-white">TOTAL</TableCell>
+                  <TableRow className={getFooterRowClass()}>
+                    <TableCell className="font-bold text-inherit">TOTAL</TableCell>
                     {products.map((product) => {
                       const total = trackItems.reduce(
                         (sum, item) => sum + (item.products[product.id] || 0),
@@ -369,19 +518,19 @@ const TrackSheet = () => {
                       return (
                         <TableCell
                           key={product.id}
-                          className="text-center font-semibold text-white"
+                          className="text-center font-semibold text-inherit"
                         >
                           {total || "-"}
                         </TableCell>
                       );
                     })}
-                    <TableCell className="text-center font-bold text-white">
+                    <TableCell className="text-center font-bold text-inherit">
                       {trackItems.reduce(
                         (sum, item) => sum + item.totalQuantity,
                         0
                       )}
                     </TableCell>
-                    <TableCell className="text-center font-bold print:hidden text-white">
+                    <TableCell className="text-center font-bold print:hidden text-inherit">
                       ₹
                       {trackItems.reduce(
                         (sum, item) => sum + item.totalAmount,
@@ -397,13 +546,14 @@ const TrackSheet = () => {
       </Card>
       
       <div className="print:hidden">
-        <Card className="bg-gradient-to-r from-indigo-900/80 to-blue-900/80 text-white border-0 shadow-md">
+        <Card className="bg-gradient-to-r from-teal-900/80 to-teal-800/80 text-white border-0 shadow-md rounded-xl">
           <CardHeader>
             <CardTitle className="text-white">Instructions</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc pl-5 space-y-2 text-gray-300">
+            <ul className="list-disc pl-5 space-y-2 text-teal-100">
               <li>Select a date to view the track sheet for that day.</li>
+              <li>Group by vehicle or salesman to filter the track sheet.</li>
               <li>Use the Export button to download as CSV/PDF or the Print button to print.</li>
               <li>Track sheets show all customer orders for the selected date.</li>
               <li>If no data is available, create an order for the selected date first.</li>

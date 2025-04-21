@@ -1,762 +1,581 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useData } from "@/contexts/DataContext";
+import { useNavigate } from "react-router-dom";
+import {
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
+} from "@/components/ui/card";
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger
+} from "@/components/ui/tabs";
+import {
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Settings as SettingsIcon, 
-  Palette, 
-  Bell, 
-  Globe, 
-  User, 
-  Shield, 
-  Database,
-  HardDrive,
-  FileJson,
-  Download,
-  UploadCloud,
-  RefreshCw,
-  Sun,
-  Moon
+  Sun, Moon, Computer, Palette, ChevronsLeftRight, Layout, Database, 
+  Info, Bell, LogOut, Save, Undo 
 } from "lucide-react";
 import { toast } from "sonner";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
+import { UISettings } from "@/types";
 
 const Settings = () => {
-  const [darkMode, setDarkMode] = useState(true);
-  const [accentColor, setAccentColor] = useState("teal");
-  const [fontFamily, setFontFamily] = useState("inter");
-  const [borderRadius, setBorderRadius] = useState("medium");
-  const [desktopNotifications, setDesktopNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [backupFrequency, setBackupFrequency] = useState("daily");
-  const [exportFormat, setExportFormat] = useState("json");
-  const [apiKey, setApiKey] = useState("sk_live_51HZGu0JbMwZGgTV36i0tDFYLx5MHl");
-  const [language, setLanguage] = useState("english");
-  const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
-  const [currencySymbol, setCurrencySymbol] = useState("₹");
-  const [backupDate, setBackupDate] = useState<Date>(new Date());
-
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    toast.success(`Theme set to ${!darkMode ? "Dark" : "Light"} Mode`);
+  const { uiSettings, updateUISettings } = useData();
+  const navigate = useNavigate();
+  
+  const [tempSettings, setTempSettings] = useState<UISettings>({ ...uiSettings });
+  
+  const handleThemeChange = (theme: "light" | "dark" | "system") => {
+    setTempSettings({ ...tempSettings, theme });
   };
-
+  
+  const handleAccentColorChange = (accentColor: string) => {
+    setTempSettings({ ...tempSettings, accentColor });
+  };
+  
+  const handleSidebarStyleChange = (sidebarStyle: "default" | "compact" | "expanded" | "gradient") => {
+    setTempSettings({ ...tempSettings, sidebarStyle });
+  };
+  
+  const handleSidebarColorChange = (sidebarColor: string) => {
+    setTempSettings({ ...tempSettings, sidebarColor });
+  };
+  
+  const handleTableStyleChange = (tableStyle: "default" | "bordered" | "striped") => {
+    setTempSettings({ ...tempSettings, tableStyle });
+  };
+  
   const saveSettings = () => {
+    updateUISettings(tempSettings);
     toast.success("Settings saved successfully");
   };
-
+  
   const resetSettings = () => {
+    const defaultSettings: UISettings = {
+      theme: "light",
+      accentColor: "teal",
+      sidebarStyle: "default",
+      sidebarColor: "default",
+      tableStyle: "default"
+    };
+    
+    setTempSettings(defaultSettings);
+    updateUISettings(defaultSettings);
     toast.success("Settings reset to defaults");
-    setAccentColor("teal");
-    setFontFamily("inter");
-    setBorderRadius("medium");
-    setDesktopNotifications(true);
-    setEmailNotifications(true);
-    setBackupFrequency("daily");
-    setExportFormat("json");
-    setLanguage("english");
-    setDateFormat("DD/MM/YYYY");
-    setCurrencySymbol("₹");
   };
-
-  const exportData = () => {
-    toast.success(`Data exported in ${exportFormat.toUpperCase()} format`);
-  };
-
-  const runBackup = () => {
-    toast.success("Backup completed successfully");
+  
+  const getThemeClass = () => {
+    return tempSettings.theme === "dark" 
+      ? "bg-gradient-to-br from-gray-900 to-gray-800 text-white border-0" 
+      : "bg-gradient-to-br from-gray-50 to-white";
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Configure your application preferences and settings</p>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground">
+            Configure application settings and preferences
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="appearance" className="space-y-4">
-        <TabsList className="grid w-full max-w-4xl grid-cols-4">
-          <TabsTrigger value="appearance" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" /> Appearance
+        <TabsList className="bg-teal-700/10 dark:bg-teal-900/30 grid w-full grid-cols-3">
+          <TabsTrigger value="appearance" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+            <Palette className="h-4 w-4 mr-2" />
+            Appearance
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Notifications
+          <TabsTrigger value="sidebar" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+            <Layout className="h-4 w-4 mr-2" />
+            Sidebar
           </TabsTrigger>
-          <TabsTrigger value="localization" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" /> Localization
-          </TabsTrigger>
-          <TabsTrigger value="backups" className="flex items-center gap-2">
-            <Database className="h-4 w-4" /> Backups & Data
+          <TabsTrigger value="data" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+            <Database className="h-4 w-4 mr-2" />
+            Data Management
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="appearance" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="dark-ui-card">
+        
+        {/* Appearance Settings */}
+        <TabsContent value="appearance">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className={`${getThemeClass()} shadow-lg rounded-xl`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" /> 
-                  Theme Settings
-                </CardTitle>
-                <CardDescription>
-                  Customize how your application looks
+                <CardTitle>Theme Settings</CardTitle>
+                <CardDescription className={tempSettings.theme === "dark" ? "text-gray-300" : ""}>
+                  Customize the application's visual theme
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Theme Mode</Label>
+                  <RadioGroup 
+                    defaultValue={tempSettings.theme} 
+                    onValueChange={(value: "light" | "dark" | "system") => handleThemeChange(value)}
+                    className="flex flex-col space-y-1"
+                  >
+                    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+                      <RadioGroupItem value="light" id="light" />
+                      <Label htmlFor="light" className="flex items-center cursor-pointer">
+                        <Sun className="h-4 w-4 mr-2" />
+                        Light
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+                      <RadioGroupItem value="dark" id="dark" />
+                      <Label htmlFor="dark" className="flex items-center cursor-pointer">
+                        <Moon className="h-4 w-4 mr-2" />
+                        Dark
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+                      <RadioGroupItem value="system" id="system" />
+                      <Label htmlFor="system" className="flex items-center cursor-pointer">
+                        <Computer className="h-4 w-4 mr-2" />
+                        System
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Accent Color</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {["teal", "blue", "purple", "amber", "red", "emerald", "pink", "indigo"].map(color => (
+                      <Button
+                        key={color}
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleAccentColorChange(color)}
+                        className={`h-10 rounded-md p-0 relative ${
+                          tempSettings.accentColor === color 
+                            ? "ring-2 ring-offset-2 ring-teal-500 dark:ring-teal-400" 
+                            : ""
+                        }`}
+                      >
+                        <div
+                          className="absolute inset-0.5 rounded-sm"
+                          style={{ backgroundColor: `var(--${color}-600)` }}
+                        />
+                        <span className="sr-only">{color}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Table Style</Label>
+                  <Select
+                    defaultValue={tempSettings.tableStyle}
+                    onValueChange={(value: "default" | "bordered" | "striped") => handleTableStyleChange(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select table style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      <SelectItem value="bordered">Bordered</SelectItem>
+                      <SelectItem value="striped">Striped</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Preview card */}
+            <Card className={`${
+              tempSettings.theme === "dark" 
+                ? "bg-gray-800 text-white border-gray-700" 
+                : "bg-white"
+            } shadow-lg rounded-xl border`}>
+              <CardHeader>
+                <CardTitle>Theme Preview</CardTitle>
+                <CardDescription className={tempSettings.theme === "dark" ? "text-gray-300" : ""}>
+                  See how your settings look
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className={`p-4 rounded-md ${
+                  tempSettings.theme === "dark" 
+                    ? "bg-gray-900" 
+                    : "bg-gray-50"
+                }`}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className={`h-3 w-3 rounded-full bg-${tempSettings.accentColor}-500`}></div>
+                    <span className="font-medium">Sample Header</span>
+                  </div>
+                  <p className={`text-sm ${
+                    tempSettings.theme === "dark" 
+                      ? "text-gray-300" 
+                      : "text-gray-500"
+                  }`}>
+                    This is how text will appear with your selected theme.
+                  </p>
+                </div>
+                
+                <div>
+                  <div className={`h-8 w-full rounded-t-md ${
+                    tempSettings.theme === "dark" 
+                      ? `bg-${tempSettings.accentColor}-900/50` 
+                      : `bg-${tempSettings.accentColor}-600/30`
+                  } flex items-center px-3`}>
+                    <span className="text-xs font-medium">Table Header</span>
+                  </div>
+                  <div className={`h-7 w-full ${
+                    tempSettings.theme === "dark" 
+                      ? "bg-gray-800" 
+                      : "bg-white"
+                  } ${
+                    tempSettings.tableStyle === "bordered" 
+                      ? "border border-gray-200 dark:border-gray-700" 
+                      : ""
+                  } ${
+                    tempSettings.tableStyle === "striped" 
+                      ? "bg-opacity-50 dark:bg-opacity-50" 
+                      : ""
+                  } flex items-center px-3`}>
+                    <span className="text-xs">Row 1</span>
+                  </div>
+                  <div className={`h-7 w-full ${
+                    tempSettings.theme === "dark" 
+                      ? "bg-gray-800" 
+                      : "bg-white"
+                  } ${
+                    tempSettings.tableStyle === "bordered" 
+                      ? "border border-gray-200 dark:border-gray-700" 
+                      : ""
+                  } ${
+                    tempSettings.tableStyle === "striped" 
+                      ? `${tempSettings.theme === "dark" ? "bg-gray-900/50" : "bg-gray-50/50"}` 
+                      : ""
+                  } flex items-center px-3`}>
+                    <span className="text-xs">Row 2</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    size="sm" 
+                    className={`bg-${tempSettings.accentColor}-600 hover:bg-${tempSettings.accentColor}-700 text-white`}
+                  >
+                    Primary Button
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    Secondary
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        {/* Sidebar Settings */}
+        <TabsContent value="sidebar">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className={`${getThemeClass()} shadow-lg rounded-xl`}>
+              <CardHeader>
+                <CardTitle>Sidebar Configuration</CardTitle>
+                <CardDescription className={tempSettings.theme === "dark" ? "text-gray-300" : ""}>
+                  Customize the appearance of the navigation sidebar
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Sidebar Style</Label>
+                  <RadioGroup 
+                    defaultValue={tempSettings.sidebarStyle} 
+                    onValueChange={(value: "default" | "compact" | "expanded" | "gradient") => handleSidebarStyleChange(value)}
+                    className="flex flex-col space-y-1"
+                  >
+                    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+                      <RadioGroupItem value="default" id="default" />
+                      <Label htmlFor="default" className="flex items-center cursor-pointer">
+                        <Layout className="h-4 w-4 mr-2" />
+                        Default
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+                      <RadioGroupItem value="compact" id="compact" />
+                      <Label htmlFor="compact" className="flex items-center cursor-pointer">
+                        <ChevronsLeftRight className="h-4 w-4 mr-2" />
+                        Compact
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+                      <RadioGroupItem value="expanded" id="expanded" />
+                      <Label htmlFor="expanded" className="flex items-center cursor-pointer">
+                        <Layout className="h-4 w-4 mr-2" />
+                        Expanded
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+                      <RadioGroupItem value="gradient" id="gradient" />
+                      <Label htmlFor="gradient" className="flex items-center cursor-pointer">
+                        <Palette className="h-4 w-4 mr-2" />
+                        Gradient
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Sidebar Color</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {["default", "teal", "blue", "purple", "amber", "gray", "emerald", "indigo"].map(color => (
+                      <Button
+                        key={color}
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleSidebarColorChange(color)}
+                        className={`h-10 rounded-md p-0 relative ${
+                          tempSettings.sidebarColor === color 
+                            ? "ring-2 ring-offset-2 ring-teal-500 dark:ring-teal-400" 
+                            : ""
+                        }`}
+                      >
+                        <div
+                          className={`absolute inset-0.5 rounded-sm ${
+                            color === "default" 
+                              ? tempSettings.theme === "dark" 
+                                ? "bg-gray-800" 
+                                : "bg-white" 
+                              : ""
+                          }`}
+                          style={color !== "default" ? { backgroundColor: `var(--${color}-600)` } : {}}
+                        />
+                        <span className="sr-only">{color}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      {darkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                      <Label htmlFor="dark-mode">Dark Mode</Label>
-                    </div>
-                    <Switch
-                      id="dark-mode"
-                      checked={darkMode}
-                      onCheckedChange={toggleTheme}
-                    />
-                  </div>
-                  
-                  <div className="pt-2">
-                    <Label htmlFor="accent-color">Accent Color</Label>
-                    <div className="grid grid-cols-5 gap-2 mt-1">
-                      {["teal", "blue", "purple", "pink", "amber"].map(color => (
-                        <button
-                          key={color}
-                          onClick={() => setAccentColor(color)}
-                          className={`w-full h-10 rounded-md transition-all ${
-                            accentColor === color ? "ring-2 ring-white scale-110" : ""
-                          }`}
-                          style={{ 
-                            background: getColorValue(color),
-                            boxShadow: accentColor === color ? `0 0 12px ${getColorValue(color)}` : 'none'
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="pt-2">
-                    <Label htmlFor="font-family">Font Family</Label>
-                    <Select value={fontFamily} onValueChange={setFontFamily}>
-                      <SelectTrigger id="font-family" className="dark-select mt-1">
-                        <SelectValue placeholder="Select font family" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="inter">Inter</SelectItem>
-                        <SelectItem value="roboto">Roboto</SelectItem>
-                        <SelectItem value="poppins">Poppins</SelectItem>
-                        <SelectItem value="system">System Font</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="pt-2">
-                    <Label htmlFor="border-radius">Border Radius</Label>
-                    <Select value={borderRadius} onValueChange={setBorderRadius}>
-                      <SelectTrigger id="border-radius" className="dark-select mt-1">
-                        <SelectValue placeholder="Select border radius" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="small">Small</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="large">Large</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="show-active-indicator">Show Active Indicator</Label>
+                    <Switch id="show-active-indicator" defaultChecked />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="dark-ui-card glow-teal">
+            {/* Sidebar Preview */}
+            <Card className={`${
+              tempSettings.theme === "dark" 
+                ? "bg-gray-800 text-white border-gray-700" 
+                : "bg-white"
+            } shadow-lg rounded-xl border h-[400px]`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" /> 
-                  Interface Settings
-                </CardTitle>
-                <CardDescription>
-                  Customize your workspace
+                <CardTitle>Sidebar Preview</CardTitle>
+                <CardDescription className={tempSettings.theme === "dark" ? "text-gray-300" : ""}>
+                  Preview of your sidebar appearance
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="compact-mode">Compact Mode</Label>
-                    <Switch id="compact-mode" />
+              <CardContent>
+                <div className={`w-56 h-64 rounded-md overflow-hidden border ${
+                  tempSettings.theme === "dark" 
+                    ? "border-gray-700" 
+                    : "border-gray-200"
+                }`}>
+                  {/* Sidebar header */}
+                  <div className={`p-3 ${
+                    tempSettings.sidebarStyle === "gradient"
+                      ? `bg-gradient-to-b from-${tempSettings.sidebarColor === "default" ? "teal" : tempSettings.sidebarColor}-700 to-${tempSettings.sidebarColor === "default" ? "teal" : tempSettings.sidebarColor}-900 text-white`
+                      : tempSettings.sidebarColor === "default"
+                        ? tempSettings.theme === "dark" 
+                          ? "bg-gray-900 text-white" 
+                          : "bg-gray-100 text-gray-800"
+                        : `bg-${tempSettings.sidebarColor}-600 text-white`
+                  }`}>
+                    <div className="flex items-center space-x-2">
+                      <div className="h-3 w-3 rounded-full bg-white"></div>
+                      <span className="font-semibold text-sm">Milk Delivery App</span>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="animations">UI Animations</Label>
-                    <Switch id="animations" defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sound-effects">Sound Effects</Label>
-                    <Switch id="sound-effects" />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="show-tooltips">Show Tooltips</Label>
-                    <Switch id="show-tooltips" defaultChecked />
-                  </div>
-                  
-                  <div className="pt-2">
-                    <Label htmlFor="default-view">Default View</Label>
-                    <Select defaultValue="dashboard">
-                      <SelectTrigger id="default-view" className="dark-select mt-1">
-                        <SelectValue placeholder="Select default view" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="dashboard">Dashboard</SelectItem>
-                        <SelectItem value="order-entry">Order Entry</SelectItem>
-                        <SelectItem value="customers">Customers</SelectItem>
-                        <SelectItem value="reports">Reports</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="pt-2">
-                    <Label htmlFor="sidebar-position">Sidebar Position</Label>
-                    <Select defaultValue="left">
-                      <SelectTrigger id="sidebar-position" className="dark-select mt-1">
-                        <SelectValue placeholder="Select sidebar position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="left">Left</SelectItem>
-                        <SelectItem value="right">Right</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  {/* Sidebar content */}
+                  <div className={`p-2 ${
+                    tempSettings.sidebarStyle === "gradient"
+                      ? `bg-gradient-to-b from-${tempSettings.sidebarColor === "default" ? "teal" : tempSettings.sidebarColor}-800 to-${tempSettings.sidebarColor === "default" ? "teal" : tempSettings.sidebarColor}-900 text-white h-full`
+                      : tempSettings.sidebarColor === "default"
+                        ? tempSettings.theme === "dark" 
+                          ? "bg-gray-900 text-gray-300" 
+                          : "bg-white text-gray-700"
+                        : `bg-${tempSettings.sidebarColor}-700 text-white h-full`
+                  }`}>
+                    <div className={`flex items-center ${
+                      tempSettings.sidebarStyle === "compact" ? "" : "space-x-2"
+                    } p-2 rounded-md ${
+                      tempSettings.sidebarStyle === "compact" 
+                        ? "justify-center" 
+                        : ""
+                    } ${
+                      tempSettings.sidebarColor === "default"
+                        ? tempSettings.theme === "dark" 
+                          ? "bg-gray-800 text-white" 
+                          : "bg-gray-100 text-gray-800"
+                        : `bg-${tempSettings.sidebarColor}-600/80 text-white`
+                    }`}>
+                      <Layout className="h-4 w-4" />
+                      {tempSettings.sidebarStyle !== "compact" && <span className="text-sm">Dashboard</span>}
+                    </div>
+                    
+                    <div className={`flex items-center ${
+                      tempSettings.sidebarStyle === "compact" ? "" : "space-x-2"
+                    } p-2 mt-1 rounded-md ${
+                      tempSettings.sidebarStyle === "compact" 
+                        ? "justify-center" 
+                        : ""
+                    }`}>
+                      <Database className="h-4 w-4" />
+                      {tempSettings.sidebarStyle !== "compact" && <span className="text-sm">Orders</span>}
+                    </div>
+                    
+                    <div className={`flex items-center ${
+                      tempSettings.sidebarStyle === "compact" ? "" : "space-x-2"
+                    } p-2 mt-1 rounded-md ${
+                      tempSettings.sidebarStyle === "compact" 
+                        ? "justify-center" 
+                        : ""
+                    }`}>
+                      <Info className="h-4 w-4" />
+                      {tempSettings.sidebarStyle !== "compact" && <span className="text-sm">Reports</span>}
+                    </div>
+                    
+                    <div className={`flex items-center ${
+                      tempSettings.sidebarStyle === "compact" ? "" : "space-x-2"
+                    } p-2 mt-1 rounded-md ${
+                      tempSettings.sidebarStyle === "compact" 
+                        ? "justify-center" 
+                        : ""
+                    }`}>
+                      <Bell className="h-4 w-4" />
+                      {tempSettings.sidebarStyle !== "compact" && <span className="text-sm">Notifications</span>}
+                    </div>
+                    
+                    <div className={`flex items-center ${
+                      tempSettings.sidebarStyle === "compact" ? "" : "space-x-2"
+                    } p-2 mt-1 rounded-md ${
+                      tempSettings.sidebarStyle === "compact" 
+                        ? "justify-center" 
+                        : ""
+                    }`}>
+                      <Palette className="h-4 w-4" />
+                      {tempSettings.sidebarStyle !== "compact" && <span className="text-sm">Settings</span>}
+                    </div>
+                    
+                    <div className={`flex items-center ${
+                      tempSettings.sidebarStyle === "compact" ? "" : "space-x-2"
+                    } p-2 mt-1 rounded-md ${
+                      tempSettings.sidebarStyle === "compact" 
+                        ? "justify-center" 
+                        : ""
+                    }`}>
+                      <LogOut className="h-4 w-4" />
+                      {tempSettings.sidebarStyle !== "compact" && <span className="text-sm">Logout</span>}
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-          
-          <Card className="dark-ui-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" /> 
-                Preview Panel
-              </CardTitle>
-              <CardDescription>
-                See your theme changes in real-time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div 
-                  className="p-4 rounded-xl text-center"
-                  style={{ 
-                    background: darkMode ? "#1a1e23" : "#ffffff",
-                    color: darkMode ? "#ffffff" : "#1a1e23",
-                    borderRadius: getBorderRadiusValue(borderRadius),
-                    fontFamily: getFontFamilyValue(fontFamily),
-                    border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
-                    boxShadow: `0 4px 20px ${darkMode ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.1)"}`,
-                  }}
-                >
-                  <div 
-                    className="w-12 h-12 mx-auto rounded-full mb-2 flex items-center justify-center text-xl font-bold"
-                    style={{ 
-                      background: getColorValue(accentColor),
-                      boxShadow: `0 0 15px ${getColorValue(accentColor)}40`
-                    }}
-                  >
-                    A
-                  </div>
-                  <h3 className="font-bold mb-1">Card Title</h3>
-                  <p className="text-sm opacity-70">Card description text</p>
-                </div>
-                
-                <div 
-                  className="p-4 rounded-xl"
-                  style={{ 
-                    background: darkMode ? "#1a1e23" : "#ffffff",
-                    color: darkMode ? "#ffffff" : "#1a1e23",
-                    borderRadius: getBorderRadiusValue(borderRadius),
-                    fontFamily: getFontFamilyValue(fontFamily),
-                    border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
-                    boxShadow: `0 4px 20px ${darkMode ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.1)"}`,
-                  }}
-                >
-                  <h3 className="font-bold mb-2">Form Example</h3>
-                  <div className="space-y-2">
-                    <input 
-                      type="text" 
-                      placeholder="Input field"
-                      className="w-full p-2 text-sm rounded-md"
-                      style={{ 
-                        background: darkMode ? "rgba(0,0,0,0.2)" : "#f1f5f9",
-                        border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
-                        borderRadius: getBorderRadiusValue(borderRadius),
-                        color: darkMode ? "#ffffff" : "#1a1e23",
-                      }}
-                    />
-                    <button
-                      className="w-full p-2 text-sm rounded-md text-white"
-                      style={{ 
-                        background: getColorValue(accentColor),
-                        borderRadius: getBorderRadiusValue(borderRadius),
-                      }}
-                    >
-                      Button
-                    </button>
-                  </div>
-                </div>
-                
-                <div 
-                  className="p-4 rounded-xl"
-                  style={{ 
-                    background: darkMode ? "#1a1e23" : "#ffffff",
-                    color: darkMode ? "#ffffff" : "#1a1e23",
-                    borderRadius: getBorderRadiusValue(borderRadius),
-                    fontFamily: getFontFamilyValue(fontFamily),
-                    border: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
-                    boxShadow: `0 4px 20px ${darkMode ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.1)"}`,
-                  }}
-                >
-                  <h3 className="font-bold mb-2">Progress</h3>
-                  <div className="space-y-3">
-                    <div className="w-full bg-gray-700 rounded-full h-2.5">
-                      <div 
-                        className="h-2.5 rounded-full" 
-                        style={{ 
-                          width: "70%", 
-                          background: getColorValue(accentColor),
-                        }}
-                      ></div>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Label</span>
-                      <span 
-                        style={{ color: getColorValue(accentColor) }}
-                      >70%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-4">
-          <Card className="dark-ui-card">
+        
+        {/* Data Management Settings */}
+        <TabsContent value="data">
+          <Card className="shadow-lg rounded-xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" /> 
-                Notification Settings
-              </CardTitle>
+              <CardTitle>Data Management</CardTitle>
               <CardDescription>
-                Configure how you receive notifications
+                Import, export, or reset application data
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Desktop Notifications</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="desktop-notifications">Enable Desktop Notifications</Label>
-                      <Switch
-                        id="desktop-notifications"
-                        checked={desktopNotifications}
-                        onCheckedChange={setDesktopNotifications}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="sound-notifications">Notification Sounds</Label>
-                      <Switch id="sound-notifications" defaultChecked />
-                    </div>
-                  </div>
-                </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="border border-gray-200 dark:border-gray-700">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Export Data</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Export your data for backup or migrating to another system
+                    </p>
+                    <Select defaultValue="all">
+                      <SelectTrigger className="mb-4">
+                        <SelectValue placeholder="Select data to export" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Export Options</SelectLabel>
+                          <SelectItem value="all">All Data</SelectItem>
+                          <SelectItem value="customers">Customers Only</SelectItem>
+                          <SelectItem value="orders">Orders Only</SelectItem>
+                          <SelectItem value="products">Products Only</SelectItem>
+                          <SelectItem value="suppliers">Suppliers Only</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+                      Export as JSON
+                    </Button>
+                  </CardContent>
+                </Card>
                 
-                <div className="border-t border-gray-700 pt-4">
-                  <h3 className="font-semibold mb-2">Email Notifications</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="email-notifications">Enable Email Notifications</Label>
-                      <Switch
-                        id="email-notifications"
-                        checked={emailNotifications}
-                        onCheckedChange={setEmailNotifications}
-                      />
+                <Card className="border border-gray-200 dark:border-gray-700">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Import Data</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Import data from a JSON file
+                    </p>
+                    <div className="flex items-center justify-center h-20 border-2 border-dashed rounded-md border-gray-300 dark:border-gray-700 p-2 mb-4">
+                      <p className="text-sm text-center text-muted-foreground">
+                        Drag and drop a JSON file or click to browse
+                      </p>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="daily-summary">Daily Summary Email</Label>
-                      <Switch id="daily-summary" />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="payment-alerts">Payment Alerts</Label>
-                      <Switch id="payment-alerts" defaultChecked />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t border-gray-700 pt-4">
-                  <h3 className="font-semibold mb-2">Notification Events</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="new-order">New Order</Label>
-                      <Switch id="new-order" defaultChecked />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="payment-received">Payment Received</Label>
-                      <Switch id="payment-received" defaultChecked />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="low-stock">Low Stock Alert</Label>
-                      <Switch id="low-stock" defaultChecked />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="system-updates">System Updates</Label>
-                      <Switch id="system-updates" />
-                    </div>
-                  </div>
-                </div>
+                    <Button variant="outline" className="w-full">
+                      Browse Files
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="localization" className="space-y-4">
-          <Card className="dark-ui-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" /> 
-                Localization Settings
-              </CardTitle>
-              <CardDescription>
-                Configure language and regional preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="language">Language</Label>
-                    <Select value={language} onValueChange={setLanguage}>
-                      <SelectTrigger id="language" className="dark-select mt-1">
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="english">English</SelectItem>
-                        <SelectItem value="hindi">Hindi</SelectItem>
-                        <SelectItem value="gujarati">Gujarati</SelectItem>
-                        <SelectItem value="marathi">Marathi</SelectItem>
-                        <SelectItem value="tamil">Tamil</SelectItem>
-                        <SelectItem value="telugu">Telugu</SelectItem>
-                      </SelectContent>
-                    </Select>
+              
+              <Card className="border border-red-200 dark:border-red-900 mt-6">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base text-red-600 dark:text-red-400">Danger Zone</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Reset or delete application data. These actions cannot be undone.
+                  </p>
+                  <div className="flex flex-col space-y-2">
+                    <Button variant="destructive" className="w-full">
+                      Reset All Data
+                    </Button>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="date-format">Date Format</Label>
-                    <Select value={dateFormat} onValueChange={setDateFormat}>
-                      <SelectTrigger id="date-format" className="dark-select mt-1">
-                        <SelectValue placeholder="Select date format" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="time-format">Time Format</Label>
-                    <Select defaultValue="12hour">
-                      <SelectTrigger id="time-format" className="dark-select mt-1">
-                        <SelectValue placeholder="Select time format" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="12hour">12-hour (AM/PM)</SelectItem>
-                        <SelectItem value="24hour">24-hour</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="currency">Currency</Label>
-                    <Select defaultValue="inr">
-                      <SelectTrigger id="currency" className="dark-select mt-1">
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="inr">Indian Rupee (₹)</SelectItem>
-                        <SelectItem value="usd">US Dollar ($)</SelectItem>
-                        <SelectItem value="eur">Euro (€)</SelectItem>
-                        <SelectItem value="gbp">British Pound (£)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="currency-symbol">Currency Symbol</Label>
-                    <Input 
-                      id="currency-symbol" 
-                      value={currencySymbol}
-                      onChange={(e) => setCurrencySymbol(e.target.value)}
-                      className="dark-input mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="first-day-week">First Day of Week</Label>
-                    <Select defaultValue="monday">
-                      <SelectTrigger id="first-day-week" className="dark-select mt-1">
-                        <SelectValue placeholder="Select first day" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sunday">Sunday</SelectItem>
-                        <SelectItem value="monday">Monday</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="backups" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="dark-ui-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" /> 
-                  Backup Settings
-                </CardTitle>
-                <CardDescription>
-                  Configure automatic backup options
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="auto-backup">Automatic Backups</Label>
-                    <Switch id="auto-backup" defaultChecked />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="backup-frequency">Backup Frequency</Label>
-                    <Select value={backupFrequency} onValueChange={setBackupFrequency}>
-                      <SelectTrigger id="backup-frequency" className="dark-select mt-1">
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="backup-time">Next Scheduled Backup</Label>
-                    <div className="mt-1">
-                      <DatePicker date={backupDate} setDate={setBackupDate} />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="retention-period">Retention Period</Label>
-                    <Select defaultValue="30days">
-                      <SelectTrigger id="retention-period" className="dark-select mt-1">
-                        <SelectValue placeholder="Select retention period" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="7days">7 Days</SelectItem>
-                        <SelectItem value="30days">30 Days</SelectItem>
-                        <SelectItem value="90days">90 Days</SelectItem>
-                        <SelectItem value="365days">1 Year</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <Button 
-                    onClick={runBackup}
-                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
-                  >
-                    <HardDrive className="mr-2 h-4 w-4" />
-                    Run Backup Now
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="dark-ui-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileJson className="h-5 w-5" /> 
-                  Data Export & Import
-                </CardTitle>
-                <CardDescription>
-                  Export or import your data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="export-format">Export Format</Label>
-                    <Select value={exportFormat} onValueChange={setExportFormat}>
-                      <SelectTrigger id="export-format" className="dark-select mt-1">
-                        <SelectValue placeholder="Select export format" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="json">JSON</SelectItem>
-                        <SelectItem value="csv">CSV</SelectItem>
-                        <SelectItem value="excel">Excel</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="export-data">Export Options</Label>
-                    <div className="space-y-2 mt-1">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="include-orders">Include Orders</Label>
-                        <Switch id="include-orders" defaultChecked />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="include-customers">Include Customers</Label>
-                        <Switch id="include-customers" defaultChecked />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="include-products">Include Products</Label>
-                        <Switch id="include-products" defaultChecked />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    onClick={exportData}
-                    className="w-full mt-2 bg-green-600 hover:bg-green-700"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Data
-                  </Button>
-                  
-                  <div className="pt-2 border-t border-gray-700">
-                    <Label htmlFor="import-data">Import Data</Label>
-                    <div className="mt-2">
-                      <Label 
-                        htmlFor="file-upload" 
-                        className="flex items-center justify-center gap-2 p-4 border border-dashed border-gray-600 rounded-md cursor-pointer hover:bg-gray-800/50"
-                      >
-                        <UploadCloud className="h-5 w-5" />
-                        <span>Click to upload file</span>
-                        <input id="file-upload" type="file" className="hidden" />
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <Card className="dark-ui-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <RefreshCw className="h-5 w-5" /> 
-                Reset Options
-              </CardTitle>
-              <CardDescription>
-                Reset your settings or application data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  variant="outline" 
-                  onClick={resetSettings}
-                  className="bg-white/10 hover:bg-white/20 text-white"
-                >
-                  Reset to Default Settings
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  className="bg-white/10 hover:bg-white/20 text-white"
-                >
-                  Clear Application Cache
-                </Button>
-                
-                <Button 
-                  variant="destructive"
-                  onClick={() => toast.error("This action cannot be undone", {
-                    description: "You would need to confirm with admin rights to proceed."
-                  })}
-                >
-                  Reset All Data
-                </Button>
-              </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
       
-      <div className="flex justify-end space-x-4">
-        <Button variant="outline" onClick={resetSettings}>
-          Reset Settings
+      <div className="mt-6 flex items-center justify-end space-x-4">
+        <Button variant="outline" onClick={resetSettings} className="flex items-center">
+          <Undo className="mr-2 h-4 w-4" />
+          Reset to Defaults
         </Button>
-        <Button onClick={saveSettings}>
+        <Button onClick={saveSettings} className="bg-teal-600 hover:bg-teal-700 text-white">
+          <Save className="mr-2 h-4 w-4" />
           Save Settings
         </Button>
       </div>
     </div>
   );
 };
-
-// Helper functions to handle theme preview
-function getColorValue(color: string): string {
-  const colorMap: Record<string, string> = {
-    teal: "#38bd95",
-    blue: "#3b82f6",
-    purple: "#a855f7",
-    pink: "#ec4899",
-    amber: "#f59e0b"
-  };
-  return colorMap[color] || colorMap.teal;
-}
-
-function getBorderRadiusValue(size: string): string {
-  const radiusMap: Record<string, string> = {
-    small: "0.375rem",
-    medium: "0.75rem",
-    large: "1rem"
-  };
-  return radiusMap[size] || radiusMap.medium;
-}
-
-function getFontFamilyValue(font: string): string {
-  const fontMap: Record<string, string> = {
-    inter: "Inter, sans-serif",
-    roboto: "Roboto, sans-serif",
-    poppins: "Poppins, sans-serif",
-    system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif"
-  };
-  return fontMap[font] || fontMap.inter;
-}
 
 export default Settings;

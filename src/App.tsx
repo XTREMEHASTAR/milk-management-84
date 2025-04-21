@@ -31,6 +31,7 @@ import FinancialYear from "./pages/FinancialYear";
 import UserAccess from "./pages/UserAccess";
 import Communication from "./pages/Communication";
 import Settings from "./pages/Settings";
+import SupplierRates from "./pages/SupplierRates";
 import { DataProvider } from "./contexts/DataContext";
 
 import "./App.css";
@@ -60,6 +61,7 @@ function App() {
             <Route path="master" element={<Master />} />
             <Route path="products" element={<Products />} />
             <Route path="suppliers" element={<Suppliers />} />
+            <Route path="supplier-rates" element={<SupplierRates />} />
             <Route path="supplier-ledger" element={<SupplierLedger />} />
             <Route path="purchase-history" element={<PurchaseHistory />} />
             <Route path="stock-settings" element={<StockSettings />} />

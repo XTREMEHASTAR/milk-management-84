@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { 
   Customer, Product, Order, Payment, 
   Expense, Supplier, SupplierPayment, CustomerProductRate,
-  StockRecord, StockEntry
+  StockRecord, StockEntry, SupplierProductRate, Vehicle, Salesman, UISettings
 } from "@/types";
 import { 
   initialCustomers, initialProducts, initialOrders, 
@@ -20,6 +20,10 @@ interface DataContextType {
   customerProductRates: CustomerProductRate[];
   stockRecords: StockRecord[];
   stockEntries: StockEntry[];
+  supplierProductRates: SupplierProductRate[];
+  vehicles: Vehicle[];
+  salesmen: Salesman[];
+  uiSettings: UISettings;
   
   addCustomer: (customer: Omit<Customer, "id">) => void;
   updateCustomer: (id: string, customerData: Partial<Customer>) => void;
@@ -56,6 +60,13 @@ interface DataContextType {
   getCustomerProductRates: (customerId: string) => CustomerProductRate[];
   getProductRateForCustomer: (customerId: string, productId: string) => number;
   
+  addSupplierProductRate: (rate: Omit<SupplierProductRate, "id">) => void;
+  updateSupplierProductRate: (id: string, rateData: Partial<SupplierProductRate>) => void;
+  deleteSupplierProductRate: (id: string) => void;
+  getSupplierProductRates: (supplierId: string) => SupplierProductRate[];
+  getProductRateForSupplier: (supplierId: string, productId: string) => number | null;
+  getSupplierRateHistory: (supplierId: string, productId: string) => SupplierProductRate[];
+  
   addStockRecord: (record: Omit<StockRecord, "id">) => void;
   updateStockRecord: (id: string, recordData: Partial<StockRecord>) => void;
   deleteStockRecord: (id: string) => void;
@@ -63,9 +74,27 @@ interface DataContextType {
   addStockEntry: (entry: StockEntry) => void;
   updateStockEntry: (id: string, entryData: Partial<StockEntry>) => void;
   deleteStockEntry: (id: string) => void;
+  
+  addVehicle: (vehicle: Omit<Vehicle, "id">) => void;
+  updateVehicle: (id: string, vehicleData: Partial<Vehicle>) => void;
+  deleteVehicle: (id: string) => void;
+  
+  addSalesman: (salesman: Omit<Salesman, "id">) => void;
+  updateSalesman: (id: string, salesmanData: Partial<Salesman>) => void;
+  deleteSalesman: (id: string) => void;
+  
+  updateUISettings: (settings: Partial<UISettings>) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
+
+const defaultUISettings: UISettings = {
+  theme: "light",
+  accentColor: "teal",
+  sidebarStyle: "default",
+  sidebarColor: "default",
+  tableStyle: "default"
+};
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>(() => {
@@ -117,6 +146,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem("stockEntries");
     return saved ? JSON.parse(saved) : [];
   });
+  
+  const [supplierProductRates, setSupplierProductRates] = useState<SupplierProductRate[]>(() => {
+    const saved = localStorage.getItem("supplierProductRates");
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
+    const saved = localStorage.getItem("vehicles");
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [salesmen, setSalesmen] = useState<Salesman[]>(() => {
+    const saved = localStorage.getItem("salesmen");
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [uiSettings, setUISettings] = useState<UISettings>(() => {
+    const saved = localStorage.getItem("uiSettings");
+    return saved ? JSON.parse(saved) : defaultUISettings;
+  });
 
   useEffect(() => {
     localStorage.setItem("customers", JSON.stringify(customers));
@@ -157,6 +206,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("stockEntries", JSON.stringify(stockEntries));
   }, [stockEntries]);
+  
+  useEffect(() => {
+    localStorage.setItem("supplierProductRates", JSON.stringify(supplierProductRates));
+  }, [supplierProductRates]);
+  
+  useEffect(() => {
+    localStorage.setItem("vehicles", JSON.stringify(vehicles));
+  }, [vehicles]);
+  
+  useEffect(() => {
+    localStorage.setItem("salesmen", JSON.stringify(salesmen));
+  }, [salesmen]);
+  
+  useEffect(() => {
+    localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
+  }, [uiSettings]);
 
   const addCustomer = (customer: Omit<Customer, "id">) => {
     const newCustomer = {
@@ -407,6 +472,56 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return product ? product.price : 0;
   };
 
+  const addSupplierProductRate = (rate: Omit<SupplierProductRate, "id">) => {
+    const newRate = {
+      ...rate,
+      id: `spr${Date.now()}`
+    };
+    setSupplierProductRates([...supplierProductRates, newRate]);
+  };
+
+  const updateSupplierProductRate = (id: string, rateData: Partial<SupplierProductRate>) => {
+    setSupplierProductRates(
+      supplierProductRates.map((rate) =>
+        rate.id === id ? { ...rate, ...rateData } : rate
+      )
+    );
+  };
+
+  const deleteSupplierProductRate = (id: string) => {
+    setSupplierProductRates(supplierProductRates.filter((rate) => rate.id !== id));
+  };
+  
+  const getSupplierProductRates = (supplierId: string) => {
+    return supplierProductRates.filter(rate => 
+      rate.supplierId === supplierId && rate.isActive
+    );
+  };
+  
+  const getProductRateForSupplier = (supplierId: string, productId: string) => {
+    const supplierRates = supplierProductRates
+      .filter(rate => 
+        rate.supplierId === supplierId && 
+        rate.productId === productId && 
+        rate.isActive
+      )
+      .sort((a, b) => 
+        new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime()
+      );
+    
+    if (supplierRates.length > 0) {
+      return supplierRates[0].rate;
+    }
+    
+    return null;
+  };
+  
+  const getSupplierRateHistory = (supplierId: string, productId: string) => {
+    return supplierProductRates
+      .filter(rate => rate.supplierId === supplierId && rate.productId === productId)
+      .sort((a, b) => new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime());
+  };
+
   const addStockRecord = (record: Omit<StockRecord, "id">) => {
     const newRecord = {
       ...record,
@@ -479,6 +594,53 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setStockEntries(stockEntries.filter((entry) => entry.id !== id));
   };
 
+  const addVehicle = (vehicle: Omit<Vehicle, "id">) => {
+    const newVehicle = {
+      ...vehicle,
+      id: `v${Date.now()}`
+    };
+    setVehicles([...vehicles, newVehicle]);
+  };
+  
+  const updateVehicle = (id: string, vehicleData: Partial<Vehicle>) => {
+    setVehicles(
+      vehicles.map((vehicle) =>
+        vehicle.id === id ? { ...vehicle, ...vehicleData } : vehicle
+      )
+    );
+  };
+  
+  const deleteVehicle = (id: string) => {
+    setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
+  };
+  
+  const addSalesman = (salesman: Omit<Salesman, "id">) => {
+    const newSalesman = {
+      ...salesman,
+      id: `sm${Date.now()}`
+    };
+    setSalesmen([...salesmen, newSalesman]);
+  };
+  
+  const updateSalesman = (id: string, salesmanData: Partial<Salesman>) => {
+    setSalesmen(
+      salesmen.map((salesman) =>
+        salesman.id === id ? { ...salesman, ...salesmanData } : salesman
+      )
+    );
+  };
+  
+  const deleteSalesman = (id: string) => {
+    setSalesmen(salesmen.filter((salesman) => salesman.id !== id));
+  };
+  
+  const updateUISettings = (settings: Partial<UISettings>) => {
+    setUISettings({
+      ...uiSettings,
+      ...settings
+    });
+  };
+
   const value = {
     customers,
     products,
@@ -490,6 +652,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     customerProductRates,
     stockRecords,
     stockEntries,
+    supplierProductRates,
+    vehicles,
+    salesmen,
+    uiSettings,
     
     addCustomer,
     updateCustomer,
@@ -526,13 +692,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
     getCustomerProductRates,
     getProductRateForCustomer,
     
+    addSupplierProductRate,
+    updateSupplierProductRate,
+    deleteSupplierProductRate,
+    getSupplierProductRates,
+    getProductRateForSupplier,
+    getSupplierRateHistory,
+    
     addStockRecord,
     updateStockRecord,
     deleteStockRecord,
     
     addStockEntry,
     updateStockEntry,
-    deleteStockEntry
+    deleteStockEntry,
+    
+    addVehicle,
+    updateVehicle,
+    deleteVehicle,
+    
+    addSalesman,
+    updateSalesman,
+    deleteSalesman,
+    
+    updateUISettings
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
