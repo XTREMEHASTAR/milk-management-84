@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,7 @@ import {
   CreditCard,
   BarChart3,
   FileText,
-  TruckIcon,
+  Truck,
   DollarSign,
   Tag,
   Warehouse,
@@ -18,7 +19,6 @@ import {
   Database,
   Settings,
   UserRound,
-  Truck,
   Receipt,
   Menu,
 } from "lucide-react";
@@ -45,6 +45,28 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const isMobile = useMobile();
   const [open, setOpen] = useState(true);
+  
+  // This would come from your theme context or settings in a real app
+  const sidebarStyle = "gradient"; // Options: gradient, dark, navy, teal, custom
+  const sidebarColor = "#3B365E"; // For custom color
+  const accentColor = "#1cd7b6";
+
+  const getSidebarBgClass = () => {
+    switch(sidebarStyle) {
+      case "gradient":
+        return "bg-gradient-to-b from-indigo-900 to-purple-900";
+      case "dark":
+        return "bg-[#1A1F2C]";
+      case "navy":
+        return "bg-[#1e2a4a]";
+      case "teal":
+        return "bg-[#0d3a3a]";
+      case "custom":
+        return `bg-[${sidebarColor}]`;
+      default:
+        return "bg-gradient-to-b from-indigo-900 to-purple-900";
+    }
+  };
 
   const navGroups: NavGroup[] = [
     {
@@ -163,6 +185,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       ]
     },
     {
+      title: "Logistics & Team",
+      items: [
+        {
+          title: "Vehicle List",
+          href: "/vehicle-list",
+          icon: Truck,
+        },
+        {
+          title: "Salesman List",
+          href: "/salesman-list",
+          icon: Users,
+        },
+      ]
+    },
+    {
       title: "Finance",
       items: [
         {
@@ -214,7 +251,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
       <div
         className={cn(
-          "fixed z-50 flex h-full flex-col border-r border-purple-800/50 bg-gradient-to-b from-indigo-900 to-purple-900 p-4 transition-all duration-300 md:relative md:z-0",
+          `fixed z-50 flex h-full flex-col border-r border-purple-800/50 ${getSidebarBgClass()} p-4 transition-all duration-300 md:relative md:z-0`,
           isMobile
             ? isOpen
               ? "translate-x-0"
@@ -264,10 +301,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           ))}
         </nav>
         <div className="pt-4 border-t border-purple-800/30">
-          <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-purple-800/50">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
+          <Link to="/settings">
+            <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-purple-800/50">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
+          </Link>
         </div>
       </div>
     </>

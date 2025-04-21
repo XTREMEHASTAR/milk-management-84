@@ -261,7 +261,8 @@ const TrackSheet = () => {
       theme: 'grid'
     });
     
-    const pageCount = doc.internal && doc.internal.getNumberOfPages ? doc.internal.getNumberOfPages() : 1;
+    const pageCount = doc.internal.pages.length - 1;
+    
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);

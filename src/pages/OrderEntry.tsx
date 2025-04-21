@@ -334,7 +334,7 @@ const OrderEntry = () => {
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
             <div className="flex items-center gap-2">
-              <DatePicker date={orderDate} setDate={setOrderDate} inputClass="bg-[#15181d] text-white rounded-lg border-none px-4 py-2 font-medium text-lg" />
+              <DatePicker date={orderDate} setDate={setOrderDate} />
             </div>
             <div className="flex gap-2">
               <Button onClick={() => setIsAddingCustomer(true)} variant="secondary" className="rounded-full px-4 py-2 font-medium"><UserPlus className="mr-2" /> Add Customer</Button>
