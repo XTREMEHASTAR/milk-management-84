@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
 import {
   Card,
@@ -25,15 +25,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingBag, Plus, FileDown, Trash2, Search, Calendar, Edit, PackageIcon } from "lucide-react";
+import { ShoppingBag, Plus, FileDown, Trash2, Search, Calendar, Edit, PackageIcon, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { StockEntry, StockEntryItem } from "@/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 export default function PurchaseHistory() {
   const { stockEntries, suppliers, products, addStockEntry } = useData();
@@ -41,21 +49,43 @@ export default function PurchaseHistory() {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isAddingEntry, setIsAddingEntry] = useState(false);
+  const [viewMode, setViewMode] = useState<"all" | "recent" | "unpaid">("all");
   
   // New entry form state
   const [entryDate, setEntryDate] = useState<Date>(new Date());
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [notes, setNotes] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<"paid" | "partial" | "unpaid">("unpaid");
+  const [paymentDueDate, setPaymentDueDate] = useState<Date | undefined>(undefined);
   const [entryItems, setEntryItems] = useState<{ productId: string; quantity: string; rate: string }[]>([
     { productId: "", quantity: "", rate: "" }
   ]);
 
+  // Get recent entries for the dashboard
+  const recentEntries = [...stockEntries]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
   const filteredEntries = stockEntries.filter(entry => {
+    // Filter by view mode
+    if (viewMode === "recent") {
+      const entryDate = new Date(entry.date);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      if (entryDate < thirtyDaysAgo) return false;
+    }
+    
+    if (viewMode === "unpaid" && entry.paymentStatus !== "unpaid") {
+      return false;
+    }
+    
     // Apply text search
     const supplier = suppliers.find(s => s.id === entry.supplierId);
     const matchesText = !searchQuery || 
       (supplier && supplier.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (entry.invoiceNumber && entry.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()));
+      (entry.invoiceNumber && entry.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (entry.notes && entry.notes.toLowerCase().includes(searchQuery.toLowerCase()));
     
     if (!matchesText) return false;
     
@@ -72,14 +102,28 @@ export default function PurchaseHistory() {
     return true;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  const getPaymentStatusBadge = (status?: string) => {
+    switch(status) {
+      case "paid":
+        return <Badge className="bg-green-500 hover:bg-green-600">Paid</Badge>;
+      case "partial":
+        return <Badge className="bg-yellow-500 hover:bg-yellow-600">Partial</Badge>;
+      case "unpaid":
+        return <Badge className="bg-red-500 hover:bg-red-600">Unpaid</Badge>;
+      default:
+        return <Badge className="bg-gray-500 hover:bg-gray-600">Unknown</Badge>;
+    }
+  };
+
   const clearFilters = () => {
     setSearchQuery("");
     setStartDate(undefined);
     setEndDate(undefined);
+    setViewMode("all");
   };
 
   const exportToCSV = () => {
-    let csvContent = "Date,Supplier,Invoice,Products,Quantity,Rate,Amount,Total\n";
+    let csvContent = "Date,Supplier,Invoice,Notes,Payment Status,Products,Quantity,Rate,Amount,Total\n";
     
     filteredEntries.forEach(entry => {
       const supplier = suppliers.find(s => s.id === entry.supplierId);
@@ -90,8 +134,8 @@ export default function PurchaseHistory() {
         const amount = item.quantity * item.rate;
         
         csvContent += isFirstRow
-          ? `"${entry.date}","${supplier?.name || "Unknown"}","${entry.invoiceNumber || ""}","${product?.name || "Unknown"}","${item.quantity}","${item.rate}","${amount}","${entry.totalAmount}"\n`
-          : `,,,"${product?.name || "Unknown"}","${item.quantity}","${item.rate}","${amount}",\n`;
+          ? `"${entry.date}","${supplier?.name || "Unknown"}","${entry.invoiceNumber || ""}","${entry.notes || ""}","${entry.paymentStatus || ""}","${product?.name || "Unknown"}","${item.quantity}","${item.rate}","${amount}","${entry.totalAmount}"\n`
+          : `,,,,,"${product?.name || "Unknown"}","${item.quantity}","${item.rate}","${amount}",\n`;
         
         isFirstRow = false;
       });
@@ -128,6 +172,18 @@ export default function PurchaseHistory() {
       const rate = parseFloat(item.rate) || 0;
       return total + (quantity * rate);
     }, 0);
+  };
+
+  // Auto-fill rate when product is selected
+  const autoFillRate = (index: number, productId: string) => {
+    if (!productId) return;
+    
+    const product = products.find(p => p.id === productId);
+    if (product && product.price) {
+      const newItems = [...entryItems];
+      newItems[index].rate = product.price.toString();
+      setEntryItems(newItems);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -167,7 +223,10 @@ export default function PurchaseHistory() {
       supplierId: selectedSupplierId,
       items: stockEntryItems,
       totalAmount,
-      invoiceNumber: invoiceNumber || undefined
+      invoiceNumber: invoiceNumber || undefined,
+      notes: notes || undefined,
+      paymentStatus,
+      paymentDueDate: paymentDueDate ? format(paymentDueDate, "yyyy-MM-dd") : undefined
     };
     
     addStockEntry(newEntry);
@@ -178,12 +237,15 @@ export default function PurchaseHistory() {
     setEntryDate(new Date());
     setSelectedSupplierId("");
     setInvoiceNumber("");
+    setNotes("");
+    setPaymentStatus("unpaid");
+    setPaymentDueDate(undefined);
     setEntryItems([{ productId: "", quantity: "", rate: "" }]);
   };
 
   return (
     <div className="space-y-6 bg-[#181A20] min-h-screen px-4 py-6 rounded-xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Purchase History</h1>
           <p className="text-gray-400">Track and manage supplier purchase records</p>
@@ -247,6 +309,40 @@ export default function PurchaseHistory() {
                     </div>
                   </div>
                   
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="paymentStatus" className="text-white">Payment Status</Label>
+                      <Select value={paymentStatus} onValueChange={(val: "paid" | "partial" | "unpaid") => setPaymentStatus(val)}>
+                        <SelectTrigger id="paymentStatus" className="mt-1 bg-[#181A20] border-[#34343A] text-white w-full">
+                          <SelectValue placeholder="Payment status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#23252b] text-white border-[#34343A]">
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="partial">Partially Paid</SelectItem>
+                          <SelectItem value="unpaid">Unpaid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="paymentDueDate" className="text-white">Payment Due Date (Optional)</Label>
+                      <div className="mt-1">
+                        <DatePicker date={paymentDueDate} setDate={setPaymentDueDate} className="w-full" />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="notes" className="text-white">Notes (Optional)</Label>
+                      <Input
+                        id="notes"
+                        className="mt-1 bg-[#181A20] border-[#34343A] text-white"
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
+                        placeholder="Add any additional details..."
+                      />
+                    </div>
+                  </div>
+                  
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label className="text-white">Purchase Items</Label>
@@ -265,7 +361,13 @@ export default function PurchaseHistory() {
                       {entryItems.map((item, index) => (
                         <div key={index} className="flex items-center gap-2 p-3 bg-[#181A20] rounded-lg">
                           <div className="flex-1">
-                            <Select value={item.productId} onValueChange={value => handleItemChange(index, "productId", value)}>
+                            <Select 
+                              value={item.productId} 
+                              onValueChange={value => {
+                                handleItemChange(index, "productId", value);
+                                autoFillRate(index, value);
+                              }}
+                            >
                               <SelectTrigger className="bg-[#181A20] border-[#34343A] text-white">
                                 <SelectValue placeholder="Select product" />
                               </SelectTrigger>
@@ -303,7 +405,7 @@ export default function PurchaseHistory() {
                             />
                           </div>
                           
-                          <div className="w-28 text-right px-2">
+                          <div className="w-28 text-right px-2 text-[#1cd7b6]">
                             ₹{((parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0)).toFixed(2)}
                           </div>
                           
@@ -348,141 +450,6 @@ export default function PurchaseHistory() {
           </Dialog>
         </div>
       </div>
-      
-      <Card className="bg-[#23252b] border-0 shadow-lg rounded-xl overflow-hidden">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle className="text-white">Purchase Records</CardTitle>
-              <CardDescription className="text-gray-400">
-                View all purchase records and transactions
-              </CardDescription>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search by supplier or invoice..."
-                  className="pl-8 bg-[#181A20] border-[#34343A] text-white"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <div>
-                  <DatePicker 
-                    date={startDate} 
-                    setDate={setStartDate} 
-                    placeholder="Start date"
-                    className="bg-[#181A20] border-[#34343A] text-white" 
-                  />
-                </div>
-                
-                <div>
-                  <DatePicker 
-                    date={endDate} 
-                    setDate={setEndDate} 
-                    placeholder="End date"
-                    className="bg-[#181A20] border-[#34343A] text-white" 
-                  />
-                </div>
-                
-                {(searchQuery || startDate || endDate) && (
-                  <Button 
-                    variant="ghost" 
-                    onClick={clearFilters}
-                    className="text-gray-400 hover:text-white hover:bg-[#34343A]"
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          {filteredEntries.length === 0 ? (
-            <div className="text-center py-12">
-              <ShoppingBag className="mx-auto h-12 w-12 text-gray-500 mb-4" />
-              <h3 className="text-lg font-medium text-white mb-1">No purchase records found</h3>
-              <p className="text-gray-400 mb-4">
-                {searchQuery || startDate || endDate
-                  ? "Try changing your search filters"
-                  : "Start by recording your first purchase"}
-              </p>
-              
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="bg-[#1cd7b6] hover:bg-[#19c0a3] text-white">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Record First Purchase
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  {/* Same dialog content as above */}
-                </DialogContent>
-              </Dialog>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-[#1A1F2C]">
-                  <TableRow className="border-b border-[#34343A]">
-                    <TableHead className="text-white w-[100px]">Date</TableHead>
-                    <TableHead className="text-white">Supplier</TableHead>
-                    <TableHead className="text-white">Invoice #</TableHead>
-                    <TableHead className="text-white">Products</TableHead>
-                    <TableHead className="text-white text-right">Total Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEntries.map(entry => {
-                    const supplier = suppliers.find(s => s.id === entry.supplierId);
-                    const totalProducts = entry.items.length;
-                    const productNames = entry.items.map(item => {
-                      const product = products.find(p => p.id === item.productId);
-                      return product ? product.name : "Unknown Product";
-                    });
-                    
-                    return (
-                      <TableRow key={entry.id} className="border-b border-[#34343A] hover:bg-[#34343A]/50">
-                        <TableCell className="font-medium text-white">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5 text-[#1cd7b6]" />
-                            {entry.date}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {supplier?.name || "Unknown Supplier"}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {entry.invoiceNumber || "-"}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          <span className="inline-flex items-center">
-                            <span className="text-[#1cd7b6] font-medium mr-1">{totalProducts}</span> 
-                            {totalProducts > 1 ? "items" : "item"}
-                          </span>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {productNames.slice(0, 2).join(", ")}
-                            {totalProducts > 2 && `... +${totalProducts - 2} more`}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-semibold text-[#1cd7b6]">
-                          ₹{entry.totalAmount.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-[#1A1F2C] to-[#23252b] border-0 shadow-lg rounded-xl overflow-hidden">
@@ -540,30 +507,22 @@ export default function PurchaseHistory() {
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-gray-400 mb-1">Top Supplier</p>
-                <h3 className="text-xl font-bold text-white">
-                  {(() => {
-                    const supplierTotals: Record<string, number> = {};
-                    stockEntries.forEach(entry => {
-                      if (!supplierTotals[entry.supplierId]) {
-                        supplierTotals[entry.supplierId] = 0;
-                      }
-                      supplierTotals[entry.supplierId] += entry.totalAmount;
-                    });
-                    
-                    const topSupplierId = Object.entries(supplierTotals)
-                      .sort((a, b) => b[1] - a[1])[0]?.[0];
-                    
-                    return suppliers.find(s => s.id === topSupplierId)?.name || "None";
-                  })()}
+                <p className="text-gray-400 mb-1">Unpaid Amount</p>
+                <h3 className="text-3xl font-bold text-white">
+                  ₹{stockEntries
+                    .filter(entry => entry.paymentStatus === "unpaid" || entry.paymentStatus === "partial")
+                    .reduce((sum, entry) => sum + entry.totalAmount, 0)
+                    .toFixed(2)}
                 </h3>
               </div>
               <div className="p-3 bg-[#1cd7b6]/10 rounded-full">
-                <ShoppingBag className="h-6 w-6 text-[#1cd7b6]" />
+                <CreditCard className="h-6 w-6 text-[#1cd7b6]" />
               </div>
             </div>
             <p className="text-gray-400 mt-4 text-sm">
-              Based on purchase value
+              {stockEntries.filter(entry => 
+                entry.paymentStatus === "unpaid" || entry.paymentStatus === "partial"
+              ).length} unpaid invoices
             </p>
           </CardContent>
         </Card>
@@ -593,7 +552,7 @@ export default function PurchaseHistory() {
                 </h3>
               </div>
               <div className="p-3 bg-[#1cd7b6]/10 rounded-full">
-                <ShoppingBag className="h-6 w-6 text-[#1cd7b6]" />
+                <PackageIcon className="h-6 w-6 text-[#1cd7b6]" />
               </div>
             </div>
             <p className="text-gray-400 mt-4 text-sm">
@@ -602,6 +561,164 @@ export default function PurchaseHistory() {
           </CardContent>
         </Card>
       </div>
+      
+      <Card className="bg-[#23252b] border-0 shadow-lg rounded-xl overflow-hidden">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <CardTitle className="text-white">Purchase Records</CardTitle>
+              <CardDescription className="text-gray-400">
+                View all purchase records and transactions
+              </CardDescription>
+            </div>
+            
+            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+              <Tabs defaultValue="all" className="w-full md:w-auto" value={viewMode} onValueChange={(value: string) => setViewMode(value as "all" | "recent" | "unpaid")}>
+                <TabsList className="bg-[#181A20]">
+                  <TabsTrigger value="all" className="data-[state=active]:bg-[#1cd7b6] data-[state=active]:text-white">
+                    All Records
+                  </TabsTrigger>
+                  <TabsTrigger value="recent" className="data-[state=active]:bg-[#1cd7b6] data-[state=active]:text-white">
+                    Recent (30 Days)
+                  </TabsTrigger>
+                  <TabsTrigger value="unpaid" className="data-[state=active]:bg-[#1cd7b6] data-[state=active]:text-white">
+                    Unpaid
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by supplier or invoice..."
+                  className="pl-8 bg-[#181A20] border-[#34343A] text-white"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <div>
+                  <DatePicker 
+                    date={startDate} 
+                    setDate={setStartDate} 
+                    placeholder="Start date"
+                    className="bg-[#181A20] border-[#34343A] text-white" 
+                  />
+                </div>
+                
+                <div>
+                  <DatePicker 
+                    date={endDate} 
+                    setDate={setEndDate} 
+                    placeholder="End date"
+                    className="bg-[#181A20] border-[#34343A] text-white" 
+                  />
+                </div>
+                
+                {(searchQuery || startDate || endDate || viewMode !== "all") && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={clearFilters}
+                    className="text-gray-400 hover:text-white hover:bg-[#34343A]"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {filteredEntries.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingBag className="mx-auto h-12 w-12 text-gray-500 mb-4" />
+              <h3 className="text-lg font-medium text-white mb-1">No purchase records found</h3>
+              <p className="text-gray-400 mb-4">
+                {searchQuery || startDate || endDate || viewMode !== "all"
+                  ? "Try changing your search filters"
+                  : "Start by recording your first purchase"}
+              </p>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="bg-[#1cd7b6] hover:bg-[#19c0a3] text-white">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Record First Purchase
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  {/* Same dialog content as above */}
+                </DialogContent>
+              </Dialog>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-[#1A1F2C]">
+                  <TableRow className="border-b border-[#34343A]">
+                    <TableHead className="text-white w-[100px]">Date</TableHead>
+                    <TableHead className="text-white">Supplier</TableHead>
+                    <TableHead className="text-white">Invoice #</TableHead>
+                    <TableHead className="text-white">Products</TableHead>
+                    <TableHead className="text-white">Status</TableHead>
+                    <TableHead className="text-white text-right">Total Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEntries.map(entry => {
+                    const supplier = suppliers.find(s => s.id === entry.supplierId);
+                    const totalProducts = entry.items.length;
+                    const productNames = entry.items.map(item => {
+                      const product = products.find(p => p.id === item.productId);
+                      return product ? product.name : "Unknown Product";
+                    });
+                    
+                    return (
+                      <TableRow key={entry.id} className="border-b border-[#34343A] hover:bg-[#34343A]/50">
+                        <TableCell className="font-medium text-white">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5 text-[#1cd7b6]" />
+                            {entry.date}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {supplier?.name || "Unknown Supplier"}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {entry.invoiceNumber || "-"}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          <span className="inline-flex items-center">
+                            <span className="text-[#1cd7b6] font-medium mr-1">{totalProducts}</span> 
+                            {totalProducts > 1 ? "items" : "item"}
+                          </span>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {productNames.slice(0, 2).join(", ")}
+                            {totalProducts > 2 && `... +${totalProducts - 2} more`}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getPaymentStatusBadge(entry.paymentStatus)}
+                          {entry.paymentDueDate && entry.paymentStatus !== "paid" && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              Due: {entry.paymentDueDate}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-[#1cd7b6]">
+                          ₹{entry.totalAmount.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

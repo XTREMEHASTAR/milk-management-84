@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -115,6 +114,9 @@ export interface StockEntry {
   totalAmount: number;
   invoiceNumber?: string;
   invoiceImageUrl?: string;
+  notes?: string;
+  paymentStatus?: "paid" | "partial" | "unpaid";
+  paymentDueDate?: string;
 }
 
 export interface StockEntryItem {
