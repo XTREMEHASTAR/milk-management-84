@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingBag, Plus, FileDown, Trash2, Search, Calendar, Edit } from "lucide-react";
+import { ShoppingBag, Plus, FileDown, Trash2, Search, Calendar, Edit, PackageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { StockEntry, StockEntryItem } from "@/types";
@@ -593,7 +593,7 @@ export default function PurchaseHistory() {
                 </h3>
               </div>
               <div className="p-3 bg-[#1cd7b6]/10 rounded-full">
-                <Package className="h-6 w-6 text-[#1cd7b6]" />
+                <ShoppingBag className="h-6 w-6 text-[#1cd7b6]" />
               </div>
             </div>
             <p className="text-gray-400 mt-4 text-sm">

@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { initialData } from "@/data/initialData";
+import { initialData, getProductRateForCustomer, getCustomerProductRates, getSupplierProductRates, getSupplierRateHistory } from "@/data/initialData";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { 
@@ -15,7 +15,10 @@ import {
   Vehicle,
   Salesman,
   UISettings,
-  Area
+  Area,
+  CustomerProductRate,
+  SupplierProductRate,
+  SupplierPayment
 } from "@/types";
 
 interface DataContextType {
@@ -31,6 +34,9 @@ interface DataContextType {
   salesmen: Salesman[];
   areas: Area[];
   uiSettings: UISettings;
+  supplierPayments: SupplierPayment[];
+  customerProductRates: CustomerProductRate[];
+  supplierProductRates: SupplierProductRate[];
   
   // Customer operations
   addCustomer: (customer: Omit<Customer, "id">) => void;
@@ -89,6 +95,28 @@ interface DataContextType {
   
   // UI Settings operations
   updateUISettings: (settings: Partial<UISettings>) => void;
+  
+  // Supplier Payment operations
+  addSupplierPayment: (payment: Omit<SupplierPayment, "id">) => void;
+  updateSupplierPayment: (id: string, payment: Partial<SupplierPayment>) => void;
+  deleteSupplierPayment: (id: string) => void;
+  
+  // Customer Product Rate operations
+  addCustomerProductRate: (rate: Omit<CustomerProductRate, "id">) => void;
+  updateCustomerProductRate: (id: string, rate: Partial<CustomerProductRate>) => void;
+  deleteCustomerProductRate: (id: string) => void;
+  
+  // Supplier Product Rate operations
+  addSupplierProductRate: (rate: Omit<SupplierProductRate, "id">) => void;
+  updateSupplierProductRate: (id: string, rate: Partial<SupplierProductRate>) => void;
+  deleteSupplierProductRate: (id: string) => void;
+  
+  // Helper functions
+  getProductRateForCustomer: (customerId: string, productId: string) => number;
+  getCustomerProductRates: (customerId: string) => CustomerProductRate[];
+  getSupplierProductRates: (supplierId: string) => SupplierProductRate[];
+  getSupplierRateHistory: (supplierId: string, productId: string) => SupplierProductRate[];
+  updateProductMinStock: (productId: string, minStockLevel: number) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -161,6 +189,21 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     };
   });
   
+  const [supplierPayments, setSupplierPayments] = useState<SupplierPayment[]>(() => {
+    const savedPayments = localStorage.getItem("supplierPayments");
+    return savedPayments ? JSON.parse(savedPayments) : initialData.supplierPayments || [];
+  });
+  
+  const [customerProductRates, setCustomerProductRates] = useState<CustomerProductRate[]>(() => {
+    const savedRates = localStorage.getItem("customerProductRates");
+    return savedRates ? JSON.parse(savedRates) : initialData.customerProductRates || [];
+  });
+  
+  const [supplierProductRates, setSupplierProductRates] = useState<SupplierProductRate[]>(() => {
+    const savedRates = localStorage.getItem("supplierProductRates");
+    return savedRates ? JSON.parse(savedRates) : initialData.supplierProductRates || [];
+  });
+
   // Save to localStorage whenever state changes
   useEffect(() => {
     localStorage.setItem("customers", JSON.stringify(customers));
@@ -209,6 +252,18 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
   }, [uiSettings]);
+  
+  useEffect(() => {
+    localStorage.setItem("supplierPayments", JSON.stringify(supplierPayments));
+  }, [supplierPayments]);
+  
+  useEffect(() => {
+    localStorage.setItem("customerProductRates", JSON.stringify(customerProductRates));
+  }, [customerProductRates]);
+  
+  useEffect(() => {
+    localStorage.setItem("supplierProductRates", JSON.stringify(supplierProductRates));
+  }, [supplierProductRates]);
   
   // CRUD operations for Customers
   const addCustomer = (customer: Omit<Customer, "id">) => {
@@ -666,6 +721,121 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setUISettings({ ...uiSettings, ...settings });
   };
 
+  // Supplier Payment operations
+  const addSupplierPayment = (payment: Omit<SupplierPayment, "id">) => {
+    const newPayment = { ...payment, id: uuidv4() };
+    
+    // Update supplier balance 
+    const updatedSuppliers = suppliers.map(supplier => {
+      if (supplier.id === payment.supplierId && supplier.outstandingBalance !== undefined) {
+        return {
+          ...supplier,
+          outstandingBalance: Math.max(0, supplier.outstandingBalance - payment.amount)
+        };
+      }
+      return supplier;
+    });
+    
+    setSuppliers(updatedSuppliers);
+    setSupplierPayments([...supplierPayments, newPayment]);
+  };
+  
+  const updateSupplierPayment = (id: string, updatedFields: Partial<SupplierPayment>) => {
+    setSupplierPayments(
+      supplierPayments.map((payment) =>
+        payment.id === id ? { ...payment, ...updatedFields } : payment
+      )
+    );
+  };
+  
+  const deleteSupplierPayment = (id: string) => {
+    const paymentToDelete = supplierPayments.find(payment => payment.id === id);
+    
+    if (paymentToDelete) {
+      // Adjust supplier balance
+      const updatedSuppliers = suppliers.map(supplier => {
+        if (supplier.id === paymentToDelete.supplierId && supplier.outstandingBalance !== undefined) {
+          return {
+            ...supplier,
+            outstandingBalance: supplier.outstandingBalance + paymentToDelete.amount
+          };
+        }
+        return supplier;
+      });
+      
+      setSuppliers(updatedSuppliers);
+    }
+    
+    setSupplierPayments(supplierPayments.filter((payment) => payment.id !== id));
+  };
+  
+  // Customer Product Rate operations
+  const addCustomerProductRate = (rate: Omit<CustomerProductRate, "id">) => {
+    const newRate = { ...rate, id: uuidv4() };
+    setCustomerProductRates([...customerProductRates, newRate]);
+    toast.success("Customer product rate added successfully");
+  };
+  
+  const updateCustomerProductRate = (id: string, updatedFields: Partial<CustomerProductRate>) => {
+    setCustomerProductRates(
+      customerProductRates.map((rate) =>
+        rate.id === id ? { ...rate, ...updatedFields } : rate
+      )
+    );
+    toast.success("Customer product rate updated");
+  };
+  
+  const deleteCustomerProductRate = (id: string) => {
+    setCustomerProductRates(customerProductRates.filter((rate) => rate.id !== id));
+    toast.success("Customer product rate deleted");
+  };
+  
+  // Supplier Product Rate operations
+  const addSupplierProductRate = (rate: Omit<SupplierProductRate, "id">) => {
+    const newRate = { ...rate, id: uuidv4() };
+    setSupplierProductRates([...supplierProductRates, newRate]);
+    toast.success("Supplier product rate added successfully");
+  };
+  
+  const updateSupplierProductRate = (id: string, updatedFields: Partial<SupplierProductRate>) => {
+    setSupplierProductRates(
+      supplierProductRates.map((rate) =>
+        rate.id === id ? { ...rate, ...updatedFields } : rate
+      )
+    );
+    toast.success("Supplier product rate updated");
+  };
+  
+  const deleteSupplierProductRate = (id: string) => {
+    setSupplierProductRates(supplierProductRates.filter((rate) => rate.id !== id));
+    toast.success("Supplier product rate deleted");
+  };
+  
+  // Product min stock update
+  const updateProductMinStock = (productId: string, minStockLevel: number) => {
+    // Update the product
+    const updatedProducts = products.map(product => 
+      product.id === productId ? { ...product, minStockLevel } : product
+    );
+    
+    setProducts(updatedProducts);
+    
+    // Update the latest stock record for this product
+    const latestStockRecord = [...stockRecords]
+      .filter(record => record.productId === productId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    
+    if (latestStockRecord) {
+      const updatedStockRecords = stockRecords.map(record => 
+        record.id === latestStockRecord.id ? { ...record, minStockLevel } : record
+      );
+      
+      setStockRecords(updatedStockRecords);
+    }
+    
+    toast.success("Minimum stock level updated");
+  };
+
   // Expose all data and operations through context
   const value = {
     customers,
@@ -680,6 +850,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     salesmen,
     areas,
     uiSettings,
+    supplierPayments,
+    customerProductRates,
+    supplierProductRates,
     
     addCustomer,
     updateCustomer,
@@ -725,7 +898,25 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     updateArea,
     deleteArea,
     
-    updateUISettings
+    updateUISettings,
+    
+    addSupplierPayment,
+    updateSupplierPayment,
+    deleteSupplierPayment,
+    
+    addCustomerProductRate,
+    updateCustomerProductRate,
+    deleteCustomerProductRate,
+    
+    addSupplierProductRate,
+    updateSupplierProductRate,
+    deleteSupplierProductRate,
+    
+    getProductRateForCustomer,
+    getCustomerProductRates,
+    getSupplierProductRates,
+    getSupplierRateHistory,
+    updateProductMinStock
   };
   
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -42,14 +41,13 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-type SidebarStyleType = "gradient" | "dark" | "navy" | "teal" | "custom";
+type SidebarStyleType = "default" | "gradient" | "dark" | "navy" | "teal" | "custom";
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const isMobile = useMobile();
   const [open, setOpen] = useState(true);
   
-  // This would come from your theme context or settings in a real app
   const sidebarStyle: SidebarStyleType = "gradient"; // Options: gradient, dark, navy, teal, custom
   const sidebarColor = "#3B365E"; // For custom color
   const accentColor = "#1cd7b6";
