@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   name: string;
@@ -7,9 +8,6 @@ export interface Customer {
   outstandingBalance: number;
   lastPaymentDate?: string;
   lastPaymentAmount?: number;
-  area?: string;
-  vehicleId?: string;
-  salesmanId?: string;
 }
 
 export interface Product {
@@ -114,9 +112,6 @@ export interface StockEntry {
   totalAmount: number;
   invoiceNumber?: string;
   invoiceImageUrl?: string;
-  notes?: string;
-  paymentStatus?: "paid" | "partial" | "unpaid";
-  paymentDueDate?: string;
 }
 
 export interface StockEntryItem {
@@ -155,11 +150,6 @@ export interface Vehicle {
   regNumber: string;
   type: string;
   driver?: string;
-  capacity?: number;
-  capacityUnit?: string;
-  driverContact?: string;
-  status: "active" | "maintenance";
-  notes?: string;
   isActive: boolean;
 }
 
@@ -168,27 +158,13 @@ export interface Salesman {
   name: string;
   phone: string;
   address?: string;
-  area?: string;
-  route?: string;
-  joinDate?: string;
-  commission?: number;
-  salaryType?: "commission" | "fixed";
-  salary?: number;
-  status?: "active" | "inactive";
-  isActive: boolean;
-}
-
-export interface Area {
-  id: string;
-  name: string;
-  description?: string;
   isActive: boolean;
 }
 
 export interface UISettings {
   theme: "light" | "dark" | "system";
   accentColor: string;
-  sidebarStyle: "default" | "compact" | "expanded" | "gradient" | "dark" | "navy" | "teal" | "custom";
+  sidebarStyle: "default" | "compact" | "expanded" | "gradient";
   sidebarColor: string;
   tableStyle: "default" | "bordered" | "striped";
 }

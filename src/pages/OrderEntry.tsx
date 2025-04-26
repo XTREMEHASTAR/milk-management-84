@@ -32,28 +32,16 @@ import {
   UserPlus, 
   Edit, 
   Trash2, 
-  PackagePlus,
-  FileSpreadsheet,
-  Users,
-  Truck
+  PackagePlus
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Order, OrderItem, Customer, Product, Vehicle, Salesman } from "@/types";
+import { Order, OrderItem, Customer, Product } from "@/types";
 
 interface OrderGridCell {
   customerId: string;
   productId: string;
   quantity: string; // Using string for input, will convert to number when saving
-}
-
-type GroupBy = "none" | "vehicle" | "salesman" | "area";
-
-interface GroupedCustomers {
-  id: string;
-  name: string;
-  customers: Customer[];
 }
 
 const OrderEntry = () => {
@@ -66,18 +54,12 @@ const OrderEntry = () => {
     deleteCustomer,
     addProduct,
     updateProduct,
-    deleteProduct,
-    vehicles,
-    salesmen
+    deleteProduct
   } = useData();
   
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [orderGrid, setOrderGrid] = useState<OrderGridCell[]>([]);
   const [customerTotals, setCustomerTotals] = useState<Record<string, { quantity: number, amount: number }>>({});
-  const [groupBy, setGroupBy] = useState<GroupBy>("none");
-  const [groupedCustomers, setGroupedCustomers] = useState<GroupedCustomers[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>(customers);
   
   // Customer form state
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
@@ -85,9 +67,6 @@ const OrderEntry = () => {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
-  const [customerArea, setCustomerArea] = useState("");
-  const [customerVehicleId, setCustomerVehicleId] = useState("");
-  const [customerSalesmanId, setCustomerSalesmanId] = useState("");
   
   // Product form state
   const [isAddingProduct, setIsAddingProduct] = useState(false);
@@ -102,7 +81,7 @@ const OrderEntry = () => {
   useEffect(() => {
     const initialGrid: OrderGridCell[] = [];
     
-    filteredCustomers.forEach(customer => {
+    customers.forEach(customer => {
       products.forEach(product => {
         initialGrid.push({
           customerId: customer.id,
@@ -113,7 +92,7 @@ const OrderEntry = () => {
     });
     
     setOrderGrid(initialGrid);
-  }, [filteredCustomers, products]);
+  }, [customers, products]);
   
   // Calculate totals when orderGrid changes
   useEffect(() => {
@@ -138,76 +117,6 @@ const OrderEntry = () => {
     
     setCustomerTotals(newCustomerTotals);
   }, [orderGrid, products]);
-
-  // Group customers when groupBy changes
-  useEffect(() => {
-    const groups: GroupedCustomers[] = [];
-    
-    if (groupBy === "none") {
-      setFilteredCustomers(customers);
-      return;
-    }
-    
-    // Get unique areas, vehicles, or salesmen
-    if (groupBy === "area") {
-      const uniqueAreas = Array.from(new Set(customers.map(c => c.area || "Unassigned")));
-      uniqueAreas.forEach(area => {
-        groups.push({
-          id: area,
-          name: area,
-          customers: customers.filter(c => (c.area || "Unassigned") === area)
-        });
-      });
-    } else if (groupBy === "vehicle") {
-      vehicles.forEach(vehicle => {
-        groups.push({
-          id: vehicle.id,
-          name: `${vehicle.name} (${vehicle.regNumber})`,
-          customers: customers.filter(c => c.vehicleId === vehicle.id)
-        });
-      });
-      // Add unassigned customers
-      groups.push({
-        id: "unassigned",
-        name: "Unassigned",
-        customers: customers.filter(c => !c.vehicleId)
-      });
-    } else if (groupBy === "salesman") {
-      salesmen.forEach(salesman => {
-        groups.push({
-          id: salesman.id,
-          name: salesman.name,
-          customers: customers.filter(c => c.salesmanId === salesman.id)
-        });
-      });
-      // Add unassigned customers
-      groups.push({
-        id: "unassigned",
-        name: "Unassigned",
-        customers: customers.filter(c => !c.salesmanId)
-      });
-    }
-    
-    setGroupedCustomers(groups);
-    
-    // If no group is selected, select the first one
-    if (!selectedGroup && groups.length > 0) {
-      setSelectedGroup(groups[0].id);
-      setFilteredCustomers(groups[0].customers);
-    } else if (selectedGroup) {
-      const selectedGroupData = groups.find(g => g.id === selectedGroup);
-      if (selectedGroupData) {
-        setFilteredCustomers(selectedGroupData.customers);
-      } else if (groups.length > 0) {
-        setSelectedGroup(groups[0].id);
-        setFilteredCustomers(groups[0].customers);
-      } else {
-        setFilteredCustomers([]);
-      }
-    } else {
-      setFilteredCustomers([]);
-    }
-  }, [groupBy, customers, vehicles, salesmen, selectedGroup]);
   
   const handleCellChange = (customerId: string, productId: string, value: string) => {
     // Only allow numbers
@@ -248,9 +157,7 @@ const OrderEntry = () => {
     
     const newOrder: Omit<Order, "id"> = {
       date: format(orderDate, "yyyy-MM-dd"),
-      items: orderItems,
-      vehicleId: groupBy === "vehicle" ? selectedGroup !== "unassigned" ? selectedGroup : undefined : undefined,
-      salesmanId: groupBy === "salesman" ? selectedGroup !== "unassigned" ? selectedGroup : undefined : undefined
+      items: orderItems
     };
     
     addOrder(newOrder);
@@ -265,7 +172,7 @@ const OrderEntry = () => {
   const exportToCSV = () => {
     // Generate CSV content
     let csvContent = "Product,";
-    filteredCustomers.forEach(customer => {
+    customers.forEach(customer => {
       csvContent += `${customer.name},`;
     });
     csvContent += "Total Quantity,Total Amount\n";
@@ -274,7 +181,7 @@ const OrderEntry = () => {
       csvContent += `${product.name},`;
       
       let productTotal = 0;
-      filteredCustomers.forEach(customer => {
+      customers.forEach(customer => {
         const cellValue = getCellValue(customer.id, product.id);
         csvContent += `${cellValue || "0"},`;
         productTotal += cellValue ? Number(cellValue) : 0;
@@ -293,21 +200,13 @@ const OrderEntry = () => {
     );
     
     csvContent += `Total,,${grandTotalQuantity},${grandTotalAmount}\n`;
-
-    // Add group information
-    if (groupBy !== "none" && selectedGroup) {
-      const groupInfo = groupedCustomers.find(g => g.id === selectedGroup);
-      if (groupInfo) {
-        csvContent += `\n${groupBy === "vehicle" ? "Vehicle" : groupBy === "salesman" ? "Salesman" : "Area"}: ${groupInfo.name}\n`;
-      }
-    }
     
     // Create a download link
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `milk-order-${format(orderDate, "yyyy-MM-dd")}${groupBy !== "none" ? `-${groupBy}` : ""}.csv`);
+    link.setAttribute("download", `milk-order-${format(orderDate, "yyyy-MM-dd")}.csv`);
     link.click();
   };
 
@@ -322,9 +221,6 @@ const OrderEntry = () => {
       name: customerName.trim(),
       phone: customerPhone.trim(),
       address: customerAddress.trim(),
-      area: customerArea.trim(),
-      vehicleId: customerVehicleId || undefined,
-      salesmanId: customerSalesmanId || undefined,
       outstandingBalance: 0
     };
 
@@ -345,9 +241,6 @@ const OrderEntry = () => {
     setCustomerName(customer.name);
     setCustomerPhone(customer.phone || "");
     setCustomerAddress(customer.address || "");
-    setCustomerArea(customer.area || "");
-    setCustomerVehicleId(customer.vehicleId || "");
-    setCustomerSalesmanId(customer.salesmanId || "");
     setIsAddingCustomer(true);
   };
 
@@ -364,9 +257,6 @@ const OrderEntry = () => {
     setCustomerName("");
     setCustomerPhone("");
     setCustomerAddress("");
-    setCustomerArea("");
-    setCustomerVehicleId("");
-    setCustomerSalesmanId("");
   };
 
   // Product CRUD operations
@@ -428,250 +318,173 @@ const OrderEntry = () => {
     setProductUnit("L");
     setProductDescription("");
   };
-
-  // Get all unique areas for dropdown
-  const allAreas = Array.from(new Set(customers.map(c => c.area).filter(Boolean) as string[]));
   
   return (
-    <div className="space-y-6 bg-[#181A20] min-h-screen px-2 py-6 rounded-2xl">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-white mb-1" style={{letterSpacing: '-1px'}}>Daily Milk<br/>Order Entry</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Order Entry</h1>
+          <p className="text-muted-foreground">
+            Create and manage daily milk orders
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={exportToCSV} variant="default" className="bg-[#1cd7b6] text-white">
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={exportToCSV}>
+            <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button onClick={saveOrder} variant="default" className="bg-[#1cd7b6] text-white">
+          <Button onClick={saveOrder}>
             <Save className="mr-2 h-4 w-4" />
             Save Order
           </Button>
         </div>
       </div>
-
-      <Card className="bg-[#181A20] rounded-2xl shadow-lg border-0 mt-8">
+      
+      <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-            <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
+          <div className="flex items-center justify-between">
+            <CardTitle>Daily Milk Order Entry</CardTitle>
+            <div className="flex items-center gap-2">
               <DatePicker date={orderDate} setDate={setOrderDate} />
-              <div className="flex items-center gap-2">
-                <Label htmlFor="groupby" className="text-white">Group By:</Label>
-                <Select
-                  value={groupBy}
-                  onValueChange={(value: GroupBy) => {
-                    setGroupBy(value);
-                    setSelectedGroup(null);
-                  }}
-                >
-                  <SelectTrigger id="groupby" className="w-[180px] bg-[#23252b] text-white border-0">
-                    <SelectValue placeholder="Select grouping" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#23252b] text-white border-[#34343A]">
-                    <SelectItem value="none">No Grouping</SelectItem>
-                    <SelectItem value="vehicle">By Vehicle</SelectItem>
-                    <SelectItem value="salesman">By Salesman</SelectItem>
-                    <SelectItem value="area">By Area</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               
-              {groupBy !== "none" && (
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="selectedGroup" className="text-white">{
-                    groupBy === "vehicle" ? "Vehicle:" :
-                    groupBy === "salesman" ? "Salesman:" :
-                    "Area:"
-                  }</Label>
-                  <Select
-                    value={selectedGroup || ""}
-                    onValueChange={(value) => setSelectedGroup(value)}
-                  >
-                    <SelectTrigger id="selectedGroup" className="w-[200px] bg-[#23252b] text-white border-0">
-                      <SelectValue placeholder={`Select ${groupBy}`} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#23252b] text-white border-[#34343A]">
-                      {groupedCustomers.map(group => (
-                        <SelectItem key={group.id} value={group.id}>
-                          {group.name} ({group.customers.length})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-            <div className="flex gap-2">
+              {/* Add Customer Dialog */}
               <Dialog open={isAddingCustomer} onOpenChange={setIsAddingCustomer}>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" className="rounded-full px-4 py-2 font-medium">
-                    <UserPlus className="mr-2" /> Add Customer
+                  <Button variant="outline">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Customer
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#23252b] text-white border-0">
+                <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>{editingCustomer ? "Edit Customer" : "Add Customer"}</DialogTitle>
+                    <DialogTitle>
+                      {editingCustomer ? "Edit Customer" : "Add New Customer"}
+                    </DialogTitle>
                     <DialogDescription>
-                      {editingCustomer ? "Update customer details" : "Add a new customer to your list"}
+                      {editingCustomer 
+                        ? "Update customer details below"
+                        : "Add customer details to create a new customer."
+                      }
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="name">Customer Name</Label>
-                      <Input
-                        id="name"
-                        className="bg-[#181A20] border-[#34343A] text-white"
-                        value={customerName}
+                      <Label htmlFor="name">Customer Name *</Label>
+                      <Input 
+                        id="name" 
+                        value={customerName} 
                         onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Enter customer name"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        className="bg-[#181A20] border-[#34343A] text-white"
-                        value={customerPhone}
+                      <Label htmlFor="phone">Contact Number</Label>
+                      <Input 
+                        id="phone" 
+                        value={customerPhone} 
                         onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="Enter contact number"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="address">Address</Label>
-                      <Textarea
-                        id="address"
-                        className="bg-[#181A20] border-[#34343A] text-white"
-                        value={customerAddress}
+                      <Label htmlFor="address">Delivery Area</Label>
+                      <Input 
+                        id="address" 
+                        value={customerAddress} 
                         onChange={(e) => setCustomerAddress(e.target.value)}
+                        placeholder="Enter delivery area"
                       />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="area">Area/Zone</Label>
-                      <Select value={customerArea} onValueChange={setCustomerArea}>
-                        <SelectTrigger id="area" className="bg-[#181A20] border-[#34343A] text-white">
-                          <SelectValue placeholder="Select area or enter new" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#23252b] text-white border-[#34343A]">
-                          <SelectItem value="">None</SelectItem>
-                          {allAreas.map(area => (
-                            <SelectItem key={area} value={area}>{area}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {!allAreas.includes(customerArea) && customerArea && (
-                        <p className="text-xs text-[#1cd7b6]">New area will be created</p>
-                      )}
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="vehicle">Assign Vehicle</Label>
-                      <Select value={customerVehicleId} onValueChange={setCustomerVehicleId}>
-                        <SelectTrigger id="vehicle" className="bg-[#181A20] border-[#34343A] text-white">
-                          <SelectValue placeholder="Select vehicle" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#23252b] text-white border-[#34343A]">
-                          <SelectItem value="">None</SelectItem>
-                          {vehicles.map(vehicle => (
-                            <SelectItem key={vehicle.id} value={vehicle.id}>
-                              {vehicle.name} ({vehicle.regNumber})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="salesman">Assign Salesman</Label>
-                      <Select value={customerSalesmanId} onValueChange={setCustomerSalesmanId}>
-                        <SelectTrigger id="salesman" className="bg-[#181A20] border-[#34343A] text-white">
-                          <SelectValue placeholder="Select salesman" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#23252b] text-white border-[#34343A]">
-                          <SelectItem value="">None</SelectItem>
-                          {salesmen.map(salesman => (
-                            <SelectItem key={salesman.id} value={salesman.id}>
-                              {salesman.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={resetCustomerForm}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddCustomer} className="bg-[#1cd7b6] text-white hover:bg-[#19c0a3]">
+                    <DialogClose asChild>
+                      <Button variant="outline" onClick={resetCustomerForm}>
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button onClick={handleAddCustomer}>
                       {editingCustomer ? "Update Customer" : "Add Customer"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
               
+              {/* Add Product Dialog */}
               <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" className="rounded-full px-4 py-2 font-medium">
-                    <PackagePlus className="mr-2" /> Add Product
+                  <Button variant="outline">
+                    <PackagePlus className="mr-2 h-4 w-4" />
+                    Add Product
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#23252b] text-white border-0">
+                <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>{editingProduct ? "Edit Product" : "Add Product"}</DialogTitle>
+                    <DialogTitle>
+                      {editingProduct ? "Edit Product" : "Add New Product"}
+                    </DialogTitle>
                     <DialogDescription>
-                      {editingProduct ? "Update product details" : "Add a new product to your list"}
+                      {editingProduct 
+                        ? "Update product details below"
+                        : "Add product details to create a new product."
+                      }
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="productName">Product Name</Label>
-                      <Input
-                        id="productName"
-                        className="bg-[#181A20] border-[#34343A] text-white"
-                        value={productName}
+                      <Label htmlFor="productName">Product Name *</Label>
+                      <Input 
+                        id="productName" 
+                        value={productName} 
                         onChange={(e) => setProductName(e.target.value)}
+                        placeholder="Enter product name"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="productPrice">Price (₹)</Label>
-                      <Input
-                        id="productPrice"
-                        className="bg-[#181A20] border-[#34343A] text-white"
-                        type="number"
-                        value={productPrice}
+                      <Label htmlFor="productPrice">Unit Price (₹) *</Label>
+                      <Input 
+                        id="productPrice" 
+                        value={productPrice} 
                         onChange={(e) => setProductPrice(e.target.value)}
+                        placeholder="Enter product price"
+                        type="number"
+                        step="0.01"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="productCategory">Category</Label>
-                        <Input
-                          id="productCategory"
-                          className="bg-[#181A20] border-[#34343A] text-white"
-                          value={productCategory}
-                          onChange={(e) => setProductCategory(e.target.value)}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="productUnit">Unit</Label>
-                        <Input
-                          id="productUnit"
-                          className="bg-[#181A20] border-[#34343A] text-white"
-                          value={productUnit}
-                          onChange={(e) => setProductUnit(e.target.value)}
-                        />
-                      </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="productCategory">Category</Label>
+                      <Input 
+                        id="productCategory" 
+                        value={productCategory} 
+                        onChange={(e) => setProductCategory(e.target.value)}
+                        placeholder="e.g., Amul, Warna, Gokul"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="productUnit">Unit</Label>
+                      <Input 
+                        id="productUnit" 
+                        value={productUnit} 
+                        onChange={(e) => setProductUnit(e.target.value)}
+                        placeholder="e.g., L, ml, kg"
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="productDescription">Description (Optional)</Label>
-                      <Textarea
-                        id="productDescription"
-                        className="bg-[#181A20] border-[#34343A] text-white"
-                        value={productDescription}
+                      <Textarea 
+                        id="productDescription" 
+                        value={productDescription} 
                         onChange={(e) => setProductDescription(e.target.value)}
+                        placeholder="Enter product description"
                       />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={resetProductForm}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddProduct} className="bg-[#1cd7b6] text-white hover:bg-[#19c0a3]">
+                    <DialogClose asChild>
+                      <Button variant="outline" onClick={resetProductForm}>
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button onClick={handleAddProduct}>
                       {editingProduct ? "Update Product" : "Add Product"}
                     </Button>
                   </DialogFooter>
@@ -681,90 +494,104 @@ const OrderEntry = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div>
-            {groupBy !== "none" && selectedGroup && (
-              <div className="mb-6 bg-[#2a2d33] p-4 rounded-xl">
-                <h3 className="text-xl font-bold text-white mb-1">
-                  {groupBy === "vehicle" ? (
-                    <><Truck className="inline-block mr-2" size={20} /> Vehicle:</>
-                  ) : groupBy === "salesman" ? (
-                    <><Users className="inline-block mr-2" size={20} /> Salesman:</>
-                  ) : (
-                    <><UserPlus className="inline-block mr-2" size={20} /> Area:</>
-                  )}
-                  <span className="ml-2 text-[#1cd7b6]">
-                    {groupedCustomers.find(g => g.id === selectedGroup)?.name}
-                  </span>
-                </h3>
-                <p className="text-gray-400">
-                  {filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''} in this group
-                </p>
+          <div className="overflow-x-auto">
+            {customers.length === 0 || products.length === 0 ? (
+              <div className="p-4 text-center">
+                <p className="mb-2">You need to add customers and products first.</p>
+                <div className="flex gap-2 justify-center">
+                  <Button variant="outline" onClick={() => setIsAddingCustomer(true)}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Customers
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsAddingProduct(true)}>
+                    <PackagePlus className="mr-2 h-4 w-4" />
+                    Add Products
+                  </Button>
+                </div>
               </div>
-            )}
-            
-            <div className="mb-10">
-              <h3 className="text-lg font-semibold text-white mb-2">Customers</h3>
-              <div className="flex flex-wrap gap-2">
-                {filteredCustomers.map(customer => (
-                  <div key={customer.id} className="flex items-center px-5 py-2 bg-white text-gray-900 rounded-2xl shadow border border-gray-200 font-semibold text-base">
-                    <span>{customer.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="ml-2 text-destructive hover:bg-red-100 rounded-full"
-                      onClick={() => handleDeleteCustomer(customer.id)}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+            ) : (
+              <div>
+                {/* Customers management section */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-2">Customers</h3>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {customers.map(customer => (
+                      <div key={customer.id} className="flex items-center rounded-md bg-gray-100 px-3 py-2">
+                        <span className="mr-2">{customer.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 rounded-full"
+                          onClick={() => handleEditCustomer(customer)}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 rounded-full text-destructive"
+                          onClick={() => handleDeleteCustomer(customer.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {filteredCustomers.length === 0 && (
-                  <p className="text-gray-400">No customers in this group. Please select a different group or add customers to this group.</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="mb-10">
-              <h3 className="text-lg font-semibold text-white mb-2">Products</h3>
-              <div className="flex flex-wrap gap-2">
-                {products.map(product => (
-                  <div key={product.id} className="flex items-center px-5 py-2 bg-white text-gray-900 rounded-2xl shadow border border-gray-200 font-semibold text-base">
-                    <div>
-                      {product.name}
-                      <div className="text-xs text-gray-500">₹{product.price}/{product.unit}</div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="ml-2 text-destructive hover:bg-red-100 rounded-full"
-                      onClick={() => handleDeleteProduct(product.id)}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+                </div>
+                
+                {/* Products management section */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-2">Products</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+                    {products.map(product => (
+                      <div key={product.id} className="flex items-center rounded-md bg-gray-100 px-3 py-2">
+                        <div className="flex-1">
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-sm text-muted-foreground">₹{product.price}/{product.unit}</div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEditProduct(product)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleDeleteProduct(product.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-            
-            {filteredCustomers.length > 0 && (
-              <div className="overflow-x-auto bg-[#1F2227] rounded-xl shadow border-0 ring-0 px-2 py-3">
-                <Table className="text-white">
+                </div>
+                
+                {/* Order entry table */}
+                <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-white bg-transparent border-b-2 border-[#34343A] font-bold text-lg">Products</TableHead>
-                      {filteredCustomers.map(customer => (
-                        <TableHead key={customer.id} className="text-white text-center bg-transparent border-b-2 border-[#34343A] font-bold text-lg">{customer.name}</TableHead>
+                      <TableHead className="header-cell">Products</TableHead>
+                      {customers.map(customer => (
+                        <TableHead key={customer.id} className="header-cell text-center">
+                          {customer.name}
+                        </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {products.map(product => (
-                      <TableRow key={product.id} className="border-b border-[#23252b]">
-                        <TableCell className="font-medium bg-transparent text-white">{product.name} (₹{product.price}/{product.unit})</TableCell>
-                        {filteredCustomers.map(customer => (
-                          <TableCell key={customer.id} className="p-0 bg-[#181A20]">
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium">
+                          {product.name} (₹{product.price}/{product.unit})
+                        </TableCell>
+                        {customers.map(customer => (
+                          <TableCell key={customer.id} className="table-cell p-0">
                             <Input
-                              className="bg-[#23252b] text-white focus:ring-2 focus:ring-[#1cd7b6] rounded-lg px-3 py-2"
+                              className="cell-input"
                               type="text"
                               value={getCellValue(customer.id, product.id)}
                               onChange={(e) => handleCellChange(customer.id, product.id, e.target.value)}
@@ -774,15 +601,19 @@ const OrderEntry = () => {
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell className="font-semibold bg-transparent">Total Quantity</TableCell>
-                      {filteredCustomers.map(customer => (
-                        <TableCell key={customer.id} className="text-center bg-transparent">{customerTotals[customer.id]?.quantity || 0}</TableCell>
+                      <TableCell className="total-cell font-semibold">Total Quantity</TableCell>
+                      {customers.map(customer => (
+                        <TableCell key={customer.id} className="total-cell text-center">
+                          {customerTotals[customer.id]?.quantity || 0}
+                        </TableCell>
                       ))}
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-semibold bg-transparent">Total Amount (₹)</TableCell>
-                      {filteredCustomers.map(customer => (
-                        <TableCell key={customer.id} className="text-center bg-transparent">{customerTotals[customer.id]?.amount || 0}</TableCell>
+                      <TableCell className="amount-cell font-semibold">Total Amount (₹)</TableCell>
+                      {customers.map(customer => (
+                        <TableCell key={customer.id} className="amount-cell text-center">
+                          {customerTotals[customer.id]?.amount || 0}
+                        </TableCell>
                       ))}
                     </TableRow>
                   </TableBody>

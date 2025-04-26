@@ -12,13 +12,12 @@ import {
 import { cn } from "@/lib/utils";
 
 interface DatePickerProps {
-  date: Date | undefined;
-  setDate: (date: Date | undefined) => void;
+  date: Date;
+  setDate: (date: Date) => void;
   className?: string;
-  placeholder?: string;
 }
 
-export function DatePicker({ date, setDate, className, placeholder }: DatePickerProps) {
+export function DatePicker({ date, setDate, className }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -31,14 +30,14 @@ export function DatePicker({ date, setDate, className, placeholder }: DatePicker
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder || "Pick a date"}</span>}
+          {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={(date) => date && setDate(date)}
           initialFocus
           className="p-3 pointer-events-auto"
         />
