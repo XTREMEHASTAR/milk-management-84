@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,6 +10,19 @@ import { Progress } from "@/components/ui/progress";
 export const DataBackupRestore = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [storageUsage, setStorageUsage] = useState(() => StorageService.getStorageUsage());
+
+  useEffect(() => {
+    // Set up listeners for Electron menu actions if we're in Electron
+    if (window.electron?.isElectron) {
+      window.electron.onMenuExportData(() => {
+        handleExportData();
+      });
+      
+      window.electron.onMenuImportData(() => {
+        handleImportData();
+      });
+    }
+  }, []);
 
   const handleExportData = () => {
     try {

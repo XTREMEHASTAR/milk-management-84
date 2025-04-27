@@ -10,21 +10,52 @@
     "dist/**/*",
     "electron/**/*"
   ],
+  "extraResources": [
+    {
+      "from": "public",
+      "to": "public",
+      "filter": ["*.png", "*.jpg", "*.svg", "*.ico"]
+    }
+  ],
+  "asar": true,
   "mac": {
     "category": "public.app-category.business",
-    "target": ["dmg", "zip"]
+    "target": ["dmg", "zip"],
+    "icon": "public/icon-512x512.png",
+    "darkModeSupport": true
   },
   "win": {
-    "target": ["nsis", "portable"]
+    "target": ["nsis", "portable"],
+    "icon": "public/icon-512x512.png"
   },
   "linux": {
     "target": ["AppImage", "deb"],
-    "category": "Office"
+    "category": "Office",
+    "icon": "public/icon-512x512.png"
   },
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
-    "createStartMenuShortcut": true
+    "createStartMenuShortcut": true,
+    "shortcutName": "Milk Center"
+  },
+  "dmg": {
+    "contents": [
+      {
+        "x": 130,
+        "y": 220
+      },
+      {
+        "x": 410,
+        "y": 220,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ],
+    "window": {
+      "width": 540,
+      "height": 380
+    }
   }
 }

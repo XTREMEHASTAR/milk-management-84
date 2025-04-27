@@ -1,9 +1,9 @@
-
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { DataProvider } from './contexts/DataContext.tsx'
+import { ElectronDetector } from './components/ElectronDetector.tsx'
 
 // Enhanced global error handler with more details
 window.addEventListener('error', (event) => {
@@ -33,6 +33,7 @@ if (rootElement) {
     console.log('Rendering app to DOM');
     root.render(
       <DataProvider>
+        <ElectronDetector />
         <App />
       </DataProvider>
     );
