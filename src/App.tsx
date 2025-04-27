@@ -33,14 +33,51 @@ import Communication from "./pages/Communication";
 import Settings from "./pages/Settings";
 import SupplierRates from "./pages/SupplierRates";
 import { DataProvider } from "./contexts/DataContext";
+import { OfflineIndicator } from "./components/OfflineIndicator";
+import { useEffect } from "react";
 
 import "./App.css";
 
 function App() {
+  // Check for storage compatibility and warn if not available
+  useEffect(() => {
+    const isStorageAvailable = (type: string) => {
+      try {
+        const storage = window[type as keyof Window];
+        const x = '__storage_test__';
+        storage.setItem(x, x);
+        storage.removeItem(x);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+    
+    if (!isStorageAvailable('localStorage')) {
+      alert('Local storage is not available in your browser. This application requires local storage to function properly.');
+    }
+    
+    // Apply saved theme from storage if available
+    const savedTheme = localStorage.getItem('uiSettings');
+    if (savedTheme) {
+      try {
+        const settings = JSON.parse(savedTheme);
+        if (settings.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {
+        console.error('Error parsing theme settings', e);
+      }
+    }
+  }, []);
+
   return (
     <DataProvider>
       <Router>
         <Toaster position="top-right" />
+        <OfflineIndicator />
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Index />} />
