@@ -66,7 +66,7 @@
   }
 }
 
-// Custom global styles
+/* Custom global styles */
 .glass-card {
   @apply bg-background-secondary/80 backdrop-blur-md border border-white/10 rounded-lg shadow-subtle;
 }
