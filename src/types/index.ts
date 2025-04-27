@@ -167,4 +167,7 @@ export interface UISettings {
   sidebarStyle: "default" | "compact" | "expanded" | "gradient";
   sidebarColor: string;
   tableStyle: "default" | "bordered" | "striped";
+  compactMode?: boolean;
+  paymentReminders?: boolean;
+  lowStockAlerts?: boolean;
 }

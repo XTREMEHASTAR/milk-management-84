@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Laptop, Moon, Sun, Database, Settings2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { DataBackupRestore } from "@/components/settings/DataBackupRestore";
+import { StorageService } from "@/services/StorageService";
 
 export default function Settings() {
   const { uiSettings, updateUISettings } = useData();
-  const [theme, setTheme] = useState(uiSettings.theme || "light");
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(uiSettings.theme || "light");
   const [accentColor, setAccentColor] = useState(uiSettings.accentColor || "teal");
   
-  const handleThemeChange = (newTheme: string) => {
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
     setTheme(newTheme);
     updateUISettings({ theme: newTheme });
     // Apply theme to document
