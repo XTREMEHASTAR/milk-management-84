@@ -18,5 +18,12 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "related_applications": [
+    {
+      "platform": "windows",
+      "url": "https://milkcenter.app"
+    }
+  ],
+  "prefer_related_applications": false
 }

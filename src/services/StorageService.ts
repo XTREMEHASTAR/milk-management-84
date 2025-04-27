@@ -79,16 +79,34 @@ export class StorageService {
       }
       
       const dataStr = JSON.stringify(exportData, null, 2);
-      const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
       
-      const exportFileDefaultName = `milk-center-backup-${new Date().toISOString().split('T')[0]}.json`;
-      
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileDefaultName);
-      linkElement.click();
-      
-      console.log('Data exported successfully');
+      // Check if running in Electron
+      if (window.electron?.isElectron) {
+        // Use Electron's native dialog
+        window.electron.exportData(dataStr)
+          .then((result: { success: boolean; filePath?: string }) => {
+            if (result.success) {
+              console.log('Data exported successfully to:', result.filePath);
+            } else {
+              console.log('Data export cancelled');
+            }
+          })
+          .catch((error: Error) => {
+            console.error('Error exporting data', error);
+            alert('Error exporting data. Please try again.');
+          });
+      } else {
+        // Fallback to browser download
+        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+        const exportFileDefaultName = `milk-center-backup-${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        console.log('Data exported successfully via browser download');
+      }
     } catch (error) {
       console.error('Error exporting data', error);
       alert('Error exporting data. Please try again.');
@@ -98,25 +116,44 @@ export class StorageService {
   /**
    * Import app data from a JSON file
    */
-  static importData(jsonData: string): boolean {
-    try {
-      const data = JSON.parse(jsonData);
-      
-      // Clear existing data first
-      localStorage.clear();
-      
-      // Import all data from the JSON
-      Object.entries(data).forEach(([key, value]) => {
-        localStorage.setItem(key, JSON.stringify(value));
-      });
-      
-      console.log('Data imported successfully');
-      return true;
-    } catch (error) {
-      console.error('Error importing data', error);
-      alert('Invalid backup file format. Please select a valid backup file.');
-      return false;
-    }
+  static importData(jsonData?: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      try {
+        let data: Record<string, unknown>;
+        
+        if (window.electron?.isElectron && !jsonData) {
+          // Use Electron's native dialog
+          const result = await window.electron.importData();
+          if (!result.success) {
+            console.log('Import cancelled');
+            resolve(false);
+            return;
+          }
+          data = JSON.parse(result.data);
+        } else if (jsonData) {
+          // Use provided JSON string (browser file input)
+          data = JSON.parse(jsonData);
+        } else {
+          resolve(false);
+          return;
+        }
+        
+        // Clear existing data first
+        localStorage.clear();
+        
+        // Import all data from the JSON
+        Object.entries(data).forEach(([key, value]) => {
+          localStorage.setItem(key, JSON.stringify(value));
+        });
+        
+        console.log('Data imported successfully');
+        resolve(true);
+      } catch (error) {
+        console.error('Error importing data', error);
+        alert('Invalid backup file format. Please select a valid backup file.');
+        resolve(false);
+      }
+    });
   }
   
   /**
