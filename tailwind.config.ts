@@ -20,44 +20,46 @@ export default {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        background: {
+          DEFAULT: "#0C0D10",
+          secondary: "#1A1E23",
+        },
+        foreground: {
+          DEFAULT: "#E9EAEC",
+          muted: "#8E8E93",
+        },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#38BD95", // Teal green
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#3B82F6", // Blue
+          foreground: "#FFFFFF",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#EA384C", // Red for delete actions
+          foreground: "#FFFFFF",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#222428",
+          foreground: "#8E8E93",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#38BD95",
+          foreground: "#FFFFFF",
         },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        border: {
+          DEFAULT: "rgba(255,255,255,0.1)",
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "0.75rem",
+        md: "0.5rem",
+        sm: "0.25rem",
+      },
+      boxShadow: {
+        'subtle': '0 4px 20px rgba(0, 0, 0, 0.3)',
+        'hover': '0 8px 30px rgba(0, 0, 0, 0.4)',
       },
       keyframes: {
         "accordion-down": {

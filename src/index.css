@@ -47,164 +47,39 @@
 }
 
 @layer components {
-  .cell-input {
-    @apply w-full p-1 text-center bg-muted focus:outline-none focus:ring-1 focus:ring-primary;
-  }
-  
-  .table-cell {
-    @apply border border-border p-1 min-w-[80px] h-10;
-  }
-  
-  .header-cell {
-    @apply bg-muted font-medium text-sm;
-  }
-  
-  .total-cell {
-    @apply bg-muted font-semibold;
-  }
-  
-  .amount-cell {
-    @apply bg-accent/10 font-semibold text-accent;
+  .delete-icon {
+    @apply text-destructive hover:bg-destructive/10 p-1 rounded-full transition-colors;
   }
 
-  .card-gradient {
-    @apply bg-gradient-to-br from-[#1a1e23] to-[#131519] text-foreground border border-border/20 shadow-xl;
-  }
-
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px];
-  }
-
-  .glass-effect {
-    @apply bg-white/5 backdrop-blur-md;
-  }
-
-  .btn-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white;
-  }
-
-  .glass-card {
-    @apply bg-black/30 backdrop-blur-md border border-white/10 shadow-lg rounded-xl;
-  }
-
-  .dark-ui-card {
-    @apply bg-card rounded-xl border border-border shadow-lg overflow-hidden;
-  }
-  
-  .neo-card {
-    @apply bg-card rounded-xl border border-transparent shadow-[0_4px_15px_rgba(0,0,0,0.2),inset_0_1px_1px_rgba(255,255,255,0.05)];
-    position: relative;
-  }
-  
-  .neo-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-  }
-  
-  .glow-teal {
-    @apply relative;
-    box-shadow: 0 0 15px hsl(var(--primary) / 0.4);
-  }
-  
-  .glow-blue {
-    @apply relative;
-    box-shadow: 0 0 15px hsl(var(--secondary) / 0.4);
-  }
-  
-  .chart-grid {
-    @apply border-b border-l border-dashed border-border;
-  }
-  
-  .chart-line {
-    @apply stroke-[3] stroke-primary fill-none;
-  }
-  
-  .chart-area {
-    @apply fill-primary/10 stroke-none;
-  }
-  
-  .stat-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-  
-  .stat-badge-green {
-    @apply bg-primary/20 text-primary;
-  }
-  
-  .stat-badge-blue {
+  .tab-active {
     @apply bg-secondary/20 text-secondary;
   }
-  
-  .dark-input {
-    @apply bg-muted border-border text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent;
-  }
-  
-  .dark-select {
-    @apply bg-muted border-border text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent;
+
+  .table-row {
+    @apply hover:bg-muted/50 transition-colors;
   }
 
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-primary/50 rounded-full;
+  .glow-border {
+    @apply border border-transparent bg-clip-padding-box bg-origin-border 
+           bg-gradient-to-br from-background to-background 
+           border-gradient-to-br from-primary/80 to-secondary/50;
   }
 }
 
-.neon-glow {
-  text-shadow: 0 0 10px hsl(var(--primary) / 0.8), 0 0 20px hsl(var(--primary) / 0.4);
+// Custom global styles
+.glass-card {
+  @apply bg-background-secondary/80 backdrop-blur-md border border-white/10 rounded-lg shadow-subtle;
 }
 
-.neon-border {
-  box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+.soft-shadow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-.animated-bg {
-  background: linear-gradient(-45deg, hsl(var(--background)), hsl(var(--card)), hsl(var(--muted)), hsl(var(--popover)));
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.wave-line {
-  fill: none;
-  stroke: hsl(var(--primary));
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  animation: wave-anim 2s ease-in-out infinite;
-}
-
-@keyframes wave-anim {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
