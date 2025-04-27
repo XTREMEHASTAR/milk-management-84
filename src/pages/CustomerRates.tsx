@@ -11,13 +11,13 @@ import { format } from "date-fns";
 
 export default function CustomerRates() {
   const { customers, products, addCustomerProductRate, updateCustomerProductRate, deleteCustomerProductRate, getCustomerProductRates } = useData();
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("none"); // Changed from empty string to "none"
   const [customerRates, setCustomerRates] = useState<CustomerProductRate[]>([]);
   const [editingRates, setEditingRates] = useState<Record<string, number>>({});
 
   // Load customer rates when customer selection changes
   useEffect(() => {
-    if (selectedCustomerId) {
+    if (selectedCustomerId && selectedCustomerId !== "none") {
       const rates = getCustomerProductRates(selectedCustomerId);
       setCustomerRates(rates);
       

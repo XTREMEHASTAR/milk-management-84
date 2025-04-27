@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
@@ -41,7 +40,7 @@ export default function StockManagement() {
     minStockLevel: 0
   });
   
-  const [productFilter, setProductFilter] = useState("");
+  const [productFilter, setProductFilter] = useState("all");
   const [dateRangeFilter, setDateRangeFilter] = useState({
     from: format(new Date(new Date().setDate(new Date().getDate() - 7)), "yyyy-MM-dd"),
     to: format(new Date(), "yyyy-MM-dd")
@@ -159,7 +158,7 @@ export default function StockManagement() {
   };
   
   const filteredStockRecords = stockRecords.filter(record => {
-    const matchesProduct = !productFilter || record.productId === productFilter;
+    const matchesProduct = productFilter === "all" || record.productId === productFilter;
     const recordDate = new Date(record.date);
     const fromDate = new Date(dateRangeFilter.from);
     const toDate = new Date(dateRangeFilter.to);
@@ -611,7 +610,7 @@ export default function StockManagement() {
                   <SelectValue placeholder="All Products" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Products</SelectItem>
+                  <SelectItem value="all">All Products</SelectItem>
                   {products.map(product => (
                     <SelectItem key={product.id} value={product.id}>
                       {product.name}

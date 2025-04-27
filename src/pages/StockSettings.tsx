@@ -22,11 +22,12 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Package, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const StockSettings = () => {
   const { products, updateProductMinStock } = useData();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all"); // Changed from null to "all"
 
   // Extract unique categories
   const categories = Array.from(
@@ -38,9 +39,9 @@ const StockSettings = () => {
     const matchesSearch = product.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory
-      ? product.category === selectedCategory
-      : true;
+    const matchesCategory = selectedCategory === "all" // Changed condition
+      ? true
+      : product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -88,23 +89,22 @@ const StockSettings = () => {
               <Label htmlFor="category-filter" className="whitespace-nowrap">
                 Filter by Category:
               </Label>
-              <select
-                id="category-filter"
-                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={selectedCategory || ""}
-                onChange={(e) =>
-                  setSelectedCategory(
-                    e.target.value === "" ? null : e.target.value
-                  )
-                }
+              <Select
+                value={selectedCategory}
+                onValueChange={(value) => setSelectedCategory(value)}
               >
-                <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="category-filter" className="h-10 w-[180px]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem> {/* Changed from empty string to "all" */}
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
