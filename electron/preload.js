@@ -9,6 +9,12 @@ contextBridge.exposeInMainWorld('electron', {
   importData: () => ipcRenderer.invoke('import-data'),
   isElectron: true,
   // Add event listeners for menu actions
-  onMenuExportData: (callback) => ipcRenderer.on('menu-export-data', () => callback()),
-  onMenuImportData: (callback) => ipcRenderer.on('menu-import-data', () => callback()),
+  onMenuExportData: (callback) => {
+    ipcRenderer.removeAllListeners('menu-export-data');
+    ipcRenderer.on('menu-export-data', () => callback());
+  },
+  onMenuImportData: (callback) => {
+    ipcRenderer.removeAllListeners('menu-import-data');
+    ipcRenderer.on('menu-import-data', () => callback());
+  }
 });

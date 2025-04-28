@@ -8,10 +8,25 @@ if (!fs.existsSync('electron')) {
   fs.mkdirSync('electron');
 }
 
+// Ensure build-resources directory exists for icons
+if (!fs.existsSync('build-resources')) {
+  fs.mkdirSync('build-resources');
+}
+
 // For Windows builds, ensure we have icon files
 const ensureIconFile = () => {
   const iconPath = path.join(__dirname, 'public', 'icon-512x512.png');
-  if (!fs.existsSync(iconPath)) {
+  const buildResourcesIconPath = path.join(__dirname, 'build-resources', 'icon.png');
+  
+  // If the source icon exists, copy it to build-resources
+  if (fs.existsSync(iconPath)) {
+    try {
+      fs.copyFileSync(iconPath, buildResourcesIconPath);
+      console.log('Copied icon to build resources');
+    } catch (err) {
+      console.error('Error copying icon to build resources:', err);
+    }
+  } else {
     console.warn('Warning: No icon file found at', iconPath);
     console.warn('Using a placeholder icon for the build');
     
@@ -22,6 +37,7 @@ const ensureIconFile = () => {
       for (const placeholder of possiblePlaceholders) {
         if (fs.existsSync(placeholder)) {
           fs.copyFileSync(placeholder, iconPath);
+          fs.copyFileSync(placeholder, buildResourcesIconPath);
           console.log('Created placeholder icon from', placeholder);
           return;
         }

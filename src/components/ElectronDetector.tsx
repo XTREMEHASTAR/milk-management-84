@@ -12,6 +12,10 @@ export function ElectronDetector() {
     
     if (isRunningInElectron) {
       console.log("Running in Electron desktop environment");
+      toast.success("Desktop application ready", {
+        description: "You are running the full desktop version",
+        duration: 3000
+      });
     } else {
       console.log("Running in browser environment");
     }
