@@ -1,5 +1,4 @@
-
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, autoUpdater } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
@@ -10,6 +9,9 @@ let mainWindow;
 
 // App name
 const APP_NAME = 'Milk Center Management';
+
+// Update server URLs - update with your actual URL when you have it
+const updateServerUrl = 'https://your-update-server.com';
 
 function createWindow() {
   // Create the browser window
@@ -27,6 +29,9 @@ function createWindow() {
     show: false, // Don't show until ready
     backgroundColor: '#0C0D10', // Match app background color
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
+    // Make it look more native
+    frame: true,
+    autoHideMenuBar: false, // Show menu
   });
 
   // Load the app
@@ -179,10 +184,58 @@ function createMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+// Setup auto-updates
+function setupAutoUpdates() {
+  if (isDev) {
+    console.log('Auto-updates disabled in development mode');
+    return;
+  }
+
+  if (process.platform === 'darwin') {
+    // macOS updates
+    autoUpdater.setFeedURL({
+      url: `${updateServerUrl}/update/mac/${app.getVersion()}`
+    });
+  } else if (process.platform === 'win32') {
+    // Windows updates
+    autoUpdater.setFeedURL({
+      url: `${updateServerUrl}/update/win/${app.getVersion()}`
+    });
+  }
+
+  // Check for updates
+  autoUpdater.checkForUpdates();
+
+  // Listen for update events
+  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+    const dialogOpts = {
+      type: 'info',
+      buttons: ['Restart', 'Later'],
+      title: 'Application Update',
+      message: releaseName,
+      detail: 'A new version has been downloaded. Restart the application to apply the updates.'
+    };
+
+    dialog.showMessageBox(dialogOpts).then((returnValue) => {
+      if (returnValue.response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on('error', (error) => {
+    console.error('There was a problem updating the application', error);
+  });
+
+  // Check for updates every 4 hours
+  setInterval(() => {
+    autoUpdater.checkForUpdates();
+  }, 4 * 60 * 60 * 1000);
+}
+
 // Create the window when Electron has finished initializing
 app.whenReady().then(() => {
   createWindow();
   createMenu();
+  setupAutoUpdates();
 
   // On macOS, recreate window when dock icon is clicked and no windows are open
   app.on('activate', () => {

@@ -16,5 +16,15 @@ contextBridge.exposeInMainWorld('electron', {
   onMenuImportData: (callback) => {
     ipcRenderer.removeAllListeners('menu-import-data');
     ipcRenderer.on('menu-import-data', () => callback());
+  },
+  // App info and updates
+  appInfo: {
+    getVersion: () => ipcRenderer.invoke('get-version'),
+    getPlatform: () => process.platform,
+  },
+  updates: {
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    downloadUpdate: () => ipcRenderer.invoke('download-update'),
+    installUpdate: () => ipcRenderer.invoke('install-update'),
   }
 });

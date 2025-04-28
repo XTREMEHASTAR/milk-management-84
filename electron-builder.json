@@ -28,6 +28,13 @@
     }
   ],
   "asar": true,
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "your-github-username",
+      "repo": "milk-center-management"
+    }
+  ],
   "mac": {
     "category": "public.app-category.business",
     "target": ["dmg", "zip"],

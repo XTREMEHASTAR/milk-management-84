@@ -48,10 +48,40 @@ const ensureIconFile = () => {
   }
 };
 
+// Add the needed packages
+const ensurePackages = () => {
+  try {
+    console.log('Checking required packages for desktop app...');
+    const packageInfo = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    const missingDevDeps = [];
+    
+    // Check if electron-updater is installed
+    const devDeps = packageInfo.devDependencies || {};
+    if (!devDeps['electron-updater']) {
+      missingDevDeps.push('electron-updater');
+    }
+    if (!devDeps['electron-log']) {
+      missingDevDeps.push('electron-log');
+    }
+    
+    // Install missing packages
+    if (missingDevDeps.length > 0) {
+      console.log(`Installing missing packages: ${missingDevDeps.join(', ')}`);
+      execSync(`npm install -D ${missingDevDeps.join(' ')}`, { stdio: 'inherit' });
+      console.log('Packages installed successfully!');
+    } else {
+      console.log('All required packages are installed.');
+    }
+  } catch (error) {
+    console.error('Error checking or installing packages:', error);
+  }
+};
+
 const commands = {
   'start-electron': async () => {
     try {
       console.log('Starting Electron development environment...');
+      ensurePackages();
       execSync('concurrently "cross-env BROWSER=none npm run dev" "wait-on http://localhost:8080 && cross-env NODE_ENV=development electron electron/main.js"', { stdio: 'inherit' });
     } catch (error) {
       console.error('Error starting Electron development environment:', error);
@@ -62,6 +92,7 @@ const commands = {
   'build-electron': async () => {
     try {
       console.log('Building for Electron...');
+      ensurePackages();
       ensureIconFile();
       // First build the React app
       execSync('npm run build', { stdio: 'inherit' });
@@ -78,6 +109,7 @@ const commands = {
   'package-windows': async () => {
     try {
       console.log('Packaging for Windows...');
+      ensurePackages();
       ensureIconFile();
       execSync('npm run build', { stdio: 'inherit' });
       execSync('electron-builder --win --config electron-builder.json', { stdio: 'inherit' });
@@ -92,6 +124,7 @@ const commands = {
   'package-mac': async () => {
     try {
       console.log('Packaging for macOS...');
+      ensurePackages();
       ensureIconFile();
       execSync('npm run build', { stdio: 'inherit' });
       execSync('electron-builder --mac --config electron-builder.json', { stdio: 'inherit' });
@@ -106,6 +139,7 @@ const commands = {
   'package-linux': async () => {
     try {
       console.log('Packaging for Linux...');
+      ensurePackages();
       ensureIconFile();
       execSync('npm run build', { stdio: 'inherit' });
       execSync('electron-builder --linux --config electron-builder.json', { stdio: 'inherit' });
@@ -113,6 +147,20 @@ const commands = {
       console.log('Your Linux packages are available in the dist_electron directory');
     } catch (error) {
       console.error('Error packaging for Linux:', error);
+      process.exit(1);
+    }
+  },
+
+  'publish-update': async () => {
+    try {
+      console.log('Building and publishing update...');
+      ensurePackages();
+      ensureIconFile();
+      execSync('npm run build', { stdio: 'inherit' });
+      execSync('electron-builder --publish always --config electron-builder.json', { stdio: 'inherit' });
+      console.log('Update published successfully!');
+    } catch (error) {
+      console.error('Error publishing update:', error);
       process.exit(1);
     }
   },

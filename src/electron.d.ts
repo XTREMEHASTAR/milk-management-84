@@ -5,6 +5,15 @@ interface ElectronAPI {
   isElectron: boolean;
   onMenuExportData: (callback: () => void) => void;
   onMenuImportData: (callback: () => void) => void;
+  appInfo: {
+    getVersion: () => Promise<string>;
+    getPlatform: () => string;
+  };
+  updates: {
+    checkForUpdates: () => Promise<boolean>;
+    downloadUpdate: () => Promise<boolean>;
+    installUpdate: () => Promise<void>;
+  };
 }
 
 declare interface Window {
