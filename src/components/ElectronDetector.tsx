@@ -1,41 +1,45 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
-export function ElectronDetector() {
+// Using memo to prevent unnecessary re-renders
+export const ElectronDetector = memo(function ElectronDetector() {
   const [isElectron, setIsElectron] = useState<boolean>(false);
   const [appVersion, setAppVersion] = useState<string>('');
 
   useEffect(() => {
-    // Check if we're running in Electron
-    const isRunningInElectron = Boolean(window.electron?.isElectron);
-    setIsElectron(isRunningInElectron);
-    
-    if (isRunningInElectron) {
+    // Check if we're running in Electron - only run once
+    const detectElectron = async () => {
+      const isRunningInElectron = Boolean(window.electron?.isElectron);
+      setIsElectron(isRunningInElectron);
+      
+      if (!isRunningInElectron) return;
+      
       console.log("Running in Electron desktop environment");
       
-      // Get app version if available
-      if (window.electron?.appInfo?.getVersion) {
-        window.electron.appInfo.getVersion()
-          .then((version: string) => {
-            setAppVersion(version);
-            console.log(`App version: ${version}`);
-          })
-          .catch((err: any) => {
-            console.error('Failed to get app version:', err);
-          });
+      try {
+        // Get app version if available
+        if (window.electron?.appInfo?.getVersion) {
+          const version = await window.electron.appInfo.getVersion();
+          setAppVersion(version);
+          console.log(`App version: ${version}`);
+        }
+        
+        // Show toast notification only once at startup
+        toast.success("Desktop application ready", {
+          description: "You are running the full desktop version",
+          duration: 3000
+        });
+      } catch (err) {
+        console.error('Failed to get app version:', err);
       }
-      
-      toast.success("Desktop application ready", {
-        description: "You are running the full desktop version",
-        duration: 3000
-      });
-    } else {
-      console.log("Running in browser environment");
-    }
+    };
+
+    detectElectron();
   }, []);
 
+  // Don't render anything if not in Electron
   if (!isElectron) return null;
 
   return (
@@ -45,4 +49,4 @@ export function ElectronDetector() {
       </Badge>
     </div>
   );
-}
+});

@@ -1,40 +1,45 @@
 
+import React, { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Layout } from "./components/Layout";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import OrderEntry from "./pages/OrderEntry";
-import Customers from "./pages/Customers";
-import CustomerDirectory from "./pages/CustomerDirectory";
-import Payments from "./pages/Payments";
-import Expenses from "./pages/Expenses";
-import Reports from "./pages/Reports";
-import TrackSheet from "./pages/TrackSheet";
-import InvoiceGenerator from "./pages/InvoiceGenerator";
-import CustomerRates from "./pages/CustomerRates";
-import ProductRates from "./pages/ProductRates";
-import BulkRates from "./pages/BulkRates";
-import SupplierPayments from "./pages/SupplierPayments";
-import StockManagement from "./pages/StockManagement";
-import CustomerLedgerReport from "./pages/CustomerLedgerReport";
-import Master from "./pages/Master";
-import Products from "./pages/Products";
-import Suppliers from "./pages/Suppliers";
-import SupplierLedger from "./pages/SupplierLedger";
-import PurchaseHistory from "./pages/PurchaseHistory";
-import StockSettings from "./pages/StockSettings";
-import ProductCategories from "./pages/ProductCategories";
-import OutstandingAmounts from "./pages/OutstandingAmounts";
-import CustomerStatement from "./pages/CustomerStatement";
-import FinancialYear from "./pages/FinancialYear";
-import UserAccess from "./pages/UserAccess";
-import Communication from "./pages/Communication";
-import Settings from "./pages/Settings";
-import SupplierRates from "./pages/SupplierRates";
 import { DataProvider } from "./contexts/DataContext";
 import { OfflineIndicator } from "./components/OfflineIndicator";
-import { useEffect } from "react";
+import { LoadingSpinner } from "./components/LoadingSpinner";
+
+// Eagerly load Index page for better initial load experience
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+
+// Lazy load all other pages
+const OrderEntry = lazy(() => import("./pages/OrderEntry"));
+const Customers = lazy(() => import("./pages/Customers"));
+const CustomerDirectory = lazy(() => import("./pages/CustomerDirectory"));
+const Payments = lazy(() => import("./pages/Payments"));
+const Expenses = lazy(() => import("./pages/Expenses"));
+const Reports = lazy(() => import("./pages/Reports"));
+const TrackSheet = lazy(() => import("./pages/TrackSheet"));
+const InvoiceGenerator = lazy(() => import("./pages/InvoiceGenerator"));
+const CustomerRates = lazy(() => import("./pages/CustomerRates"));
+const ProductRates = lazy(() => import("./pages/ProductRates"));
+const BulkRates = lazy(() => import("./pages/BulkRates"));
+const SupplierPayments = lazy(() => import("./pages/SupplierPayments"));
+const StockManagement = lazy(() => import("./pages/StockManagement"));
+const CustomerLedgerReport = lazy(() => import("./pages/CustomerLedgerReport"));
+const Master = lazy(() => import("./pages/Master"));
+const Products = lazy(() => import("./pages/Products"));
+const Suppliers = lazy(() => import("./pages/Suppliers"));
+const SupplierLedger = lazy(() => import("./pages/SupplierLedger"));
+const PurchaseHistory = lazy(() => import("./pages/PurchaseHistory"));
+const StockSettings = lazy(() => import("./pages/StockSettings"));
+const ProductCategories = lazy(() => import("./pages/ProductCategories"));
+const OutstandingAmounts = lazy(() => import("./pages/OutstandingAmounts"));
+const CustomerStatement = lazy(() => import("./pages/CustomerStatement"));
+const FinancialYear = lazy(() => import("./pages/FinancialYear"));
+const UserAccess = lazy(() => import("./pages/UserAccess"));
+const Communication = lazy(() => import("./pages/Communication"));
+const Settings = lazy(() => import("./pages/Settings"));
+const SupplierRates = lazy(() => import("./pages/SupplierRates"));
 
 import "./App.css";
 
@@ -81,34 +86,148 @@ function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Index />} />
-            <Route path="order-entry" element={<OrderEntry />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="customer-directory" element={<CustomerDirectory />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="expenses" element={<Expenses />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="track-sheet" element={<TrackSheet />} />
-            <Route path="invoice-generator" element={<InvoiceGenerator />} />
-            <Route path="customer-rates" element={<CustomerRates />} />
-            <Route path="product-rates" element={<ProductRates />} />
-            <Route path="bulk-rates" element={<BulkRates />} />
-            <Route path="supplier-payments" element={<SupplierPayments />} />
-            <Route path="stock-management" element={<StockManagement />} />
-            <Route path="customer-ledger" element={<CustomerLedgerReport />} />
-            <Route path="master" element={<Master />} />
-            <Route path="products" element={<Products />} />
-            <Route path="suppliers" element={<Suppliers />} />
-            <Route path="supplier-rates" element={<SupplierRates />} />
-            <Route path="supplier-ledger" element={<SupplierLedger />} />
-            <Route path="purchase-history" element={<PurchaseHistory />} />
-            <Route path="stock-settings" element={<StockSettings />} />
-            <Route path="product-categories" element={<ProductCategories />} />
-            <Route path="outstanding" element={<OutstandingAmounts />} />
-            <Route path="customer-statement/:customerId" element={<CustomerStatement />} />
-            <Route path="financial-year" element={<FinancialYear />} />
-            <Route path="user-access" element={<UserAccess />} />
-            <Route path="communication" element={<Communication />} />
-            <Route path="settings" element={<Settings />} />
+            
+            {/* All other routes are lazy loaded with suspense */}
+            <Route path="order-entry" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <OrderEntry />
+              </Suspense>
+            } />
+            <Route path="customers" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Customers />
+              </Suspense>
+            } />
+            <Route path="customer-directory" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <CustomerDirectory />
+              </Suspense>
+            } />
+            <Route path="payments" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Payments />
+              </Suspense>
+            } />
+            <Route path="expenses" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Expenses />
+              </Suspense>
+            } />
+            <Route path="reports" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Reports />
+              </Suspense>
+            } />
+            <Route path="track-sheet" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <TrackSheet />
+              </Suspense>
+            } />
+            <Route path="invoice-generator" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <InvoiceGenerator />
+              </Suspense>
+            } />
+            <Route path="customer-rates" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <CustomerRates />
+              </Suspense>
+            } />
+            <Route path="product-rates" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <ProductRates />
+              </Suspense>
+            } />
+            <Route path="bulk-rates" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <BulkRates />
+              </Suspense>
+            } />
+            <Route path="supplier-payments" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <SupplierPayments />
+              </Suspense>
+            } />
+            <Route path="stock-management" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <StockManagement />
+              </Suspense>
+            } />
+            <Route path="customer-ledger" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <CustomerLedgerReport />
+              </Suspense>
+            } />
+            <Route path="master" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Master />
+              </Suspense>
+            } />
+            <Route path="products" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Products />
+              </Suspense>
+            } />
+            <Route path="suppliers" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Suppliers />
+              </Suspense>
+            } />
+            <Route path="supplier-rates" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <SupplierRates />
+              </Suspense>
+            } />
+            <Route path="supplier-ledger" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <SupplierLedger />
+              </Suspense>
+            } />
+            <Route path="purchase-history" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <PurchaseHistory />
+              </Suspense>
+            } />
+            <Route path="stock-settings" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <StockSettings />
+              </Suspense>
+            } />
+            <Route path="product-categories" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <ProductCategories />
+              </Suspense>
+            } />
+            <Route path="outstanding" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <OutstandingAmounts />
+              </Suspense>
+            } />
+            <Route path="customer-statement/:customerId" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <CustomerStatement />
+              </Suspense>
+            } />
+            <Route path="financial-year" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <FinancialYear />
+              </Suspense>
+            } />
+            <Route path="user-access" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <UserAccess />
+              </Suspense>
+            } />
+            <Route path="communication" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Communication />
+              </Suspense>
+            } />
+            <Route path="settings" element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <Settings />
+              </Suspense>
+            } />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

@@ -1,10 +1,11 @@
 
 const { dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
 
 // Configure logging
-autoUpdater.logger = require('electron-log');
-autoUpdater.logger.transports.file.level = 'info';
+log.transports.file.level = 'info';
+autoUpdater.logger = log;
 
 // Disable auto downloading of updates
 autoUpdater.autoDownload = false;
@@ -12,9 +13,13 @@ autoUpdater.autoDownload = false;
 class AppUpdater {
   constructor(mainWindow) {
     this.mainWindow = mainWindow;
+    global.updater = this;
 
-    // Check for updates immediately when app starts
-    autoUpdater.checkForUpdates();
+    // Check for updates when app starts, but with a slight delay
+    // to improve startup performance
+    setTimeout(() => {
+      this.checkForUpdates();
+    }, 10000); // 10 second delay
 
     // Listen for update available
     autoUpdater.on('update-available', () => {
@@ -26,7 +31,7 @@ class AppUpdater {
       }).then((result) => {
         const buttonIndex = result.response;
         if (buttonIndex === 0) {
-          autoUpdater.downloadUpdate();
+          this.downloadUpdate();
         }
       });
     });
@@ -41,15 +46,41 @@ class AppUpdater {
       }).then((result) => {
         const buttonIndex = result.response;
         if (buttonIndex === 0) {
-          autoUpdater.quitAndInstall(false, true);
+          this.quitAndInstall();
         }
       });
     });
 
-    // Check for updates every hour
+    // Check for updates periodically, but less frequently
+    // to reduce resource usage
     setInterval(() => {
-      autoUpdater.checkForUpdates();
-    }, 60 * 60 * 1000);
+      this.checkForUpdates();
+    }, 4 * 60 * 60 * 1000); // Every 4 hours
+  }
+
+  // Check for updates
+  async checkForUpdates() {
+    try {
+      return await autoUpdater.checkForUpdates();
+    } catch (error) {
+      log.error('Error checking for updates:', error);
+      return false;
+    }
+  }
+
+  // Download update
+  async downloadUpdate() {
+    try {
+      return await autoUpdater.downloadUpdate();
+    } catch (error) {
+      log.error('Error downloading update:', error);
+      return false;
+    }
+  }
+
+  // Install update
+  quitAndInstall() {
+    autoUpdater.quitAndInstall(false, true);
   }
 }
 

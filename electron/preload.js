@@ -1,14 +1,14 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
-contextBridge.exposeInMainWorld('electron', {
-  // Expose methods for data import/export using native file dialogs
+// Use a more efficient way to expose methods
+const API = {
+  // Data import/export
   exportData: (data) => ipcRenderer.invoke('export-data', data),
   importData: () => ipcRenderer.invoke('import-data'),
   isElectron: true,
-  // Add event listeners for menu actions
+  
+  // Event listeners for menu actions
   onMenuExportData: (callback) => {
     ipcRenderer.removeAllListeners('menu-export-data');
     ipcRenderer.on('menu-export-data', () => callback());
@@ -17,14 +17,20 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.removeAllListeners('menu-import-data');
     ipcRenderer.on('menu-import-data', () => callback());
   },
-  // App info and updates
+  
+  // App info
   appInfo: {
     getVersion: () => ipcRenderer.invoke('get-version'),
     getPlatform: () => process.platform,
   },
+  
+  // Updates
   updates: {
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     downloadUpdate: () => ipcRenderer.invoke('download-update'),
     installUpdate: () => ipcRenderer.invoke('install-update'),
   }
-});
+};
+
+// Expose protected methods in one single operation for better performance
+contextBridge.exposeInMainWorld('electron', API);

@@ -1,8 +1,9 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell, autoUpdater } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
 const isMac = process.platform === 'darwin';
+const AppUpdater = require('./updater');
 
 // Keep a global reference of the window object to avoid garbage collection
 let mainWindow;
@@ -10,11 +11,9 @@ let mainWindow;
 // App name
 const APP_NAME = 'Milk Center Management';
 
-// Update server URLs - update with your actual URL when you have it
-const updateServerUrl = 'https://your-update-server.com';
-
+// Create an optimized window
 function createWindow() {
-  // Create the browser window
+  // Create the browser window with optimized settings
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -24,9 +23,13 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
+      // Optimize memory usage
+      backgroundThrottling: false,
+      // Improve rendering performance 
+      offscreen: false
     },
     icon: path.join(__dirname, '../public/icon-512x512.png'),
-    show: false, // Don't show until ready
+    show: false, // Don't show until ready to prevent white flash
     backgroundColor: '#0C0D10', // Match app background color
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     // Make it look more native
@@ -43,6 +46,9 @@ function createWindow() {
   } else {
     // In production, load the built files
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    
+    // Optimize for production
+    mainWindow.webContents.setVisualZoomLevelLimits(1, 3); // Limit zoom for better performance
   }
 
   // Show window once ready to avoid white flash
@@ -57,13 +63,18 @@ function createWindow() {
     return { action: 'deny' };
   });
 
-  // Emitted when the window is closed
+  // Memory optimization: Clean up references when window is closed
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 
   // Set window title
   mainWindow.setTitle(APP_NAME);
+  
+  // Initialize updater in production
+  if (!isDev) {
+    new AppUpdater(mainWindow);
+  }
 }
 
 // Create application menu
@@ -184,58 +195,10 @@ function createMenu() {
   Menu.setApplicationMenu(menu);
 }
 
-// Setup auto-updates
-function setupAutoUpdates() {
-  if (isDev) {
-    console.log('Auto-updates disabled in development mode');
-    return;
-  }
-
-  if (process.platform === 'darwin') {
-    // macOS updates
-    autoUpdater.setFeedURL({
-      url: `${updateServerUrl}/update/mac/${app.getVersion()}`
-    });
-  } else if (process.platform === 'win32') {
-    // Windows updates
-    autoUpdater.setFeedURL({
-      url: `${updateServerUrl}/update/win/${app.getVersion()}`
-    });
-  }
-
-  // Check for updates
-  autoUpdater.checkForUpdates();
-
-  // Listen for update events
-  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-    const dialogOpts = {
-      type: 'info',
-      buttons: ['Restart', 'Later'],
-      title: 'Application Update',
-      message: releaseName,
-      detail: 'A new version has been downloaded. Restart the application to apply the updates.'
-    };
-
-    dialog.showMessageBox(dialogOpts).then((returnValue) => {
-      if (returnValue.response === 0) autoUpdater.quitAndInstall();
-    });
-  });
-
-  autoUpdater.on('error', (error) => {
-    console.error('There was a problem updating the application', error);
-  });
-
-  // Check for updates every 4 hours
-  setInterval(() => {
-    autoUpdater.checkForUpdates();
-  }, 4 * 60 * 60 * 1000);
-}
-
 // Create the window when Electron has finished initializing
 app.whenReady().then(() => {
   createWindow();
   createMenu();
-  setupAutoUpdates();
 
   // On macOS, recreate window when dock icon is clicked and no windows are open
   app.on('activate', () => {
@@ -284,3 +247,54 @@ ipcMain.handle('import-data', async () => {
   
   return { success: false };
 });
+
+// Add version info accessor
+ipcMain.handle('get-version', () => {
+  return app.getVersion();
+});
+
+// Add update check handlers
+ipcMain.handle('check-for-updates', async () => {
+  if (isDev) return false;
+  const updater = global.updater;
+  if (!updater) return false;
+  
+  try {
+    return await updater.checkForUpdates();
+  } catch (err) {
+    console.error('Failed to check for updates:', err);
+    return false;
+  }
+});
+
+ipcMain.handle('download-update', async () => {
+  if (isDev) return false;
+  const updater = global.updater;
+  if (!updater) return false;
+  
+  try {
+    return await updater.downloadUpdate();
+  } catch (err) {
+    console.error('Failed to download update:', err);
+    return false;
+  }
+});
+
+ipcMain.handle('install-update', async () => {
+  if (isDev) return;
+  const updater = global.updater;
+  if (!updater) return;
+  
+  try {
+    updater.quitAndInstall();
+  } catch (err) {
+    console.error('Failed to install update:', err);
+  }
+});
+
+// Optimize memory usage with routine garbage collection
+setInterval(() => {
+  if (global.gc) {
+    global.gc();
+  }
+}, 30 * 60 * 1000); // Run every 30 minutes
