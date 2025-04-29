@@ -1,4 +1,6 @@
 
+import { ElectronService } from './ElectronService';
+
 /**
  * Service for handling local storage operations with improved error handling and data management
  */
@@ -63,7 +65,7 @@ export class StorageService {
   /**
    * Export all app data as a JSON file for backup
    */
-  static exportData(): void {
+  static async exportData(): Promise<boolean> {
     try {
       const exportData: Record<string, unknown> = {};
       
@@ -80,80 +82,66 @@ export class StorageService {
       
       const dataStr = JSON.stringify(exportData, null, 2);
       
-      // Check if running in Electron
-      if (window.electron?.isElectron) {
-        // Use Electron's native dialog
-        window.electron.exportData(dataStr)
-          .then((result: { success: boolean; filePath?: string }) => {
-            if (result.success) {
-              console.log('Data exported successfully to:', result.filePath);
-            } else {
-              console.log('Data export cancelled');
-            }
-          })
-          .catch((error: Error) => {
-            console.error('Error exporting data', error);
-            alert('Error exporting data. Please try again.');
-          });
+      // Use ElectronService for export
+      const result = await ElectronService.exportData(dataStr);
+      
+      if (result.success) {
+        console.log('Data exported successfully');
+        return true;
       } else {
-        // Fallback to browser download
-        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-        const exportFileDefaultName = `milk-center-backup-${new Date().toISOString().split('T')[0]}.json`;
-        
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-        
-        console.log('Data exported successfully via browser download');
+        console.error('Export failed:', result.error);
+        alert('Error exporting data: ' + (result.error || 'Unknown error'));
+        return false;
       }
     } catch (error) {
       console.error('Error exporting data', error);
       alert('Error exporting data. Please try again.');
+      return false;
     }
   }
   
   /**
    * Import app data from a JSON file
    */
-  static importData(jsonData?: string): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      try {
-        let data: Record<string, unknown>;
-        
-        if (window.electron?.isElectron && !jsonData) {
-          // Use Electron's native dialog
-          const result = await window.electron.importData();
-          if (!result.success) {
-            console.log('Import cancelled');
-            resolve(false);
-            return;
-          }
-          data = JSON.parse(result.data);
-        } else if (jsonData) {
-          // Use provided JSON string (browser file input)
-          data = JSON.parse(jsonData);
-        } else {
-          resolve(false);
-          return;
+  static async importData(jsonData?: string | React.ChangeEvent<HTMLInputElement>): Promise<boolean> {
+    try {
+      let data: Record<string, unknown>;
+      
+      if (typeof jsonData === 'string') {
+        // Use provided JSON string
+        data = JSON.parse(jsonData);
+      } else if (jsonData && 'target' in jsonData && jsonData.target.files && jsonData.target.files[0]) {
+        // Handle file input event
+        const file = jsonData.target.files[0];
+        const text = await file.text();
+        data = JSON.parse(text);
+      } else if (ElectronService.isElectron()) {
+        // Use Electron's native dialog
+        const result = await ElectronService.importData();
+        if (!result.success) {
+          console.log('Import cancelled');
+          return false;
         }
-        
-        // Clear existing data first
-        localStorage.clear();
-        
-        // Import all data from the JSON
-        Object.entries(data).forEach(([key, value]) => {
-          localStorage.setItem(key, JSON.stringify(value));
-        });
-        
-        console.log('Data imported successfully');
-        resolve(true);
-      } catch (error) {
-        console.error('Error importing data', error);
-        alert('Invalid backup file format. Please select a valid backup file.');
-        resolve(false);
+        data = JSON.parse(result.data!);
+      } else {
+        return false;
       }
-    });
+      
+      // Clear existing data first
+      localStorage.clear();
+      
+      // Import all data from the JSON
+      Object.entries(data).forEach(([key, value]) => {
+        localStorage.setItem(key, JSON.stringify(value));
+      });
+      
+      console.log('Data imported successfully');
+      return true;
+    } catch (error) {
+      console.error('Error importing data', error);
+      alert('Invalid backup file format. Please select a valid backup file.');
+      return false;
+    }
   }
   
   /**
@@ -172,5 +160,20 @@ export class StorageService {
     }
     // Convert to KB
     return Math.round(total / 1024);
+  }
+  
+  /**
+   * Save app logs to file
+   */
+  static async saveLogsToFile(logs: string[]): Promise<boolean> {
+    try {
+      const formattedLogs = logs.join('\n\n');
+      const result = await ElectronService.saveLog(formattedLogs);
+      
+      return result.success;
+    } catch (error) {
+      console.error('Error saving logs', error);
+      return false;
+    }
   }
 }

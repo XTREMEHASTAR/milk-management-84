@@ -4,19 +4,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { StorageStatus } from "./StorageStatus";
 import { BackupControls } from "./BackupControls";
 import { RestoreControls } from "./RestoreControls";
+import { StorageService } from "@/services/StorageService";
+import { ElectronService } from "@/services/ElectronService";
+import { toast } from "sonner";
 
 export const DataBackupRestore = () => {
   const [isImporting, setIsImporting] = useState(false);
+  const [isElectron, setIsElectron] = useState(false);
 
   useEffect(() => {
+    const checkElectron = async () => {
+      setIsElectron(ElectronService.isElectron());
+    };
+    
+    checkElectron();
+
     // Set up listeners for Electron menu actions if we're in Electron
-    if (window.electron?.isElectron) {
-      window.electron.onMenuExportData(() => {
+    if (ElectronService.isElectron()) {
+      window.electron?.onMenuExportData(() => {
         console.log("Menu export data action triggered");
         handleExportData();
       });
       
-      window.electron.onMenuImportData(() => {
+      window.electron?.onMenuImportData(() => {
         console.log("Menu import data action triggered");
         handleImportData();
       });
@@ -28,13 +38,16 @@ export const DataBackupRestore = () => {
     };
   }, []);
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     console.log("Export data function called");
     try {
-      const result = StorageService.exportData();
-      console.log("Export data result:", result);
+      const success = await StorageService.exportData();
+      if (success) {
+        toast.success("Data exported successfully");
+      }
     } catch (error) {
       console.error("Export data error:", error);
+      toast.error("Failed to export data");
     }
   };
 
@@ -47,6 +60,7 @@ export const DataBackupRestore = () => {
       console.log("Import data success:", success);
       
       if (success) {
+        toast.success("Data imported successfully");
         // Refresh page after successful import
         setTimeout(() => {
           window.location.reload();
@@ -54,6 +68,7 @@ export const DataBackupRestore = () => {
       }
     } catch (error) {
       console.error("Import data error:", error);
+      toast.error("Failed to import data");
     } finally {
       setIsImporting(false);
       // Reset file input if it exists
@@ -86,21 +101,4 @@ export const DataBackupRestore = () => {
       </CardContent>
     </Card>
   );
-};
-
-// Add this to the file to prevent import errors
-// This is a temporary fix until we refactor the StorageService
-const StorageService = {
-  exportData: () => {
-    const originalStorageService = require("@/services/StorageService").StorageService;
-    return originalStorageService.exportData();
-  },
-  importData: (event?: React.ChangeEvent<HTMLInputElement>) => {
-    const originalStorageService = require("@/services/StorageService").StorageService;
-    return originalStorageService.importData(event);
-  },
-  getStorageUsage: () => {
-    const originalStorageService = require("@/services/StorageService").StorageService;
-    return originalStorageService.getStorageUsage();
-  }
 };

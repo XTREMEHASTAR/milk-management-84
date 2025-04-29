@@ -9,6 +9,7 @@ const API = {
   // Data import/export
   exportData: (data) => ipcRenderer.invoke('export-data', data),
   importData: () => ipcRenderer.invoke('import-data'),
+  saveLog: (logData) => ipcRenderer.invoke('save-log', logData),
   isElectron: true,
   
   // Event listeners for menu actions
@@ -36,6 +37,8 @@ const API = {
       return ipcRenderer.invoke('get-version');
     },
     getPlatform: () => process.platform,
+    getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+    getAppPaths: () => ipcRenderer.invoke('get-app-paths'),
   },
   
   // Updates
@@ -43,6 +46,15 @@ const API = {
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     downloadUpdate: () => ipcRenderer.invoke('download-update'),
     installUpdate: () => ipcRenderer.invoke('install-update'),
+  },
+  
+  // System
+  system: {
+    openExternal: (url) => ipcRenderer.invoke('open-external', url),
+    openPath: (path) => ipcRenderer.invoke('open-path', path),
+    copyToClipboard: (text) => ipcRenderer.invoke('copy-to-clipboard', text),
+    readFromClipboard: () => ipcRenderer.invoke('read-from-clipboard'),
+    isPlatform: (platform) => ipcRenderer.invoke('is-platform', platform),
   }
 };
 

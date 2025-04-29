@@ -1,10 +1,11 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
 const isMac = process.platform === 'darwin';
 const AppUpdater = require('./updater');
 const menuBuilder = require('./menuBuilder');
+const APIRegistry = require('./api');
 
 // Keep a global reference of the window object to avoid garbage collection
 let mainWindow;
@@ -84,8 +85,57 @@ function createWindow() {
   }
 }
 
+// Register all APIs
+function registerAPIs() {
+  // Register all APIs using the registry
+  APIRegistry.registerAll(ipcMain);
+  
+  // Add any special case handlers here if needed
+  ipcMain.handle('check-for-updates', async () => {
+    if (isDev) return false;
+    const updater = global.updater;
+    if (!updater) return false;
+    
+    try {
+      return await updater.checkForUpdates();
+    } catch (err) {
+      console.error('Failed to check for updates:', err);
+      return false;
+    }
+  });
+
+  ipcMain.handle('download-update', async () => {
+    if (isDev) return false;
+    const updater = global.updater;
+    if (!updater) return false;
+    
+    try {
+      return await updater.downloadUpdate();
+    } catch (err) {
+      console.error('Failed to download update:', err);
+      return false;
+    }
+  });
+
+  ipcMain.handle('install-update', async () => {
+    if (isDev) return;
+    const updater = global.updater;
+    if (!updater) return;
+    
+    try {
+      updater.quitAndInstall();
+    } catch (err) {
+      console.error('Failed to install update:', err);
+    }
+  });
+}
+
 // Create the window when Electron has finished initializing
 app.whenReady().then(() => {
+  // Register all IPC handlers
+  registerAPIs();
+  
+  // Create the main window
   createWindow();
 
   // On macOS, recreate window when dock icon is clicked and no windows are open
@@ -101,82 +151,6 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (!isMac) {
     app.quit();
-  }
-});
-
-// Handle data export
-ipcMain.handle('export-data', async (event, data) => {
-  const { filePath } = await dialog.showSaveDialog({
-    title: 'Export Data',
-    defaultPath: `milk-center-backup-${new Date().toISOString().split('T')[0]}.json`,
-    filters: [{ name: 'JSON Files', extensions: ['json'] }],
-  });
-  
-  if (filePath) {
-    fs.writeFileSync(filePath, data);
-    return { success: true, filePath };
-  }
-  
-  return { success: false };
-});
-
-// Handle data import
-ipcMain.handle('import-data', async () => {
-  const { filePaths } = await dialog.showOpenDialog({
-    title: 'Import Data',
-    filters: [{ name: 'JSON Files', extensions: ['json'] }],
-    properties: ['openFile'],
-  });
-  
-  if (filePaths && filePaths.length > 0) {
-    const data = fs.readFileSync(filePaths[0], 'utf8');
-    return { success: true, data };
-  }
-  
-  return { success: false };
-});
-
-// Add version info accessor
-ipcMain.handle('get-version', () => {
-  return app.getVersion();
-});
-
-// Add update check handlers
-ipcMain.handle('check-for-updates', async () => {
-  if (isDev) return false;
-  const updater = global.updater;
-  if (!updater) return false;
-  
-  try {
-    return await updater.checkForUpdates();
-  } catch (err) {
-    console.error('Failed to check for updates:', err);
-    return false;
-  }
-});
-
-ipcMain.handle('download-update', async () => {
-  if (isDev) return false;
-  const updater = global.updater;
-  if (!updater) return false;
-  
-  try {
-    return await updater.downloadUpdate();
-  } catch (err) {
-    console.error('Failed to download update:', err);
-    return false;
-  }
-});
-
-ipcMain.handle('install-update', async () => {
-  if (isDev) return;
-  const updater = global.updater;
-  if (!updater) return;
-  
-  try {
-    updater.quitAndInstall();
-  } catch (err) {
-    console.error('Failed to install update:', err);
   }
 });
 
