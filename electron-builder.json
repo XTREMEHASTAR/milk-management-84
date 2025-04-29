@@ -35,11 +35,13 @@
       "repo": "milk-center-management"
     }
   ],
+  "asarUnpack": ["node_modules/electron-log"],
   "mac": {
     "category": "public.app-category.business",
     "target": ["dmg", "zip"],
     "icon": "public/icon-512x512.png",
-    "darkModeSupport": true
+    "darkModeSupport": true,
+    "hardenedRuntime": true
   },
   "win": {
     "target": [{
@@ -78,5 +80,12 @@
       "width": 540,
       "height": 380
     }
-  }
+  },
+  "fileAssociations": [
+    {
+      "ext": "json",
+      "name": "JSON File",
+      "description": "Milk Center Data File"
+    }
+  ]
 }

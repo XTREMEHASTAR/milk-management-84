@@ -4,6 +4,7 @@ const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
 const isMac = process.platform === 'darwin';
 const AppUpdater = require('./updater');
+const menuBuilder = require('./menuBuilder');
 
 // Keep a global reference of the window object to avoid garbage collection
 let mainWindow;
@@ -44,11 +45,14 @@ function createWindow() {
     // Open DevTools automatically in development
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, load the built files
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // In production, load the built index.html file
+    // Fix path resolution for packaged apps
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    console.log('Loading from:', indexPath);
+    mainWindow.loadFile(indexPath);
     
     // Optimize for production
-    mainWindow.webContents.setVisualZoomLevelLimits(1, 3); // Limit zoom for better performance
+    mainWindow.webContents.setVisualZoomLevelLimits(1, 3);
   }
 
   // Show window once ready to avoid white flash
@@ -71,134 +75,18 @@ function createWindow() {
   // Set window title
   mainWindow.setTitle(APP_NAME);
   
+  // Initialize menu
+  menuBuilder.buildMenu(mainWindow);
+  
   // Initialize updater in production
   if (!isDev) {
     new AppUpdater(mainWindow);
   }
 }
 
-// Create application menu
-function createMenu() {
-  const template = [
-    // App menu (macOS only)
-    ...(isMac ? [{
-      label: APP_NAME,
-      submenu: [
-        { role: 'about' },
-        { type: 'separator' },
-        { role: 'services' },
-        { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
-        { type: 'separator' },
-        { role: 'quit' }
-      ]
-    }] : []),
-    // File menu
-    {
-      label: 'File',
-      submenu: [
-        {
-          label: 'Export Data',
-          click: async () => {
-            if (mainWindow) {
-              mainWindow.webContents.send('menu-export-data');
-            }
-          }
-        },
-        {
-          label: 'Import Data',
-          click: async () => {
-            if (mainWindow) {
-              mainWindow.webContents.send('menu-import-data');
-            }
-          }
-        },
-        { type: 'separator' },
-        isMac ? { role: 'close' } : { role: 'quit' }
-      ]
-    },
-    // Edit menu
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        ...(isMac ? [
-          { role: 'pasteAndMatchStyle' },
-          { role: 'delete' },
-          { role: 'selectAll' },
-        ] : [
-          { role: 'delete' },
-          { type: 'separator' },
-          { role: 'selectAll' }
-        ])
-      ]
-    },
-    // View menu
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
-    },
-    // Window menu
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        ...(isMac ? [
-          { type: 'separator' },
-          { role: 'front' },
-          { type: 'separator' },
-          { role: 'window' }
-        ] : [
-          { role: 'close' }
-        ])
-      ]
-    },
-    // Help menu
-    {
-      label: 'Help',
-      submenu: [
-        {
-          label: 'About ' + APP_NAME,
-          click: async () => {
-            const version = app.getVersion();
-            await dialog.showMessageBox(mainWindow, {
-              title: 'About ' + APP_NAME,
-              message: APP_NAME,
-              detail: `Version: ${version}\n© 2025 Milk Center Management`,
-              buttons: ['OK']
-            });
-          }
-        }
-      ]
-    }
-  ];
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
-}
-
 // Create the window when Electron has finished initializing
 app.whenReady().then(() => {
   createWindow();
-  createMenu();
 
   // On macOS, recreate window when dock icon is clicked and no windows are open
   app.on('activate', () => {

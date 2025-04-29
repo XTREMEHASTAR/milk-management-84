@@ -20,12 +20,16 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  base: './', // This is crucial for Electron to load assets correctly when packaged
   build: {
     // Optimize production builds
     target: 'es2015',
     minify: 'terser',
     cssMinify: true,
     reportCompressedSize: false,
+    outDir: 'dist', // Ensure the output directory is explicitly set
+    assetsDir: 'assets', // Put assets in a subdirectory
+    sourcemap: false, // Don't generate sourcemaps for production
     rollupOptions: {
       output: {
         // Chunk vendor code

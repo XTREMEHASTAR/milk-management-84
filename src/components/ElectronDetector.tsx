@@ -11,19 +11,33 @@ export const ElectronDetector = memo(function ElectronDetector() {
   useEffect(() => {
     // Check if we're running in Electron - only run once
     const detectElectron = async () => {
-      const isRunningInElectron = Boolean(window.electron?.isElectron);
-      setIsElectron(isRunningInElectron);
-      
-      if (!isRunningInElectron) return;
-      
-      console.log("Running in Electron desktop environment");
-      
       try {
+        console.log("Checking for Electron environment...");
+        const isRunningInElectron = Boolean(window.electron?.isElectron);
+        setIsElectron(isRunningInElectron);
+        
+        if (!isRunningInElectron) {
+          console.log("Not running in Electron");
+          return;
+        }
+        
+        console.log("Running in Electron desktop environment");
+        
         // Get app version if available
         if (window.electron?.appInfo?.getVersion) {
-          const version = await window.electron.appInfo.getVersion();
-          setAppVersion(version);
-          console.log(`App version: ${version}`);
+          try {
+            console.log("Getting app version...");
+            const version = await window.electron.appInfo.getVersion();
+            console.log(`App version retrieved: ${version}`);
+            setAppVersion(version);
+          } catch (err) {
+            console.error('Failed to get app version:', err);
+            // Fallback to a default version
+            setAppVersion('1.0.0');
+          }
+        } else {
+          console.warn("getVersion method not available");
+          setAppVersion('1.0.0');
         }
         
         // Show toast notification only once at startup
@@ -32,7 +46,7 @@ export const ElectronDetector = memo(function ElectronDetector() {
           duration: 3000
         });
       } catch (err) {
-        console.error('Failed to get app version:', err);
+        console.error('Error in detectElectron:', err);
       }
     };
 
