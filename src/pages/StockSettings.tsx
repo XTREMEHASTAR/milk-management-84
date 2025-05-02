@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { useData } from "@/contexts/DataContext";
-import { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,7 +97,7 @@ const StockSettings = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem> {/* Changed from empty string to "all" */}
-                  {categories.map((category) => (
+                  {categories.map((category: string) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>

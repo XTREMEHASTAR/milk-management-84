@@ -26,8 +26,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const paymentState = usePaymentState(customerState.customers, customerState.updateCustomer);
   const supplierState = useSupplierState();
   const expenseState = useExpenseState();
-  const stockState = useStockState();
-  const productRateState = useProductRateState();
+  const stockState = useStockState(supplierState.updateSupplier);
+  const productRateState = useProductRateState(productState.products);
   const vehicleSalesmanState = useVehicleSalesmanState();
   const uiSettingsState = useUISettingsState();
 
