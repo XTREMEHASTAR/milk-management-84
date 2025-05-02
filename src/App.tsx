@@ -38,59 +38,62 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { DataProvider } from '@/contexts/data/DataContext';
 
 import './App.css';
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <SonnerToaster richColors position="top-right" />
-        <OfflineIndicator />
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          {/* Protected routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Index />} />
-              <Route path="customer-directory" element={<CustomerDirectory />} />
-              <Route path="order-entry" element={<OrderEntry />} />
-              <Route path="customers" element={<Customers />} />
-              <Route path="payments" element={<Payments />} />
-              <Route path="track-sheet" element={<TrackSheet />} />
-              <Route path="master" element={<Master />} />
-              <Route path="stock-management" element={<StockManagement />} />
-              <Route path="stock-settings" element={<StockSettings />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="products" element={<Products />} />
-              <Route path="product-rates" element={<ProductRates />} />
-              <Route path="bulk-rates" element={<BulkRates />} />
-              <Route path="customer-rates" element={<CustomerRates />} />
-              <Route path="expenses" element={<Expenses />} />
-              <Route path="suppliers" element={<Suppliers />} />
-              <Route path="supplier-rates" element={<SupplierRates />} />
-              <Route path="supplier-payments" element={<SupplierPayments />} />
-              <Route path="supplier-ledger" element={<SupplierLedger />} />
-              <Route path="invoice-generator" element={<InvoiceGenerator />} />
-              <Route path="customer-statement" element={<CustomerStatement />} />
-              <Route path="outstanding-amounts" element={<OutstandingAmounts />} />
-              <Route path="customer-ledger-report" element={<CustomerLedgerReport />} />
-              <Route path="communication" element={<Communication />} />
-              <Route path="product-categories" element={<ProductCategories />} />
-              <Route path="purchase-history" element={<PurchaseHistory />} />
-              <Route path="financial-year" element={<FinancialYear />} />
-              <Route path="user-access" element={<UserAccess />} />
+      <DataProvider>
+        <BrowserRouter>
+          <SonnerToaster richColors position="top-right" />
+          <OfflineIndicator />
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            {/* Protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Index />} />
+                <Route path="customer-directory" element={<CustomerDirectory />} />
+                <Route path="order-entry" element={<OrderEntry />} />
+                <Route path="customers" element={<Customers />} />
+                <Route path="payments" element={<Payments />} />
+                <Route path="track-sheet" element={<TrackSheet />} />
+                <Route path="master" element={<Master />} />
+                <Route path="stock-management" element={<StockManagement />} />
+                <Route path="stock-settings" element={<StockSettings />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="products" element={<Products />} />
+                <Route path="product-rates" element={<ProductRates />} />
+                <Route path="bulk-rates" element={<BulkRates />} />
+                <Route path="customer-rates" element={<CustomerRates />} />
+                <Route path="expenses" element={<Expenses />} />
+                <Route path="suppliers" element={<Suppliers />} />
+                <Route path="supplier-rates" element={<SupplierRates />} />
+                <Route path="supplier-payments" element={<SupplierPayments />} />
+                <Route path="supplier-ledger" element={<SupplierLedger />} />
+                <Route path="invoice-generator" element={<InvoiceGenerator />} />
+                <Route path="customer-statement" element={<CustomerStatement />} />
+                <Route path="outstanding-amounts" element={<OutstandingAmounts />} />
+                <Route path="customer-ledger-report" element={<CustomerLedgerReport />} />
+                <Route path="communication" element={<Communication />} />
+                <Route path="product-categories" element={<ProductCategories />} />
+                <Route path="purchase-history" element={<PurchaseHistory />} />
+                <Route path="financial-year" element={<FinancialYear />} />
+                <Route path="user-access" element={<UserAccess />} />
+              </Route>
             </Route>
-          </Route>
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </BrowserRouter>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </BrowserRouter>
+      </DataProvider>
     </AuthProvider>
   );
 }
