@@ -17,11 +17,13 @@ const DataContext = createContext<any>(undefined);
 
 // Provider component
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  
   // All individual state hooks
   const customerState = useCustomerState();
   const productState = useProductState();
   const orderState = useOrderState();
-  const paymentState = usePaymentState();
+  const paymentState = usePaymentState(customerState.customers, customerState.updateCustomer);
   const supplierState = useSupplierState();
   const expenseState = useExpenseState();
   const stockState = useStockState();

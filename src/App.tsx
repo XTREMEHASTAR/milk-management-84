@@ -2,7 +2,7 @@
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
-import Layout from '@/components/Layout';
+import { Layout } from '@/components/Layout';
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
 import CustomerDirectory from './pages/CustomerDirectory';
