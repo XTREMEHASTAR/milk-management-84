@@ -1,162 +1,61 @@
 
-import { createContext, useContext, ReactNode } from "react";
-import { DataContextType } from './types';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useCustomerState } from './useCustomerState';
 import { useProductState } from './useProductState';
 import { useOrderState } from './useOrderState';
 import { usePaymentState } from './usePaymentState';
-import { useExpenseState } from './useExpenseState';
 import { useSupplierState } from './useSupplierState';
-import { useProductRateState } from './useProductRateState';
+import { useExpenseState } from './useExpenseState';
 import { useStockState } from './useStockState';
+import { useProductRateState } from './useProductRateState';
 import { useVehicleSalesmanState } from './useVehicleSalesmanState';
 import { useUISettingsState } from './useUISettingsState';
+import { useAuth } from '@/contexts/AuthContext';
 
-const DataContext = createContext<DataContextType | undefined>(undefined);
+// Create data context
+const DataContext = createContext<any>(undefined);
 
-export function DataProvider({ children }: { children: ReactNode }) {
-  // Initialize all state hooks
-  const { customers, addCustomer, updateCustomer, deleteCustomer } = useCustomerState();
-  const { products, addProduct, updateProduct, deleteProduct, updateProductMinStock } = useProductState();
-  const { orders, addOrder, updateOrder, deleteOrder } = useOrderState();
-  const { payments, addPayment, updatePayment, deletePayment } = usePaymentState(customers, updateCustomer);
-  const { expenses, addExpense, updateExpense, deleteExpense } = useExpenseState();
-  
-  const { 
-    suppliers, 
-    supplierPayments, 
-    addSupplier, 
-    updateSupplier, 
-    deleteSupplier, 
-    addSupplierPayment, 
-    updateSupplierPayment, 
-    deleteSupplierPayment 
-  } = useSupplierState();
-  
-  const {
-    customerProductRates,
-    supplierProductRates, 
-    addCustomerProductRate, 
-    updateCustomerProductRate, 
-    deleteCustomerProductRate,
-    getCustomerProductRates,
-    getProductRateForCustomer,
-    addSupplierProductRate,
-    updateSupplierProductRate,
-    deleteSupplierProductRate,
-    getSupplierProductRates,
-    getProductRateForSupplier,
-    getSupplierRateHistory
-  } = useProductRateState(products);
-  
-  const {
-    stockRecords,
-    stockEntries,
-    addStockRecord,
-    updateStockRecord,
-    deleteStockRecord,
-    addStockEntry,
-    updateStockEntry,
-    deleteStockEntry
-  } = useStockState(updateSupplier);
-  
-  const {
-    vehicles,
-    salesmen,
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    addSalesman,
-    updateSalesman,
-    deleteSalesman
-  } = useVehicleSalesmanState();
-  
-  const { uiSettings, updateUISettings } = useUISettingsState();
+// Provider component
+export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // All individual state hooks
+  const customerState = useCustomerState();
+  const productState = useProductState();
+  const orderState = useOrderState();
+  const paymentState = usePaymentState();
+  const supplierState = useSupplierState();
+  const expenseState = useExpenseState();
+  const stockState = useStockState();
+  const productRateState = useProductRateState();
+  const vehicleSalesmanState = useVehicleSalesmanState();
+  const uiSettingsState = useUISettingsState();
 
-  const contextValue: DataContextType = {
-    customers,
-    products,
-    orders,
-    payments,
-    expenses,
-    suppliers,
-    supplierPayments,
-    customerProductRates,
-    stockRecords,
-    stockEntries,
-    supplierProductRates,
-    vehicles,
-    salesmen,
-    uiSettings,
-    
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    updateProductMinStock,
-    
-    addOrder,
-    updateOrder,
-    deleteOrder,
-    
-    addPayment,
-    updatePayment,
-    deletePayment,
-    
-    addExpense,
-    updateExpense,
-    deleteExpense,
-    
-    addSupplier,
-    updateSupplier,
-    deleteSupplier,
-    
-    addSupplierPayment,
-    updateSupplierPayment,
-    deleteSupplierPayment,
-    
-    addCustomerProductRate,
-    updateCustomerProductRate,
-    deleteCustomerProductRate,
-    getCustomerProductRates,
-    getProductRateForCustomer,
-    
-    addSupplierProductRate,
-    updateSupplierProductRate,
-    deleteSupplierProductRate,
-    getSupplierProductRates,
-    getProductRateForSupplier,
-    getSupplierRateHistory,
-    
-    addStockRecord,
-    updateStockRecord,
-    deleteStockRecord,
-    
-    addStockEntry,
-    updateStockEntry,
-    deleteStockEntry,
-    
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    
-    addSalesman,
-    updateSalesman,
-    deleteSalesman,
-    
-    updateUISettings
+  // Combine all state into one object
+  const dataContext = {
+    ...customerState,
+    ...productState,
+    ...orderState,
+    ...paymentState,
+    ...supplierState,
+    ...expenseState,
+    ...stockState,
+    ...productRateState,
+    ...vehicleSalesmanState,
+    ...uiSettingsState
   };
 
-  return <DataContext.Provider value={contextValue}>{children}</DataContext.Provider>;
-}
+  // Provide combined state to children
+  return (
+    <DataContext.Provider value={dataContext}>
+      {children}
+    </DataContext.Provider>
+  );
+};
 
-export function useData() {
+// Hook for using the data context
+export const useData = () => {
   const context = useContext(DataContext);
   if (context === undefined) {
-    throw new Error("useData must be used within a DataProvider");
+    throw new Error('useData must be used within a DataProvider');
   }
   return context;
-}
+};
