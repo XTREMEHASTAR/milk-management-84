@@ -1,218 +1,83 @@
 
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
-// Ensure the electron directory exists
-if (!fs.existsSync('electron')) {
-  fs.mkdirSync('electron');
-}
-
-// Ensure build-resources directory exists for icons
-if (!fs.existsSync('build-resources')) {
-  fs.mkdirSync('build-resources');
-}
-
-// For Windows builds, ensure we have icon files
-const ensureIconFile = () => {
-  const iconPath = path.join(__dirname, 'public', 'icon-512x512.png');
-  const buildResourcesIconPath = path.join(__dirname, 'build-resources', 'icon.png');
-  
-  // If the source icon exists, copy it to build-resources
-  if (fs.existsSync(iconPath)) {
-    try {
-      fs.copyFileSync(iconPath, buildResourcesIconPath);
-      console.log('Copied icon to build resources');
-    } catch (err) {
-      console.error('Error copying icon to build resources:', err);
-    }
-  } else {
-    console.warn('Warning: No icon file found at', iconPath);
-    console.warn('Using a placeholder icon for the build');
-    
-    // Create a simple placeholder if it doesn't exist
-    try {
-      // Copy a placeholder if it exists
-      const possiblePlaceholders = ['public/placeholder.svg', 'public/favicon.ico'];
-      for (const placeholder of possiblePlaceholders) {
-        if (fs.existsSync(placeholder)) {
-          fs.copyFileSync(placeholder, iconPath);
-          fs.copyFileSync(placeholder, buildResourcesIconPath);
-          console.log('Created placeholder icon from', placeholder);
-          return;
-        }
-      }
-    } catch (err) {
-      console.error('Error creating placeholder icon:', err);
-    }
-  }
-};
-
-// Add the needed packages
-const ensurePackages = () => {
+// Function to execute shell commands and display output
+function runCommand(command) {
+  console.log(`\n> ${command}\n`);
   try {
-    console.log('Checking required packages for desktop app...');
-    const packageInfo = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-    const missingDevDeps = [];
-    
-    // Check if required packages are installed
-    const requiredPackages = [
-      'electron-updater',
-      'electron-log',
-      'electron-builder'
-    ];
-    
-    const devDeps = packageInfo.devDependencies || {};
-    
-    for (const pkg of requiredPackages) {
-      if (!devDeps[pkg]) {
-        missingDevDeps.push(pkg);
-      }
-    }
-    
-    // Install missing packages
-    if (missingDevDeps.length > 0) {
-      console.log(`Installing missing packages: ${missingDevDeps.join(', ')}`);
-      execSync(`npm install -D ${missingDevDeps.join(' ')}`, { stdio: 'inherit' });
-      console.log('Packages installed successfully!');
-    } else {
-      console.log('All required packages are installed.');
-    }
+    execSync(command, { stdio: 'inherit' });
   } catch (error) {
-    console.error('Error checking or installing packages:', error);
+    console.error(`Command failed: ${command}`);
+    console.error(error);
+    process.exit(1);
   }
-};
+}
 
-// Verify that all required electron files exist
-const verifyElectronFiles = () => {
-  const requiredFiles = [
-    'electron/main.js',
-    'electron/preload.js',
-    'electron/updater.js',
-    'electron/menuBuilder.js'
-  ];
-  
-  let allFilesExist = true;
-  
-  for (const file of requiredFiles) {
-    if (!fs.existsSync(file)) {
-      console.error(`Missing required file: ${file}`);
-      allFilesExist = false;
-    }
+// Create directory if it doesn't exist
+function ensureDirectoryExists(directory) {
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
   }
-  
-  if (!allFilesExist) {
-    throw new Error('Some required Electron files are missing!');
-  }
-  
-  console.log('All required Electron files exist');
-};
+}
 
-const commands = {
-  'start-electron': async () => {
-    try {
-      console.log('Starting Electron development environment...');
-      ensurePackages();
-      execSync('concurrently "cross-env BROWSER=none npm run dev" "wait-on http://localhost:8080 && cross-env NODE_ENV=development electron electron/main.js"', { stdio: 'inherit' });
-    } catch (error) {
-      console.error('Error starting Electron development environment:', error);
-      process.exit(1);
-    }
-  },
+// Get command line arguments
+const args = process.argv.slice(2);
+const command = args[0];
 
-  'build-electron': async () => {
-    try {
-      console.log('Building for Electron...');
-      ensurePackages();
-      ensureIconFile();
-      verifyElectronFiles();
-      
-      // First build the React app
-      console.log('Building React app...');
-      execSync('npm run build', { stdio: 'inherit' });
-      
-      // Then build the Electron app
-      console.log('Building Electron app...');
-      execSync('electron-builder --config electron-builder.json', { stdio: 'inherit' });
-      
-      console.log('Electron build completed successfully!');
-      console.log('Your installable application is available in the dist_electron directory');
-    } catch (error) {
-      console.error('Error building Electron app:', error);
-      process.exit(1);
-    }
-  },
+// Execute the appropriate command based on arguments
+switch (command) {
+  case 'start':
+    // Start both Vite dev server and Electron
+    runCommand('concurrently "vite" "cross-env NODE_ENV=development electron electron/main.js"');
+    break;
 
-  'package-windows': async () => {
-    try {
-      console.log('Packaging for Windows...');
-      ensurePackages();
-      ensureIconFile();
-      verifyElectronFiles();
-      execSync('npm run build', { stdio: 'inherit' });
-      execSync('electron-builder --win --config electron-builder.json', { stdio: 'inherit' });
-      console.log('Windows packaging completed successfully!');
-      console.log('Your Windows installation package is available in the dist_electron directory');
-    } catch (error) {
-      console.error('Error packaging for Windows:', error);
-      process.exit(1);
-    }
-  },
+  case 'build':
+    // Build for all platforms
+    console.log('Building for all supported platforms...');
+    runCommand('vite build');
+    runCommand('electron-builder build --win --mac --linux');
+    break;
 
-  'package-mac': async () => {
-    try {
-      console.log('Packaging for macOS...');
-      ensurePackages();
-      ensureIconFile();
-      verifyElectronFiles();
-      execSync('npm run build', { stdio: 'inherit' });
-      execSync('electron-builder --mac --config electron-builder.json', { stdio: 'inherit' });
-      console.log('macOS packaging completed successfully!');
-      console.log('Your macOS application bundle is available in the dist_electron directory');
-    } catch (error) {
-      console.error('Error packaging for macOS:', error);
-      process.exit(1);
-    }
-  },
+  case 'build-win':
+    // Build for Windows
+    console.log('Building for Windows...');
+    runCommand('vite build');
+    runCommand('electron-builder build --win');
+    break;
 
-  'package-linux': async () => {
-    try {
-      console.log('Packaging for Linux...');
-      ensurePackages();
-      ensureIconFile();
-      verifyElectronFiles();
-      execSync('npm run build', { stdio: 'inherit' });
-      execSync('electron-builder --linux --config electron-builder.json', { stdio: 'inherit' });
-      console.log('Linux packaging completed successfully!');
-      console.log('Your Linux packages are available in the dist_electron directory');
-    } catch (error) {
-      console.error('Error packaging for Linux:', error);
-      process.exit(1);
-    }
-  },
+  case 'build-mac':
+    // Build for macOS
+    console.log('Building for macOS...');
+    runCommand('vite build');
+    runCommand('electron-builder build --mac');
+    break;
 
-  'publish-update': async () => {
-    try {
-      console.log('Building and publishing update...');
-      ensurePackages();
-      ensureIconFile();
-      verifyElectronFiles();
-      execSync('npm run build', { stdio: 'inherit' });
-      execSync('electron-builder --publish always --config electron-builder.json', { stdio: 'inherit' });
-      console.log('Update published successfully!');
-    } catch (error) {
-      console.error('Error publishing update:', error);
-      process.exit(1);
-    }
-  },
-};
+  case 'build-linux':
+    // Build for Linux
+    console.log('Building for Linux...');
+    runCommand('vite build');
+    runCommand('electron-builder build --linux');
+    break;
 
-// Get the command from command line arguments
-const command = process.argv[2];
+  case 'dev':
+    // For development only
+    runCommand('vite build');
+    runCommand('cross-env NODE_ENV=development electron electron/main.js');
+    break;
 
-if (commands[command]) {
-  commands[command]();
-} else {
-  console.log('Available commands:');
-  Object.keys(commands).forEach(cmd => console.log(`- ${cmd}`));
+  default:
+    console.log(`
+Electron build script for Milk Center Management
+Usage: node electron-scripts.js [command]
+
+Commands:
+  start       Start both Vite dev server and Electron for development
+  build       Build for all platforms
+  build-win   Build for Windows
+  build-mac   Build for macOS
+  build-linux Build for Linux
+  dev         Build once and start Electron (for testing)
+`);
 }

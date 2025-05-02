@@ -1,106 +1,37 @@
 
-const { dialog } = require('electron');
-const { autoUpdater } = require('electron-updater');
-const log = require('electron-log');
-
-// Configure logging
-log.transports.file.level = 'info';
-autoUpdater.logger = log;
-
-// Disable auto downloading of updates
-autoUpdater.autoDownload = false;
-
+/**
+ * Auto-updater module for the Electron app
+ */
 class AppUpdater {
   constructor(mainWindow) {
     this.mainWindow = mainWindow;
-    global.updater = this;
-
-    // Log startup
-    log.info('Starting AppUpdater');
     
-    // Configure error handling for the updater
-    autoUpdater.on('error', (error) => {
-      log.error('Error in auto-updater:', error);
-    });
-
-    // Check for updates when app starts, but with a slight delay
-    // to improve startup performance
-    setTimeout(() => {
-      this.checkForUpdates().catch(err => {
-        log.error('Initial update check failed:', err);
-      });
-    }, 10000); // 10 second delay
-
-    // Listen for update available
-    autoUpdater.on('update-available', (info) => {
-      log.info('Update available:', info);
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Update Available',
-        message: 'A new version is available. Do you want to download it now?',
-        buttons: ['Yes', 'No']
-      }).then((result) => {
-        const buttonIndex = result.response;
-        if (buttonIndex === 0) {
-          this.downloadUpdate();
-        }
-      }).catch(err => {
-        log.error('Error showing update dialog:', err);
-      });
-    });
-
-    // Listen for update downloaded
-    autoUpdater.on('update-downloaded', (info) => {
-      log.info('Update downloaded:', info);
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Update Ready',
-        message: 'Install and restart now?',
-        buttons: ['Yes', 'Later']
-      }).then((result) => {
-        const buttonIndex = result.response;
-        if (buttonIndex === 0) {
-          this.quitAndInstall();
-        }
-      }).catch(err => {
-        log.error('Error showing install dialog:', err);
-      });
-    });
-
-    // Check for updates periodically
-    setInterval(() => {
-      this.checkForUpdates().catch(err => {
-        log.error('Periodic update check failed:', err);
-      });
-    }, 4 * 60 * 60 * 1000); // Every 4 hours
+    // Store reference to updater globally
+    global.updater = this;
+    
+    console.log('AppUpdater initialized');
+    
+    // In a real app, you would implement auto-update logic here using
+    // electron-updater or similar package
   }
-
-  // Check for updates
+  
   async checkForUpdates() {
-    try {
-      log.info('Checking for updates...');
-      return await autoUpdater.checkForUpdates();
-    } catch (error) {
-      log.error('Error checking for updates:', error);
-      return false;
-    }
+    console.log('Checking for updates (placeholder)');
+    // In a real implementation, this would check for updates
+    // and return true if updates are available
+    return false;
   }
-
-  // Download update
+  
   async downloadUpdate() {
-    try {
-      log.info('Downloading update...');
-      return await autoUpdater.downloadUpdate();
-    } catch (error) {
-      log.error('Error downloading update:', error);
-      return false;
-    }
+    console.log('Downloading updates (placeholder)');
+    // In a real implementation, this would download updates
+    // and return true on success
+    return true;
   }
-
-  // Install update
+  
   quitAndInstall() {
-    log.info('Installing update...');
-    autoUpdater.quitAndInstall(false, true);
+    console.log('Installing update and restarting (placeholder)');
+    // In a real implementation, this would quit and install the update
   }
 }
 

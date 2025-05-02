@@ -1,5 +1,5 @@
 
-import { Routes, Route, BrowserRouter } from 'react-router-dom';
+import { Routes, Route, HashRouter } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 import { Layout } from '@/components/Layout';
@@ -46,7 +46,7 @@ function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <BrowserRouter>
+        <HashRouter>
           <SonnerToaster richColors position="top-right" />
           <OfflineIndicator />
           <Routes>
@@ -92,7 +92,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
-        </BrowserRouter>
+        </HashRouter>
       </DataProvider>
     </AuthProvider>
   );
