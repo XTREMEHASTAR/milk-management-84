@@ -31,6 +31,8 @@ export default defineConfig(({ mode }) => ({
     assetsDir: 'assets', // Put assets in a subdirectory
     sourcemap: false, // Don't generate sourcemaps for production
     rollupOptions: {
+      // Add bcryptjs as an external dependency for Electron
+      external: ['bcryptjs'],
       output: {
         // Chunk vendor code
         manualChunks: {
