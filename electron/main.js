@@ -2,7 +2,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = require('electron-is-dev'); // Using the proper module
 const isMac = process.platform === 'darwin';
 const AppUpdater = require('./updater');
 const MenuBuilder = require('./menuBuilder');
