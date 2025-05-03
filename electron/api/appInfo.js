@@ -1,7 +1,7 @@
 
-const { app } = require('electron');
-const os = require('os');
-const path = require('path');
+import { app } from 'electron';
+import os from 'os';
+import path from 'path';
 
 /**
  * Application information API
@@ -52,4 +52,4 @@ class AppInfoAPI {
   }
 }
 
-module.exports = AppInfoAPI;
+export default AppInfoAPI;

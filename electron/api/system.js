@@ -1,6 +1,5 @@
 
-const { shell, clipboard } = require('electron');
-const os = require('os');
+import { shell, clipboard } from 'electron';
 
 /**
  * System integration API
@@ -86,4 +85,4 @@ class SystemAPI {
   }
 }
 
-module.exports = SystemAPI;
+export default SystemAPI;

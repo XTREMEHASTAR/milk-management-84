@@ -1,7 +1,7 @@
 
-const { dialog, app } = require('electron');
-const fs = require('fs');
-const path = require('path');
+import { dialog, app } from 'electron';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * File system operations API for the Electron app
@@ -86,4 +86,4 @@ class FileSystemAPI {
   }
 }
 
-module.exports = FileSystemAPI;
+export default FileSystemAPI;
