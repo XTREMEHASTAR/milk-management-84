@@ -1,5 +1,6 @@
 
-const { app, Menu, shell } = require('electron');
+import { app, Menu, shell } from 'electron';
+
 const isDev = process.env.NODE_ENV === 'development';
 const isMac = process.platform === 'darwin';
 
@@ -144,4 +145,4 @@ class MenuBuilder {
   }
 }
 
-module.exports = MenuBuilder;
+export default MenuBuilder;

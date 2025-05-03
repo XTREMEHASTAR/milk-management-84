@@ -3,8 +3,8 @@
  * Auto-updater module for the Electron app
  * Currently configured for offline-only mode
  */
-const { dialog } = require('electron');
-const log = require('electron-log');
+import { dialog } from 'electron';
+import log from 'electron-log';
 
 class AppUpdater {
   constructor(mainWindow) {
@@ -40,4 +40,4 @@ class AppUpdater {
   }
 }
 
-module.exports = AppUpdater;
+export default AppUpdater;

@@ -1,6 +1,6 @@
 
-const { contextBridge, ipcRenderer } = require('electron');
-const log = require('electron-log');
+import { contextBridge, ipcRenderer } from 'electron';
+import log from 'electron-log';
 
 // Log initialization to help diagnose issues
 log.info('Preload script initializing...');

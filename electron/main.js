@@ -1,12 +1,17 @@
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import path from 'path';
+import fs from 'fs';
+import isDev from 'electron-is-dev';
+import { fileURLToPath } from 'url';
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const isDev = require('electron-is-dev'); // Using the proper module
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const isMac = process.platform === 'darwin';
-const AppUpdater = require('./updater');
-const MenuBuilder = require('./menuBuilder');
-const APIRegistry = require('./api');
+import AppUpdater from './updater.js';
+import MenuBuilder from './menuBuilder.js';
+import APIRegistry from './api/index.js';
 
 // Keep a global reference of the window object to avoid garbage collection
 let mainWindow;
