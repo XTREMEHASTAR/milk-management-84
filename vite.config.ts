@@ -32,7 +32,6 @@ export default defineConfig(({ mode }) => ({
     sourcemap: false, // Don't generate sourcemaps for production
     rollupOptions: {
       // External dependencies that should not be bundled
-      external: ['bcryptjs'],
       output: {
         // Chunk vendor code
         manualChunks: {

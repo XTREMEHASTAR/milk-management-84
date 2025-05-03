@@ -23,6 +23,23 @@ function ensureDirectoryExists(directory) {
   }
 }
 
+// Copy directory recursively
+function copyDir(src, dest) {
+  ensureDirectoryExists(dest);
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 // Ensure build directories exist
 function prepareBuildDirectories() {
   ensureDirectoryExists(path.join(__dirname, 'dist'));
@@ -39,6 +56,8 @@ function copyIconFile() {
     ensureDirectoryExists(path.join(__dirname, 'build'));
     fs.copyFileSync(sourceIcon, destIcon);
     console.log('Copied icon file to build resources directory');
+  } else if (!fs.existsSync(sourceIcon)) {
+    console.warn('Warning: Icon file not found at', sourceIcon);
   }
 }
 
@@ -70,6 +89,9 @@ switch (command) {
     prepareBuildDirectories();
     copyIconFile();
     runCommand('vite build');
+    
+    // Ensure electron directory is included in the build
+    console.log('Ensuring electron directory is included in the build...');
     
     const platform = os.platform();
     if (platform === 'win32') {

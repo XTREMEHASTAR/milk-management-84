@@ -17,6 +17,8 @@ log.info('API Registry initialization');
 // Registry of all API handlers
 class APIRegistry {
   static registerAll(ipcMain) {
+    log.info('Registering API handlers');
+    
     // File system operations
     ipcMain.handle('export-data', async (event, data) => {
       try {
