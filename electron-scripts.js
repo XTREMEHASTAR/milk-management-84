@@ -47,7 +47,7 @@ function prepareBuildDirectories() {
   ensureDirectoryExists(path.join(__dirname, 'dist_electron'));
 }
 
-// Copy icon for build resources if needed
+// Copy icon file for build resources if needed
 function copyIconFile() {
   const sourceIcon = path.join(__dirname, 'public/icon-512x512.png');
   const destIcon = path.join(__dirname, 'build/icon-512x512.png');

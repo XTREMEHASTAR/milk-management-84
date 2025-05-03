@@ -4,6 +4,7 @@
  * Currently configured for offline-only mode
  */
 const { dialog } = require('electron');
+const log = require('electron-log');
 
 class AppUpdater {
   constructor(mainWindow) {
@@ -12,23 +13,23 @@ class AppUpdater {
     // Store reference to updater globally
     global.updater = this;
     
-    console.log('AppUpdater initialized in offline-only mode');
+    log.info('AppUpdater initialized in offline-only mode');
   }
   
   async checkForUpdates() {
-    console.log('Update checking disabled in offline mode');
+    log.info('Update checking disabled in offline mode');
     // Always return false in offline mode
     return false;
   }
   
   async downloadUpdate() {
-    console.log('Update downloading disabled in offline mode');
+    log.info('Update downloading disabled in offline mode');
     // Always return false in offline mode
     return false;
   }
   
   quitAndInstall() {
-    console.log('Update installation disabled in offline mode');
+    log.info('Update installation disabled in offline mode');
     dialog.showMessageBox(this.mainWindow, {
       type: 'info',
       title: 'Offline Mode',
