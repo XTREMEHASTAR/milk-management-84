@@ -1,10 +1,11 @@
+
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
 const isMac = process.platform === 'darwin';
 const AppUpdater = require('./updater');
-const menuBuilder = require('./menuBuilder');
+const MenuBuilder = require('./menuBuilder');
 const APIRegistry = require('./api');
 
 // Keep a global reference of the window object to avoid garbage collection
@@ -15,6 +16,8 @@ const APP_NAME = 'Milk Center Management';
 
 // Create an optimized window
 function createWindow() {
+  console.log('Creating main window...');
+  
   // Create the browser window with optimized settings
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -42,15 +45,31 @@ function createWindow() {
   // Load the app
   if (isDev) {
     // In development, load from the dev server
+    console.log('Running in development mode, loading from dev server...');
     mainWindow.loadURL('http://localhost:8080');
     // Open DevTools automatically in development
     mainWindow.webContents.openDevTools();
   } else {
     // In production, load the built index.html file
-    // Fix path resolution for packaged apps
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    console.log('Loading from:', indexPath);
-    mainWindow.loadFile(indexPath);
+    try {
+      // Fix path resolution for packaged apps
+      const indexPath = path.join(__dirname, '../dist/index.html');
+      console.log('Running in production mode, loading from:', indexPath);
+      
+      if (!fs.existsSync(indexPath)) {
+        console.error(`ERROR: Could not find index.html at ${indexPath}`);
+        dialog.showErrorBox('Application Error', 'Could not load application files. Please reinstall the application.');
+        app.quit();
+        return;
+      }
+      
+      mainWindow.loadFile(indexPath);
+    } catch (error) {
+      console.error('Failed to load index.html:', error);
+      dialog.showErrorBox('Application Error', `Failed to load application: ${error.message}`);
+      app.quit();
+      return;
+    }
     
     // Optimize for production
     mainWindow.webContents.setVisualZoomLevelLimits(1, 3);
@@ -58,6 +77,7 @@ function createWindow() {
 
   // Show window once ready to avoid white flash
   mainWindow.once('ready-to-show', () => {
+    console.log('Window ready to show');
     mainWindow.show();
     mainWindow.focus();
   });
@@ -77,16 +97,19 @@ function createWindow() {
   mainWindow.setTitle(APP_NAME);
   
   // Initialize menu
-  menuBuilder.buildMenu(mainWindow);
+  MenuBuilder.buildMenu(mainWindow);
   
   // Initialize updater in production
   if (!isDev) {
     new AppUpdater(mainWindow);
   }
+  
+  console.log('Window created successfully');
 }
 
 // Register all APIs
 function registerAPIs() {
+  console.log('Registering API handlers...');
   // Register all APIs using the registry
   APIRegistry.registerAll(ipcMain);
   
@@ -128,10 +151,24 @@ function registerAPIs() {
       console.error('Failed to install update:', err);
     }
   });
+  
+  // Add data directory API
+  ipcMain.handle('get-app-paths', () => {
+    return {
+      userData: app.getPath('userData'),
+      documents: app.getPath('documents'),
+      downloads: app.getPath('downloads'),
+      appData: app.getPath('appData')
+    };
+  });
+  
+  console.log('API handlers registered successfully');
 }
 
 // Create the window when Electron has finished initializing
 app.whenReady().then(() => {
+  console.log('Application ready, initializing...');
+  
   // Register all IPC handlers
   registerAPIs();
   
@@ -144,6 +181,12 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+  
+  console.log('Application initialization complete');
+}).catch(error => {
+  console.error('Failed to initialize application:', error);
+  dialog.showErrorBox('Application Error', `Failed to initialize application: ${error.message}`);
+  app.quit();
 });
 
 // Quit when all windows are closed, except on macOS where it's common
@@ -152,6 +195,12 @@ app.on('window-all-closed', () => {
   if (!isMac) {
     app.quit();
   }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  dialog.showErrorBox('Application Error', `An unexpected error occurred: ${error.message}`);
 });
 
 // Optimize memory usage with routine garbage collection

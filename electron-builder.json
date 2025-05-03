@@ -28,5 +28,12 @@
     "category": "Office",
     "icon": "public/icon-512x512.png"
   },
-  "publish": null
+  "publish": null,
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Milk Center Management"
+  }
 }

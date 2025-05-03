@@ -1,7 +1,10 @@
 
 /**
  * Auto-updater module for the Electron app
+ * Currently configured for offline-only mode
  */
+const { dialog } = require('electron');
+
 class AppUpdater {
   constructor(mainWindow) {
     this.mainWindow = mainWindow;
@@ -9,29 +12,30 @@ class AppUpdater {
     // Store reference to updater globally
     global.updater = this;
     
-    console.log('AppUpdater initialized');
-    
-    // In a real app, you would implement auto-update logic here using
-    // electron-updater or similar package
+    console.log('AppUpdater initialized in offline-only mode');
   }
   
   async checkForUpdates() {
-    console.log('Checking for updates (placeholder)');
-    // In a real implementation, this would check for updates
-    // and return true if updates are available
+    console.log('Update checking disabled in offline mode');
+    // Always return false in offline mode
     return false;
   }
   
   async downloadUpdate() {
-    console.log('Downloading updates (placeholder)');
-    // In a real implementation, this would download updates
-    // and return true on success
-    return true;
+    console.log('Update downloading disabled in offline mode');
+    // Always return false in offline mode
+    return false;
   }
   
   quitAndInstall() {
-    console.log('Installing update and restarting (placeholder)');
-    // In a real implementation, this would quit and install the update
+    console.log('Update installation disabled in offline mode');
+    dialog.showMessageBox(this.mainWindow, {
+      type: 'info',
+      title: 'Offline Mode',
+      message: 'This application is configured for offline use only.',
+      detail: 'Please check for new versions manually at the official website.',
+      buttons: ['OK']
+    });
   }
 }
 

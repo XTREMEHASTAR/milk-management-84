@@ -38,6 +38,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { ElectronDetector } from './components/ElectronDetector';
 import { DataProvider } from '@/contexts/data/DataContext';
 
 import './App.css';
@@ -49,6 +50,7 @@ function App() {
         <HashRouter>
           <SonnerToaster richColors position="top-right" />
           <OfflineIndicator />
+          <ElectronDetector />
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
