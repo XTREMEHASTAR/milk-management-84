@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -161,13 +160,14 @@ export interface Salesman {
   isActive: boolean;
 }
 
+// Add UISettings interface if not already present
 export interface UISettings {
   theme: "light" | "dark" | "system";
   accentColor: string;
-  sidebarStyle: "default" | "compact" | "expanded" | "gradient";
+  sidebarStyle: string;
   sidebarColor: string;
-  tableStyle: "default" | "bordered" | "striped";
-  compactMode?: boolean;
-  paymentReminders?: boolean;
-  lowStockAlerts?: boolean;
+  tableStyle: string;
+  compactMode: boolean;
+  paymentReminders: boolean;
+  lowStockAlerts: boolean;
 }

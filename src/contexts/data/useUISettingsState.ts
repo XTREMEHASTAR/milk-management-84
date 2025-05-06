@@ -7,24 +7,36 @@ const defaultUISettings: UISettings = {
   accentColor: "teal",
   sidebarStyle: "default",
   sidebarColor: "default",
-  tableStyle: "default"
+  tableStyle: "default",
+  compactMode: false,
+  paymentReminders: true,
+  lowStockAlerts: true
 };
 
 export function useUISettingsState() {
   const [uiSettings, setUISettings] = useState<UISettings>(() => {
-    const saved = localStorage.getItem("uiSettings");
-    return saved ? JSON.parse(saved) : defaultUISettings;
+    try {
+      const saved = localStorage.getItem("uiSettings");
+      return saved ? JSON.parse(saved) : defaultUISettings;
+    } catch (error) {
+      console.error("Error loading UI settings:", error);
+      return defaultUISettings;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
+    try {
+      localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
+    } catch (error) {
+      console.error("Error saving UI settings:", error);
+    }
   }, [uiSettings]);
 
   const updateUISettings = (settings: Partial<UISettings>) => {
-    setUISettings({
-      ...uiSettings,
+    setUISettings(prev => ({
+      ...prev,
       ...settings
-    });
+    }));
   };
 
   return {
