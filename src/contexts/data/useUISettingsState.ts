@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { UISettings } from '@/types';
 
 const defaultUISettings: UISettings = {
@@ -7,37 +7,25 @@ const defaultUISettings: UISettings = {
   accentColor: "teal",
   sidebarStyle: "default",
   sidebarColor: "default",
-  tableStyle: "default",
-  compactMode: false,
-  paymentReminders: true,
-  lowStockAlerts: true
+  tableStyle: "default"
 };
 
 export function useUISettingsState() {
   const [uiSettings, setUISettings] = useState<UISettings>(() => {
-    try {
-      const saved = localStorage.getItem("uiSettings");
-      return saved ? JSON.parse(saved) : defaultUISettings;
-    } catch (error) {
-      console.error("Error loading UI settings:", error);
-      return defaultUISettings;
-    }
+    const saved = localStorage.getItem("uiSettings");
+    return saved ? JSON.parse(saved) : defaultUISettings;
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
-    } catch (error) {
-      console.error("Error saving UI settings:", error);
-    }
+    localStorage.setItem("uiSettings", JSON.stringify(uiSettings));
   }, [uiSettings]);
 
-  const updateUISettings = useCallback((settings: Partial<UISettings>) => {
-    setUISettings(prev => ({
-      ...prev,
+  const updateUISettings = (settings: Partial<UISettings>) => {
+    setUISettings({
+      ...uiSettings,
       ...settings
-    }));
-  }, []);
+    });
+  };
 
   return {
     uiSettings,

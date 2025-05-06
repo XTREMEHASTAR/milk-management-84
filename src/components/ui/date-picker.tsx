@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -15,10 +15,9 @@ interface DatePickerProps {
   date: Date;
   setDate: (date: Date) => void;
   className?: string;
-  mode?: "default" | "month"; // Add mode option
 }
 
-export function DatePicker({ date, setDate, className, mode = "default" }: DatePickerProps) {
+export function DatePicker({ date, setDate, className }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -31,13 +30,7 @@ export function DatePicker({ date, setDate, className, mode = "default" }: DateP
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? (
-            mode === "month" ? 
-            format(date, "MMMM yyyy") : 
-            format(date, "PPP")
-          ) : (
-            <span>Pick a {mode === "month" ? "month" : "date"}</span>
-          )}
+          {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -47,12 +40,6 @@ export function DatePicker({ date, setDate, className, mode = "default" }: DateP
           onSelect={(date) => date && setDate(date)}
           initialFocus
           className="p-3 pointer-events-auto"
-          fromMonth={mode === "month" ? new Date(date.getFullYear(), 0) : undefined}
-          toMonth={mode === "month" ? new Date(date.getFullYear(), 11) : undefined}
-          captionLayout={mode === "month" ? "dropdown-buttons" : "buttons"}
-          defaultMonth={date}
-          showOutsideDays={mode !== "month"}
-          ISOWeek={mode !== "month"}
         />
       </PopoverContent>
     </Popover>
