@@ -56,8 +56,9 @@ export default function TrackSheet() {
 
   // Handle print functionality
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
     documentTitle: `Track_Sheet_${format(selectedMonth, 'MMM_yyyy')}`,
+    // Fix error 1: Use contentRef instead of content
+    contentRef: () => printRef.current,
     pageStyle: `
       @page {
         size: landscape;
@@ -211,6 +212,7 @@ export default function TrackSheet() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
             <div className="space-y-2">
               <label className="text-sm font-medium">Month</label>
+              {/* Fix error 2: Use the updated DatePicker with proper mode prop */}
               <DatePicker
                 date={selectedMonth}
                 setDate={setSelectedMonth}
@@ -386,21 +388,23 @@ export default function TrackSheet() {
         </CardContent>
       </Card>
       
-      {/* Add custom CSS for landscape print */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: landscape;
+      {/* Fix error 3: Use standard style tag without jsx and global props */}
+      <style>
+        {`
+          @media print {
+            @page {
+              size: landscape;
+            }
+            .landscape-print {
+              width: 100%;
+              overflow: visible !important;
+            }
+            .sticky {
+              position: relative !important;
+            }
           }
-          .landscape-print {
-            width: 100%;
-            overflow: visible !important;
-          }
-          .sticky {
-            position: relative !important;
-          }
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 }

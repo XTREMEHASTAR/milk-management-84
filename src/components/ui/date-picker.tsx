@@ -15,9 +15,10 @@ interface DatePickerProps {
   date: Date;
   setDate: (date: Date) => void;
   className?: string;
+  mode?: "default" | "month"; // Add mode option
 }
 
-export function DatePicker({ date, setDate, className }: DatePickerProps) {
+export function DatePicker({ date, setDate, className, mode = "default" }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -30,12 +31,18 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>Pick a date</span>}
+          {date ? (
+            mode === "month" ? 
+            format(date, "MMMM yyyy") : 
+            format(date, "PPP")
+          ) : (
+            <span>Pick a {mode === "month" ? "month" : "date"}</span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
-          mode="single"
+          mode={mode === "month" ? "month" : "single"}
           selected={date}
           onSelect={(date) => date && setDate(date)}
           initialFocus
