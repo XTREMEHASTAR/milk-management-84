@@ -17,8 +17,10 @@ interface PdfExportOptions {
   filename: string;
   landscape?: boolean;
   theme?: UISettings["theme"];
-  fontSizeAdjustment?: number; // New option to adjust font size
-  columnWidths?: string[]; // Custom column widths
+  fontSizeAdjustment?: number; 
+  columnWidths?: string[];
+  cellPadding?: number; // New option to control cell padding
+  lineHeight?: number;  // New option to control line height
 }
 
 export const exportToPdf = (
@@ -88,29 +90,41 @@ export const exportToPdf = (
     });
   }
   
-  // Generate the PDF table with styling that matches the UI
+  // Default cell padding and line height
+  const cellPadding = options.cellPadding || 4; // Increased from 3 to 4
+  const lineHeight = options.lineHeight || 1.3; // New line height option
+  
+  // Generate the PDF table with improved styling
   autoTable(doc, {
     head: [columns],
     body: data,
     startY: yPosition,
     styles: { 
       fontSize: fontSize,
-      cellPadding: 3,
+      cellPadding: cellPadding,
+      lineColor: [120, 120, 120],
+      lineWidth: 0.2, // Slightly thicker lines for better visibility
       overflow: 'linebreak',
-      lineWidth: 0.1,
+      halign: 'center', // Center align for better readability
+      valign: 'middle',
+      minCellHeight: 12, // Ensure minimum cell height
+      lineHeight: lineHeight, // Apply line height for spacing
     },
     headStyles: { 
       fillColor: options.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      minCellHeight: 14
+      minCellHeight: 14,
+      cellPadding: cellPadding + 1, // Slightly more padding for headers
+      halign: 'center',
     },
     alternateRowStyles: { 
       fillColor: options.theme === "dark" ? [40, 54, 60] : [243, 244, 246]
     },
     footStyles: { 
       fillColor: options.theme === "dark" ? [16, 65, 82] : [220, 252, 231],
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      cellPadding: cellPadding + 1, // Slightly more padding for footers
     },
     theme: 'grid',
     columnStyles: colWidths.length > 0 ? colWidths.reduce((acc, width, index) => {
@@ -120,7 +134,13 @@ export const exportToPdf = (
       return acc;
     }, {}) : {},
     margin: { top: 10, right: margins, bottom: 15, left: margins },
-    tableWidth: 'auto'
+    tableWidth: 'auto',
+    didParseCell: (data) => {
+      // For the first column (customer names), align left
+      if (data.column.index === 0) {
+        data.cell.styles.halign = 'left';
+      }
+    }
   });
   
   // Add footer with date and page numbers
@@ -210,29 +230,41 @@ export const generatePdfPreview = (
     });
   }
   
-  // Generate the PDF table with styling that matches the UI
+  // Default cell padding and line height
+  const cellPadding = options.cellPadding || 4; // Increased from 3 to 4
+  const lineHeight = options.lineHeight || 1.3; // New line height option
+  
+  // Generate the PDF table with improved styling
   autoTable(doc, {
     head: [columns],
     body: data,
     startY: yPosition,
     styles: { 
       fontSize: fontSize,
-      cellPadding: 3,
+      cellPadding: cellPadding,
+      lineColor: [120, 120, 120],
+      lineWidth: 0.2, // Slightly thicker lines for better visibility
       overflow: 'linebreak',
-      lineWidth: 0.1,
+      halign: 'center', // Center align for better readability
+      valign: 'middle',
+      minCellHeight: 12, // Ensure minimum cell height
+      lineHeight: lineHeight, // Apply line height for spacing
     },
     headStyles: { 
       fillColor: options.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      minCellHeight: 14
+      minCellHeight: 14,
+      cellPadding: cellPadding + 1, // Slightly more padding for headers
+      halign: 'center',
     },
     alternateRowStyles: { 
       fillColor: options.theme === "dark" ? [40, 54, 60] : [243, 244, 246]
     },
     footStyles: { 
       fillColor: options.theme === "dark" ? [16, 65, 82] : [220, 252, 231],
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      cellPadding: cellPadding + 1, // Slightly more padding for footers
     },
     theme: 'grid',
     columnStyles: colWidths.length > 0 ? colWidths.reduce((acc, width, index) => {
@@ -242,7 +274,13 @@ export const generatePdfPreview = (
       return acc;
     }, {}) : {},
     margin: { top: 10, right: margins, bottom: 15, left: margins },
-    tableWidth: 'auto'
+    tableWidth: 'auto',
+    didParseCell: (data) => {
+      // For the first column (customer names), align left
+      if (data.column.index === 0) {
+        data.cell.styles.halign = 'left';
+      }
+    }
   });
   
   // Add footer with date and page numbers
@@ -275,6 +313,8 @@ export const exportDataTable = (
     theme?: UISettings["theme"];
     fontSizeAdjustment?: number;
     columnWidths?: string[];
+    cellPadding?: number;
+    lineHeight?: number;
   } = {}
 ) => {
   return exportToPdf(
@@ -289,7 +329,9 @@ export const exportDataTable = (
       landscape: options.landscape || false,
       theme: options.theme || "light",
       fontSizeAdjustment: options.fontSizeAdjustment || 0,
-      columnWidths: options.columnWidths
+      columnWidths: options.columnWidths,
+      cellPadding: options.cellPadding,
+      lineHeight: options.lineHeight
     }
   );
 };
@@ -306,6 +348,8 @@ export const previewDataTableAsPdf = (
     theme?: UISettings["theme"];
     fontSizeAdjustment?: number;
     columnWidths?: string[];
+    cellPadding?: number;
+    lineHeight?: number;
   } = {}
 ): string => {
   return generatePdfPreview(
@@ -320,7 +364,9 @@ export const previewDataTableAsPdf = (
       landscape: options.landscape || false,
       theme: options.theme || "light",
       fontSizeAdjustment: options.fontSizeAdjustment || 0,
-      columnWidths: options.columnWidths
+      columnWidths: options.columnWidths,
+      cellPadding: options.cellPadding,
+      lineHeight: options.lineHeight
     }
   );
 };

@@ -37,7 +37,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   FileDown, FileText, Printer, Maximize, 
-  ZoomIn, ZoomOut, TruckIcon, UserIcon
+  ZoomIn, ZoomOut, TruckIcon, UserIcon,
+  SpacingIcon, LineHeight
 } from "lucide-react";
 import { format } from "date-fns";
 import { Order, OrderItem, Vehicle, Salesman } from "@/types";
@@ -64,6 +65,8 @@ const TrackSheet = () => {
   const [selectedSalesman, setSelectedSalesman] = useState<string | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [fontSizeAdjustment, setFontSizeAdjustment] = useState<number>(0);
+  const [cellPadding, setCellPadding] = useState<number>(4);
+  const [lineHeight, setLineHeight] = useState<number>(1.3);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [columnWidths, setColumnWidths] = useState<string[]>([]);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -100,7 +103,7 @@ const TrackSheet = () => {
     if (selectedOrder && showPreview) {
       generatePdfPreview();
     }
-  }, [fontSizeAdjustment, columnWidths, showPreview, trackItems]);
+  }, [fontSizeAdjustment, cellPadding, lineHeight, columnWidths, showPreview, trackItems]);
 
   const generateTrackItems = (order: Order) => {
     const items: TrackItem[] = [];
@@ -291,7 +294,7 @@ const TrackSheet = () => {
       }
     }
 
-    // Generate preview
+    // Generate preview with improved table formatting
     const pdfUrl = previewDataTableAsPdf(
       tableColumn,
       tableRows,
@@ -302,7 +305,9 @@ const TrackSheet = () => {
         additionalInfo: additionalInfo.length > 0 ? additionalInfo : undefined,
         theme: uiSettings.theme,
         fontSizeAdjustment: fontSizeAdjustment,
-        columnWidths: columnWidths
+        columnWidths: columnWidths,
+        cellPadding: cellPadding,
+        lineHeight: lineHeight
       }
     );
     
@@ -382,7 +387,7 @@ const TrackSheet = () => {
       }
     }
     
-    // Export to PDF
+    // Export to PDF with improved table formatting
     exportToPdf(
       tableColumn,
       tableRows,
@@ -395,7 +400,9 @@ const TrackSheet = () => {
         landscape: true,
         theme: uiSettings.theme,
         fontSizeAdjustment: fontSizeAdjustment,
-        columnWidths: columnWidths
+        columnWidths: columnWidths,
+        cellPadding: cellPadding,
+        lineHeight: lineHeight
       }
     );
     
@@ -474,22 +481,57 @@ const TrackSheet = () => {
               </DialogHeader>
               <div className="flex flex-col h-full">
                 <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center space-x-4">
-                    <span>Adjust Font Size:</span>
-                    <div className="w-48">
-                      <Slider
-                        defaultValue={[0]}
-                        min={-2}
-                        max={4}
-                        step={0.5}
-                        value={[fontSizeAdjustment]}
-                        onValueChange={(value) => setFontSizeAdjustment(value[0])}
-                      />
+                  <div className="flex flex-wrap items-center gap-4">
+                    {/* Font size adjustment */}
+                    <div className="flex items-center gap-2">
+                      <span>Font Size:</span>
+                      <div className="w-48">
+                        <Slider
+                          defaultValue={[0]}
+                          min={-2}
+                          max={4}
+                          step={0.5}
+                          value={[fontSizeAdjustment]}
+                          onValueChange={(value) => setFontSizeAdjustment(value[0])}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <ZoomOut className="h-4 w-4" />
+                        <span>{fontSizeAdjustment}</span>
+                        <ZoomIn className="h-4 w-4" />
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <ZoomOut className="h-4 w-4" />
-                      <span>{fontSizeAdjustment}</span>
-                      <ZoomIn className="h-4 w-4" />
+                    
+                    {/* Cell padding adjustment */}
+                    <div className="flex items-center gap-2">
+                      <span>Cell Padding:</span>
+                      <div className="w-36">
+                        <Slider
+                          defaultValue={[4]}
+                          min={2}
+                          max={8}
+                          step={0.5}
+                          value={[cellPadding]}
+                          onValueChange={(value) => setCellPadding(value[0])}
+                        />
+                      </div>
+                      <span>{cellPadding}</span>
+                    </div>
+                    
+                    {/* Line height adjustment */}
+                    <div className="flex items-center gap-2">
+                      <span>Line Height:</span>
+                      <div className="w-36">
+                        <Slider
+                          defaultValue={[1.3]}
+                          min={1}
+                          max={2}
+                          step={0.1}
+                          value={[lineHeight]}
+                          onValueChange={(value) => setLineHeight(value[0])}
+                        />
+                      </div>
+                      <span>{lineHeight.toFixed(1)}</span>
                     </div>
                   </div>
                   <Button onClick={exportToPDF} className="bg-teal-700 hover:bg-teal-800">
@@ -718,7 +760,7 @@ const TrackSheet = () => {
               <li>Select a date to view the track sheet for that day.</li>
               <li>Group by vehicle or salesman to filter the track sheet.</li>
               <li>Use the Preview button to check how the PDF will look before exporting.</li>
-              <li>In the preview, you can adjust font size to ensure data fits properly.</li>
+              <li>In the preview, you can adjust font size, cell padding, and line height to improve readability.</li>
               <li>Use the Export buttons to download as CSV/PDF or the Print button to print.</li>
               <li>If no data is available, create an order for the selected date first.</li>
             </ul>
