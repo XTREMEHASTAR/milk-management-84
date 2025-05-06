@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -57,8 +56,8 @@ export default function TrackSheet() {
   // Handle print functionality
   const handlePrint = useReactToPrint({
     documentTitle: `Track_Sheet_${format(selectedMonth, 'MMM_yyyy')}`,
-    // Fix the contentRef to be a RefObject instead of a function
-    content: () => printRef.current,
+    // Fix the contentRef property name
+    contentRef: printRef,
     pageStyle: `
       @page {
         size: landscape;
@@ -212,7 +211,6 @@ export default function TrackSheet() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
             <div className="space-y-2">
               <label className="text-sm font-medium">Month</label>
-              {/* Fix error 2: Use the updated DatePicker with proper mode prop */}
               <DatePicker
                 date={selectedMonth}
                 setDate={setSelectedMonth}
@@ -388,7 +386,6 @@ export default function TrackSheet() {
         </CardContent>
       </Card>
       
-      {/* Fix error 3: Use standard style tag without jsx and global props */}
       <style>
         {`
           @media print {

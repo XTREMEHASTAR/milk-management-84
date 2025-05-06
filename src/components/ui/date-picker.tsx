@@ -50,8 +50,8 @@ export function DatePicker({ date, setDate, className, mode = "default" }: DateP
           fromMonth={mode === "month" ? new Date(date.getFullYear(), 0) : undefined}
           toMonth={mode === "month" ? new Date(date.getFullYear(), 11) : undefined}
           captionLayout={mode === "month" ? "dropdown-buttons" : "buttons"}
-          // Hide day selection for month picker
-          hidden={mode === "month" ? { day: true } : undefined}
+          // For month picker, use views prop instead of hidden
+          view={mode === "month" ? "month" : "day"}
         />
       </PopoverContent>
     </Popover>
