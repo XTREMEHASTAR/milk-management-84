@@ -42,11 +42,16 @@ export function DatePicker({ date, setDate, className, mode = "default" }: DateP
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
-          mode={mode === "month" ? "month" : "single"}
+          mode={mode === "month" ? "range" : "single"} 
           selected={date}
           onSelect={(date) => date && setDate(date)}
           initialFocus
           className="p-3 pointer-events-auto"
+          fromMonth={mode === "month" ? new Date(date.getFullYear(), 0) : undefined}
+          toMonth={mode === "month" ? new Date(date.getFullYear(), 11) : undefined}
+          captionLayout={mode === "month" ? "dropdown-buttons" : "buttons"}
+          // Hide day selection for month picker
+          hidden={mode === "month" ? { day: true } : undefined}
         />
       </PopoverContent>
     </Popover>

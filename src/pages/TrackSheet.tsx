@@ -57,8 +57,8 @@ export default function TrackSheet() {
   // Handle print functionality
   const handlePrint = useReactToPrint({
     documentTitle: `Track_Sheet_${format(selectedMonth, 'MMM_yyyy')}`,
-    // Fix error 1: Use contentRef instead of content
-    contentRef: () => printRef.current,
+    // Fix the contentRef to be a RefObject instead of a function
+    content: () => printRef.current,
     pageStyle: `
       @page {
         size: landscape;
