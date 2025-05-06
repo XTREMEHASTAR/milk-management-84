@@ -190,43 +190,45 @@ const TrackSheet = () => {
       return;
     }
 
-    const doc = new jsPDF();
+    // Create PDF in landscape orientation
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+    });
     
-    // Add title and date
-    doc.setFontSize(18);
-    doc.text("Daily Delivery Track Sheet", 14, 22);
-    
-    doc.setFontSize(12);
-    doc.text(`Date: ${format(trackDate, "dd MMMM yyyy")}`, 14, 30);
-    
-    // Create a gradient background for the title area (lighter version for PDF)
+    // Add title and date with styling
+    // Create a gradient background for the title area
     doc.setFillColor(16, 185, 129); // Teal color
-    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
+    doc.rect(0, 0, doc.internal.pageSize.width, 20, 'F');
     
-    // Add a logo or business name with styling
+    // Add title with styling
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text("Milk Delivery App", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    doc.text("Milk Delivery App", doc.internal.pageSize.width / 2, 10, { align: 'center' });
+    
+    // Add subtitle
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text("Daily Delivery Track Sheet", 14, 30);
+    
+    // Add date
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${format(trackDate, "dd MMMM yyyy")}`, 14, 40);
     
     // Add vehicle or salesman info if applicable
     if (groupBy === "vehicle" && selectedVehicle) {
       const vehicle = vehicles.find(v => v.id === selectedVehicle);
       if (vehicle) {
-        doc.setFontSize(12);
-        doc.text(`Vehicle: ${vehicle.name} (${vehicle.regNumber})`, doc.internal.pageSize.width - 15, 30, { align: 'right' });
+        doc.text(`Vehicle: ${vehicle.name} (${vehicle.regNumber})`, doc.internal.pageSize.width - 20, 40, { align: 'right' });
       }
     } else if (groupBy === "salesman" && selectedSalesman) {
       const salesman = salesmen.find(s => s.id === selectedSalesman);
       if (salesman) {
-        doc.setFontSize(12);
-        doc.text(`Salesman: ${salesman.name}`, doc.internal.pageSize.width - 15, 30, { align: 'right' });
+        doc.text(`Salesman: ${salesman.name}`, doc.internal.pageSize.width - 20, 40, { align: 'right' });
       }
     }
-    
-    // Reset text color
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
     
     // Prepare table data
     const tableColumn = ["Customer"];
@@ -279,11 +281,20 @@ const TrackSheet = () => {
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 40,
+      startY: 45,
       styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255] },
-      footStyles: { fillColor: [240, 253, 244], fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [243, 244, 246] },
+      headStyles: { 
+        fillColor: uiSettings.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: { 
+        fillColor: uiSettings.theme === "dark" ? [40, 54, 60] : [243, 244, 246]
+      },
+      footStyles: { 
+        fillColor: uiSettings.theme === "dark" ? [16, 65, 82] : [220, 252, 231],
+        fontStyle: 'bold'
+      },
       theme: 'grid'
     });
     
