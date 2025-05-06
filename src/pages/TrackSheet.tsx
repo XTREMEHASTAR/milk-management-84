@@ -17,6 +17,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Select,
@@ -26,14 +27,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Download, FileDown, FileText, Printer, 
-  TruckIcon, UserIcon
+  Slider
+} from "@/components/ui/slider";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  FileDown, FileText, Printer, Maximize, 
+  ZoomIn, ZoomOut, TruckIcon, UserIcon
 } from "lucide-react";
 import { format } from "date-fns";
 import { Order, OrderItem, Vehicle, Salesman } from "@/types";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { exportToPdf, previewDataTableAsPdf } from "@/utils/pdfUtils";
 
 interface TrackItem {
   customerId: string;
@@ -53,6 +63,10 @@ const TrackSheet = () => {
   const [groupBy, setGroupBy] = useState<"none" | "vehicle" | "salesman">("none");
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [selectedSalesman, setSelectedSalesman] = useState<string | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [fontSizeAdjustment, setFontSizeAdjustment] = useState<number>(0);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [columnWidths, setColumnWidths] = useState<string[]>([]);
   const tableRef = useRef<HTMLDivElement>(null);
 
   // Find order for the selected date
@@ -67,6 +81,27 @@ const TrackSheet = () => {
       setTrackItems([]);
     }
   }, [trackDate, orders, customers, products]);
+
+  // Initialize column widths when products change
+  useEffect(() => {
+    // Default column width distribution - first column wider for customer names
+    const defaultWidths = ["25%"];
+    
+    // Equal distribution for product columns
+    if (products.length > 0) {
+      const productColumnWidth = `${65 / products.length}%`;
+      const productWidths = Array(products.length).fill(productColumnWidth);
+      // Add widths for total columns
+      setColumnWidths([...defaultWidths, ...productWidths, "5%", "5%"]);
+    }
+  }, [products]);
+
+  // Update preview when relevant settings change
+  useEffect(() => {
+    if (selectedOrder && showPreview) {
+      generatePdfPreview();
+    }
+  }, [fontSizeAdjustment, columnWidths, showPreview, trackItems]);
 
   const generateTrackItems = (order: Order) => {
     const items: TrackItem[] = [];
@@ -184,52 +219,12 @@ const TrackSheet = () => {
     link.click();
   };
 
-  const exportToPDF = () => {
+  const generatePdfPreview = () => {
     if (!selectedOrder) {
       toast.error("No order data available for the selected date");
       return;
     }
 
-    // Create PDF in landscape orientation
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-    });
-    
-    // Add title and date with styling
-    // Create a gradient background for the title area
-    doc.setFillColor(16, 185, 129); // Teal color
-    doc.rect(0, 0, doc.internal.pageSize.width, 20, 'F');
-    
-    // Add title with styling
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text("Milk Delivery App", doc.internal.pageSize.width / 2, 10, { align: 'center' });
-    
-    // Add subtitle
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14);
-    doc.text("Daily Delivery Track Sheet", 14, 30);
-    
-    // Add date
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Date: ${format(trackDate, "dd MMMM yyyy")}`, 14, 40);
-    
-    // Add vehicle or salesman info if applicable
-    if (groupBy === "vehicle" && selectedVehicle) {
-      const vehicle = vehicles.find(v => v.id === selectedVehicle);
-      if (vehicle) {
-        doc.text(`Vehicle: ${vehicle.name} (${vehicle.regNumber})`, doc.internal.pageSize.width - 20, 40, { align: 'right' });
-      }
-    } else if (groupBy === "salesman" && selectedSalesman) {
-      const salesman = salesmen.find(s => s.id === selectedSalesman);
-      if (salesman) {
-        doc.text(`Salesman: ${salesman.name}`, doc.internal.pageSize.width - 20, 40, { align: 'right' });
-      }
-    }
-    
     // Prepare table data
     const tableColumn = ["Customer"];
     products.forEach(product => {
@@ -276,44 +271,136 @@ const TrackSheet = () => {
     totalsRow.push(`₹${grandTotalAmount}`);
     
     tableRows.push(totalsRow);
+
+    // Get vehicle or salesman info
+    let additionalInfo = [];
+    if (groupBy === "vehicle" && selectedVehicle) {
+      const vehicle = vehicles.find(v => v.id === selectedVehicle);
+      if (vehicle) {
+        additionalInfo.push({ 
+          label: "Vehicle", 
+          value: `${vehicle.name} (${vehicle.regNumber})` 
+        });
+      }
+    } else if (groupBy === "salesman" && selectedSalesman) {
+      const salesman = salesmen.find(s => s.id === selectedSalesman);
+      if (salesman) {
+        additionalInfo.push({ 
+          label: "Salesman", 
+          value: salesman.name 
+        });
+      }
+    }
+
+    // Generate preview
+    const pdfUrl = previewDataTableAsPdf(
+      tableColumn,
+      tableRows,
+      "Milk Delivery App",
+      {
+        landscape: true,
+        dateInfo: `Date: ${format(trackDate, "dd MMMM yyyy")}`,
+        additionalInfo: additionalInfo.length > 0 ? additionalInfo : undefined,
+        theme: uiSettings.theme,
+        fontSizeAdjustment: fontSizeAdjustment,
+        columnWidths: columnWidths
+      }
+    );
     
-    // Generate the PDF table with styling that matches the UI
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 45,
-      styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { 
-        fillColor: uiSettings.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: { 
-        fillColor: uiSettings.theme === "dark" ? [40, 54, 60] : [243, 244, 246]
-      },
-      footStyles: { 
-        fillColor: uiSettings.theme === "dark" ? [16, 65, 82] : [220, 252, 231],
-        fontStyle: 'bold'
-      },
-      theme: 'grid'
+    setPdfPreviewUrl(pdfUrl);
+  };
+
+  const exportToPDF = () => {
+    if (!selectedOrder) {
+      toast.error("No order data available for the selected date");
+      return;
+    }
+
+    // Prepare table data
+    const tableColumn = ["Customer"];
+    products.forEach(product => {
+      tableColumn.push(product.name);
+    });
+    tableColumn.push("Total Qty");
+    tableColumn.push("Amount (₹)");
+    
+    const tableRows = trackItems.map(item => {
+      const row = [item.customerName];
+      
+      products.forEach(product => {
+        row.push(item.products[product.id]?.toString() || "-");
+      });
+      
+      row.push(item.totalQuantity.toString());
+      row.push(`₹${item.totalAmount}`);
+      
+      return row;
     });
     
-    // Add footer with date and page numbers
-    const pageCount = doc.internal.pages.length - 1;
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text(
-        `Generated on: ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
-        doc.internal.pageSize.width / 2,
-        doc.internal.pageSize.height - 10,
-        { align: 'center' }
+    // Add totals row
+    const totalsRow = ["TOTAL"];
+    
+    products.forEach(product => {
+      const total = trackItems.reduce(
+        (sum, item) => sum + (item.products[product.id] || 0),
+        0
       );
+      totalsRow.push(total.toString());
+    });
+    
+    const grandTotalQuantity = trackItems.reduce(
+      (sum, item) => sum + item.totalQuantity,
+      0
+    );
+    
+    const grandTotalAmount = trackItems.reduce(
+      (sum, item) => sum + item.totalAmount,
+      0
+    );
+    
+    totalsRow.push(grandTotalQuantity.toString());
+    totalsRow.push(`₹${grandTotalAmount}`);
+    
+    tableRows.push(totalsRow);
+
+    // Get vehicle or salesman info
+    let additionalInfo = [];
+    if (groupBy === "vehicle" && selectedVehicle) {
+      const vehicle = vehicles.find(v => v.id === selectedVehicle);
+      if (vehicle) {
+        additionalInfo.push({ 
+          label: "Vehicle", 
+          value: `${vehicle.name} (${vehicle.regNumber})` 
+        });
+      }
+    } else if (groupBy === "salesman" && selectedSalesman) {
+      const salesman = salesmen.find(s => s.id === selectedSalesman);
+      if (salesman) {
+        additionalInfo.push({ 
+          label: "Salesman", 
+          value: salesman.name 
+        });
+      }
     }
     
-    // Save the PDF
-    doc.save(`track-sheet-${format(trackDate, "yyyy-MM-dd")}.pdf`);
+    // Export to PDF
+    exportToPdf(
+      tableColumn,
+      tableRows,
+      "Milk Delivery App",
+      {
+        title: "Milk Delivery App",
+        subtitle: "Daily Delivery Track Sheet",
+        dateInfo: `Date: ${format(trackDate, "dd MMMM yyyy")}`,
+        additionalInfo: additionalInfo.length > 0 ? additionalInfo : undefined,
+        filename: `track-sheet-${format(trackDate, "yyyy-MM-dd")}.pdf`,
+        landscape: true,
+        theme: uiSettings.theme,
+        fontSizeAdjustment: fontSizeAdjustment,
+        columnWidths: columnWidths
+      }
+    );
+    
     toast.success("PDF exported successfully");
   };
 
@@ -324,6 +411,17 @@ const TrackSheet = () => {
     }
     
     window.print();
+  };
+
+  const handlePreview = () => {
+    setShowPreview(true);
+    generatePdfPreview();
+  };
+
+  const handleColumnWidthChange = (index: number, newWidth: string) => {
+    const newColumnWidths = [...columnWidths];
+    newColumnWidths[index] = newWidth;
+    setColumnWidths(newColumnWidths);
   };
 
   const getBgColorClass = () => {
@@ -364,6 +462,57 @@ const TrackSheet = () => {
             <FileDown className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
+          
+          <Dialog open={showPreview} onOpenChange={setShowPreview}>
+            <DialogTrigger asChild>
+              <Button variant="outline" onClick={handlePreview} disabled={!selectedOrder}>
+                <Maximize className="mr-2 h-4 w-4" />
+                Preview PDF
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[90vw] max-h-[90vh] w-[90vw] h-[90vh]">
+              <DialogHeader>
+                <DialogTitle>PDF Preview</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col h-full">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center space-x-4">
+                    <span>Adjust Font Size:</span>
+                    <div className="w-48">
+                      <Slider
+                        defaultValue={[0]}
+                        min={-2}
+                        max={4}
+                        step={0.5}
+                        value={[fontSizeAdjustment]}
+                        onValueChange={(value) => setFontSizeAdjustment(value[0])}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <ZoomOut className="h-4 w-4" />
+                      <span>{fontSizeAdjustment}</span>
+                      <ZoomIn className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <Button onClick={exportToPDF} className="bg-teal-700 hover:bg-teal-800">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Export PDF
+                  </Button>
+                </div>
+                
+                <div className="flex-1 overflow-auto bg-gray-100 rounded-md">
+                  {pdfPreviewUrl && (
+                    <iframe 
+                      src={pdfPreviewUrl}
+                      className="w-full h-full border-0"
+                      title="PDF Preview"
+                    />
+                  )}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
           <Button variant="outline" onClick={exportToPDF} className="bg-teal-700 text-white hover:bg-teal-800 hover:text-white border-none">
             <FileText className="mr-2 h-4 w-4" />
             Export PDF
@@ -554,6 +703,11 @@ const TrackSheet = () => {
             </div>
           )}
         </CardContent>
+        <CardFooter className="print:hidden">
+          <div className="text-sm text-teal-200">
+            * Font size and table layout in the PDF can be adjusted using the Preview PDF option.
+          </div>
+        </CardFooter>
       </Card>
       
       <div className="print:hidden">
@@ -565,8 +719,9 @@ const TrackSheet = () => {
             <ul className="list-disc pl-5 space-y-2 text-teal-100">
               <li>Select a date to view the track sheet for that day.</li>
               <li>Group by vehicle or salesman to filter the track sheet.</li>
-              <li>Use the Export button to download as CSV/PDF or the Print button to print.</li>
-              <li>Track sheets show all customer orders for the selected date.</li>
+              <li>Use the Preview button to check how the PDF will look before exporting.</li>
+              <li>In the preview, you can adjust font size to ensure data fits properly.</li>
+              <li>Use the Export buttons to download as CSV/PDF or the Print button to print.</li>
               <li>If no data is available, create an order for the selected date first.</li>
             </ul>
           </CardContent>
