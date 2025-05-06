@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UISettings } from '@/types';
 
 const defaultUISettings: UISettings = {
@@ -32,12 +32,12 @@ export function useUISettingsState() {
     }
   }, [uiSettings]);
 
-  const updateUISettings = (settings: Partial<UISettings>) => {
+  const updateUISettings = useCallback((settings: Partial<UISettings>) => {
     setUISettings(prev => ({
       ...prev,
       ...settings
     }));
-  };
+  }, []);
 
   return {
     uiSettings,

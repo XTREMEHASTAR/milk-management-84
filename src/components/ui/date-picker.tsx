@@ -42,7 +42,7 @@ export function DatePicker({ date, setDate, className, mode = "default" }: DateP
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
-          mode={mode === "month" ? "single" : "single"} 
+          mode="single"
           selected={date}
           onSelect={(date) => date && setDate(date)}
           initialFocus
@@ -50,15 +50,9 @@ export function DatePicker({ date, setDate, className, mode = "default" }: DateP
           fromMonth={mode === "month" ? new Date(date.getFullYear(), 0) : undefined}
           toMonth={mode === "month" ? new Date(date.getFullYear(), 11) : undefined}
           captionLayout={mode === "month" ? "dropdown-buttons" : "buttons"}
-          // Instead of view, use proper DayPicker props for month selection
           defaultMonth={date}
-          // For month picker, modify display to show only months
           showOutsideDays={mode !== "month"}
           ISOWeek={mode !== "month"}
-          disabled={mode === "month" ? 
-            { before: new Date(date.getFullYear(), 0, 1), 
-              after: new Date(date.getFullYear(), 11, 31) 
-            } : undefined}
         />
       </PopoverContent>
     </Popover>
