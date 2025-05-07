@@ -19,8 +19,8 @@ interface PdfExportOptions {
   theme?: UISettings["theme"];
   fontSizeAdjustment?: number; 
   columnWidths?: string[];
-  cellPadding?: number; // New option to control cell padding
-  lineHeight?: number;  // New option to control line height
+  cellPadding?: number; // Option to control cell padding
+  lineHeight?: number;  // Option to control line height
 }
 
 export const exportToPdf = (
@@ -90,9 +90,9 @@ export const exportToPdf = (
     });
   }
   
-  // Default cell padding and line height
-  const cellPadding = options.cellPadding || 4; // Increased from 3 to 4
-  const lineHeight = options.lineHeight || 1.3; // New line height option
+  // Default cell padding
+  const cellPadding = options.cellPadding || 4; 
+  const lineHeightValue = options.lineHeight || 1.3;
   
   // Generate the PDF table with improved styling
   autoTable(doc, {
@@ -108,7 +108,6 @@ export const exportToPdf = (
       halign: 'center', // Center align for better readability
       valign: 'middle',
       minCellHeight: 12, // Ensure minimum cell height
-      lineHeight: lineHeight, // Apply line height for spacing
     },
     headStyles: { 
       fillColor: options.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
@@ -139,6 +138,14 @@ export const exportToPdf = (
       // For the first column (customer names), align left
       if (data.column.index === 0) {
         data.cell.styles.halign = 'left';
+      }
+    },
+    willDrawCell: (data) => {
+      // Apply custom line height by adjusting cell height
+      if (lineHeightValue > 1) {
+        const textHeight = data.cell.height;
+        const newHeight = textHeight * lineHeightValue;
+        data.cell.height = newHeight;
       }
     }
   });
@@ -230,9 +237,9 @@ export const generatePdfPreview = (
     });
   }
   
-  // Default cell padding and line height
-  const cellPadding = options.cellPadding || 4; // Increased from 3 to 4
-  const lineHeight = options.lineHeight || 1.3; // New line height option
+  // Default cell padding
+  const cellPadding = options.cellPadding || 4; 
+  const lineHeightValue = options.lineHeight || 1.3;
   
   // Generate the PDF table with improved styling
   autoTable(doc, {
@@ -248,7 +255,6 @@ export const generatePdfPreview = (
       halign: 'center', // Center align for better readability
       valign: 'middle',
       minCellHeight: 12, // Ensure minimum cell height
-      lineHeight: lineHeight, // Apply line height for spacing
     },
     headStyles: { 
       fillColor: options.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
@@ -279,6 +285,14 @@ export const generatePdfPreview = (
       // For the first column (customer names), align left
       if (data.column.index === 0) {
         data.cell.styles.halign = 'left';
+      }
+    },
+    willDrawCell: (data) => {
+      // Apply custom line height by adjusting cell height
+      if (lineHeightValue > 1) {
+        const textHeight = data.cell.height;
+        const newHeight = textHeight * lineHeightValue;
+        data.cell.height = newHeight;
       }
     }
   });

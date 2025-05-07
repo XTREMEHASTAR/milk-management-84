@@ -38,7 +38,7 @@ import {
 import {
   FileDown, FileText, Printer, Maximize, 
   ZoomIn, ZoomOut, TruckIcon, UserIcon,
-  SpacingIcon, LineHeight
+  Spacing, ArrowDown
 } from "lucide-react";
 import { format } from "date-fns";
 import { Order, OrderItem, Vehicle, Salesman } from "@/types";
@@ -293,7 +293,7 @@ const TrackSheet = () => {
         });
       }
     }
-
+    
     // Generate preview with improved table formatting
     const pdfUrl = previewDataTableAsPdf(
       tableColumn,
