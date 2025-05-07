@@ -23,14 +23,17 @@ export default {
         background: {
           DEFAULT: "#0C0D10",
           secondary: "#1A1E23",
+          light: "#F8F9FA", // Added light background color for light theme
         },
         foreground: {
           DEFAULT: "#FFFFFF", 
           muted: "#B0B0B8",
+          dark: "#222222", // Added dark foreground color for light theme text
         },
         card: {
           DEFAULT: "#1A1E23", // Card background color
           foreground: "#FFFFFF", // Card foreground color
+          light: "#FFFFFF", // Light theme card background
         },
         primary: {
           DEFAULT: "#38BD95", // Teal green
@@ -47,6 +50,7 @@ export default {
         muted: {
           DEFAULT: "#222428",
           foreground: "#B0B0B8",
+          light: "#E9ECEF", // Light theme muted background
         },
         accent: {
           DEFAULT: "#38BD95",
@@ -54,6 +58,7 @@ export default {
         },
         border: {
           DEFAULT: "rgba(255,255,255,0.1)",
+          light: "rgba(0,0,0,0.1)", // Added light theme border color
         },
         // Adding print-specific colors for track sheets
         print: {

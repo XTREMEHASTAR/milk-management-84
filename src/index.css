@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,9 +36,38 @@
     --radius: 0.75rem;
 
     /* Default accent color values */
-    --accent-hue: 259;
-    --accent-saturation: 94%;
-    --accent-lightness: 51%;
+    --accent-hue: 164;
+    --accent-saturation: 70%;
+    --accent-lightness: 58%;
+  }
+  
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+ 
+    --primary: var(--accent-hue) var(--accent-saturation) var(--accent-lightness);
+    --primary-foreground: 0 0% 98%;
+ 
+    --secondary: 217 91% 60%;
+    --secondary-foreground: 0 0% 98%;
+ 
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+ 
+    --accent: var(--accent-hue) var(--accent-saturation) var(--accent-lightness);
+    --accent-foreground: 0 0% 98%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+ 
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
   }
 }
  
@@ -107,7 +137,22 @@
 
   /* Updated card styles for better visibility */
   .card-visible {
-    @apply bg-background-secondary text-white;
+    @apply bg-background-secondary text-white dark:text-white light:text-foreground;
+  }
+  
+  /* Light theme specific adjustments */
+  .light {
+    .table-header {
+      @apply bg-gray-100 text-gray-800;
+    }
+    
+    .table-cell {
+      @apply text-gray-800;
+    }
+    
+    .table-row {
+      @apply hover:bg-gray-50;
+    }
   }
 }
 
@@ -171,7 +216,7 @@
 
 /* White text on dark backgrounds */
 .text-visible {
-  @apply text-white font-medium;
+  @apply text-white font-medium dark:text-white light:text-gray-800;
 }
 
 /* Updated table styles specifically for track sheets */

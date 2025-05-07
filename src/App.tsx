@@ -25,6 +25,7 @@ import SupplierRates from './pages/SupplierRates';
 import SupplierPayments from './pages/SupplierPayments';
 import SupplierLedger from './pages/SupplierLedger';
 import InvoiceGenerator from './pages/InvoiceGenerator';
+import InvoiceHistory from './pages/InvoiceHistory';
 import CustomerStatement from './pages/CustomerStatement';
 import Outstanding from './pages/Outstanding';
 import CustomerLedger from './pages/CustomerLedger';
@@ -81,6 +82,7 @@ function App() {
                 <Route path="supplier-payments" element={<SupplierPayments />} />
                 <Route path="supplier-ledger" element={<SupplierLedger />} />
                 <Route path="invoice-generator" element={<InvoiceGenerator />} />
+                <Route path="invoice-history" element={<InvoiceHistory />} />
                 <Route path="customer-statement" element={<CustomerStatement />} />
                 <Route path="outstanding" element={<Outstanding />} />
                 <Route path="customer-ledger" element={<CustomerLedger />} />

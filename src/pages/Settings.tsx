@@ -7,15 +7,18 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Laptop, Moon, Sun, Database, Settings2, Download } from "lucide-react";
+import { Laptop, Moon, Sun, Database, Settings2, Download, Palette, ScreenShare, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { DataBackupRestore } from "@/components/settings/DataBackupRestore";
 import { StorageService } from "@/services/StorageService";
+import { StorageStatus } from "@/components/settings/StorageStatus";
 
 export default function Settings() {
   const { uiSettings, updateUISettings } = useData();
-  const [theme, setTheme] = useState<"light" | "dark" | "system">(uiSettings.theme || "light");
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(uiSettings.theme || "dark");
   const [accentColor, setAccentColor] = useState(uiSettings.accentColor || "teal");
+  const [sidebarStyle, setSidebarStyle] = useState(uiSettings.sidebarStyle || "gradient");
+  const [tableStyle, setTableStyle] = useState(uiSettings.tableStyle || "striped");
   
   const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
     setTheme(newTheme);
@@ -23,8 +26,19 @@ export default function Settings() {
     // Apply theme to document
     if (newTheme === "dark") {
       document.documentElement.classList.add("dark");
-    } else {
+      document.documentElement.classList.remove("light");
+    } else if (newTheme === "light") {
+      document.documentElement.classList.add("light");
       document.documentElement.classList.remove("dark");
+    } else {
+      // System preference
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add("dark");
+        document.documentElement.classList.remove("light");
+      } else {
+        document.documentElement.classList.add("light");
+        document.documentElement.classList.remove("dark");
+      }
     }
     toast.success(`Theme changed to ${newTheme}`);
   };
@@ -33,6 +47,18 @@ export default function Settings() {
     setAccentColor(newColor);
     updateUISettings({ accentColor: newColor });
     toast.success(`Accent color changed to ${newColor}`);
+  };
+
+  const handleSidebarStyleChange = (newStyle: string) => {
+    setSidebarStyle(newStyle);
+    updateUISettings({ sidebarStyle: newStyle });
+    toast.success(`Sidebar style changed to ${newStyle}`);
+  };
+
+  const handleTableStyleChange = (newStyle: string) => {
+    setTableStyle(newStyle);
+    updateUISettings({ tableStyle: newStyle });
+    toast.success(`Table style changed to ${newStyle}`);
   };
 
   return (
@@ -44,11 +70,19 @@ export default function Settings() {
         </p>
       </div>
       
-      <Tabs defaultValue="general" className="space-y-4">
+      <Tabs defaultValue="appearance" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Settings2 className="h-4 w-4" />
-            General
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Appearance
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="display" className="flex items-center gap-2">
+            <ScreenShare className="h-4 w-4" />
+            Display
           </TabsTrigger>
           <TabsTrigger value="data" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
@@ -56,10 +90,10 @@ export default function Settings() {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="general" className="space-y-4">
+        <TabsContent value="appearance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Appearance</CardTitle>
+              <CardTitle>Theme Settings</CardTitle>
               <CardDescription>
                 Customize how the application looks and feels
               </CardDescription>
@@ -114,6 +148,53 @@ export default function Settings() {
                     <SelectItem value="orange">Orange</SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="flex mt-2 gap-2">
+                  <div className={`w-6 h-6 rounded-full bg-teal-500 ${accentColor === 'teal' ? 'ring-2 ring-offset-2' : ''}`}></div>
+                  <div className={`w-6 h-6 rounded-full bg-blue-500 ${accentColor === 'blue' ? 'ring-2 ring-offset-2' : ''}`}></div>
+                  <div className={`w-6 h-6 rounded-full bg-purple-500 ${accentColor === 'purple' ? 'ring-2 ring-offset-2' : ''}`}></div>
+                  <div className={`w-6 h-6 rounded-full bg-pink-500 ${accentColor === 'pink' ? 'ring-2 ring-offset-2' : ''}`}></div>
+                  <div className={`w-6 h-6 rounded-full bg-orange-500 ${accentColor === 'orange' ? 'ring-2 ring-offset-2' : ''}`}></div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="sidebar-style">Sidebar Style</Label>
+                <Select value={sidebarStyle} onValueChange={handleSidebarStyleChange}>
+                  <SelectTrigger id="sidebar-style">
+                    <SelectValue placeholder="Select a sidebar style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gradient">Gradient</SelectItem>
+                    <SelectItem value="solid">Solid</SelectItem>
+                    <SelectItem value="minimal">Minimal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="display" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Display Settings</CardTitle>
+              <CardDescription>
+                Configure how data is displayed in the application
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="table-style">Table Style</Label>
+                <Select value={tableStyle} onValueChange={handleTableStyleChange}>
+                  <SelectTrigger id="table-style">
+                    <SelectValue placeholder="Select a table style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="striped">Striped</SelectItem>
+                    <SelectItem value="bordered">Bordered</SelectItem>
+                    <SelectItem value="minimal">Minimal</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="flex items-center justify-between">
@@ -134,7 +215,9 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-          
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Notifications</CardTitle>
@@ -181,8 +264,20 @@ export default function Settings() {
         </TabsContent>
         
         <TabsContent value="data" className="space-y-4">
-          {/* Add our new data backup and restore component */}
+          {/* Add our data backup and restore component */}
           <DataBackupRestore />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Storage Usage</CardTitle>
+              <CardDescription>
+                Monitor and manage your local storage usage
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StorageStatus />
+            </CardContent>
+          </Card>
           
           <Card>
             <CardHeader>

@@ -22,6 +22,9 @@ import {
   Truck,
   Receipt,
   Menu,
+  PaintBucket,
+  Bell,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
@@ -70,6 +73,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           title: "Invoice Generator",
           href: "/invoice-generator",
           icon: Receipt,
+        },
+        {
+          title: "Invoice History",
+          href: "/invoice-history",
+          icon: FileText,
         },
         {
           title: "Track Sheet",
@@ -181,6 +189,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     {
       title: "Settings",
       items: [
+        {
+          title: "App Settings",
+          href: "/settings",
+          icon: Settings,
+        },
         {
           title: "Master Module",
           href: "/master",

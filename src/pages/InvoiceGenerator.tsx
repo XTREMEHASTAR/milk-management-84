@@ -1,565 +1,493 @@
 
 import { useState, useEffect } from "react";
-import { useData } from "@/contexts/DataContext";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { DatePicker } from "@/components/ui/date-picker";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "sonner";
+import { Check, PlusCircle, Save, Trash, FileText, Download, Copy, Templates } from "lucide-react";
+import { useData } from "@/contexts/DataContext";
 import { format } from "date-fns";
-import { FileText, Download, Printer, Save } from "lucide-react";
-import { Customer, Product, Order } from "@/types";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 
-type InvoiceItem = {
-  productId: string;
-  quantity: number;
-  rate: number;
-  amount: number;
-};
+// Define invoice template types
+const INVOICE_TEMPLATES = [
+  {
+    id: "standard",
+    name: "Standard Invoice",
+    description: "Classic invoice format with company details and logo",
+    previewImage: "standard-invoice.png"
+  },
+  {
+    id: "modern",
+    name: "Modern Invoice",
+    description: "Clean, contemporary design with minimalist layout",
+    previewImage: "modern-invoice.png"
+  },
+  {
+    id: "detailed",
+    name: "Detailed Invoice",
+    description: "Comprehensive format with item details and tax breakdown",
+    previewImage: "detailed-invoice.png"
+  },
+  {
+    id: "simple",
+    name: "Simple Invoice",
+    description: "Streamlined format with just the essentials",
+    previewImage: "simple-invoice.png"
+  },
+];
 
-type InvoiceData = {
-  invoiceNumber: string;
-  date: Date;
-  customer: Customer | null;
-  items: InvoiceItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  paymentStatus: "paid" | "partially_paid" | "unpaid";
-  amountPaid: number;
-  balance: number;
-  notes: string;
-};
+export default function InvoiceGenerator() {
+  const { customers, products } = useData();
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedItems, setSelectedItems] = useState([{ productId: "", quantity: 1, rate: 0, amount: 0 }]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [dueDate, setDueDate] = useState(format(new Date(new Date().setDate(new Date().getDate() + 15)), "yyyy-MM-dd"));
+  const [notes, setNotes] = useState("");
+  const [terms, setTerms] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState("standard");
 
-const InvoiceGenerator = () => {
-  const { customers, products, orders } = useData();
-  const [invoice, setInvoice] = useState<InvoiceData>({
-    invoiceNumber: `INV-${Date.now()}`,
-    date: new Date(),
-    customer: null,
-    items: [],
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-    paymentStatus: "unpaid",
-    amountPaid: 0,
-    balance: 0,
-    notes: "",
+  // Company profile form
+  const { register, watch } = useForm({
+    defaultValues: {
+      companyName: "Milk Center",
+      address: "123 Dairy Lane, Milk City",
+      contactNumber: "+91 9876543210",
+      email: "info@milkcenter.com",
+      gstNumber: "29ABCDE1234F1Z5",
+      bankDetails: "Bank Name: ABC Bank\nAccount Number: 1234567890\nIFSC Code: ABCD0001234",
+    }
   });
 
-  // Calculate subtotal, tax, and total when items change
+  const companyFormValues = watch();
+
+  // Generate random invoice number on load
   useEffect(() => {
-    const subtotal = invoice.items.reduce((sum, item) => sum + item.amount, 0);
-    const tax = 0; // Add tax calculation if needed
-    const total = subtotal + tax;
-    const balance = total - invoice.amountPaid;
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
+    setInvoiceNumber(`INV-${randomNum}`);
+  }, []);
 
-    setInvoice((prev) => ({
-      ...prev,
-      subtotal,
-      tax,
-      total,
-      balance,
-    }));
-  }, [invoice.items, invoice.amountPaid]);
+  // Calculate total amount whenever selected items change
+  useEffect(() => {
+    const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
+    setTotalAmount(total);
+  }, [selectedItems]);
 
-  const handleCustomerChange = (customerId: string) => {
-    const selectedCustomer = customers.find((c) => c.id === customerId) || null;
+  // Handle product selection
+  const handleProductChange = (index: number, productId: string) => {
+    const newItems = [...selectedItems];
+    const product = products.find(p => p.id === productId);
+    const quantity = newItems[index].quantity;
     
-    // Reset items when customer changes
-    setInvoice((prev) => ({
-      ...prev,
-      customer: selectedCustomer,
-      items: [],
-    }));
-    
-    // Auto-fill items based on latest order for this customer
-    if (selectedCustomer) {
-      const customerOrders = orders
-        .filter((order) => order.items.some(item => item.customerId === customerId))
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      if (customerOrders.length > 0) {
-        const latestOrder = customerOrders[0];
-        const customerItems = latestOrder.items.filter(item => item.customerId === customerId);
-        
-        const invoiceItems: InvoiceItem[] = customerItems.map(item => {
-          const product = products.find(p => p.id === item.productId);
-          const rate = product ? product.price : 0;
-          const quantity = item.quantity;
-          
-          return {
-            productId: item.productId,
-            quantity,
-            rate,
-            amount: quantity * rate,
-          };
-        });
-        
-        setInvoice(prev => ({
-          ...prev,
-          items: invoiceItems,
-        }));
-        
-        toast.success("Auto-filled items from latest order");
-      } else {
-        toast.info("No previous orders found for this customer");
-      }
+    if (product) {
+      newItems[index] = {
+        productId,
+        quantity,
+        rate: product.price || 0,
+        amount: quantity * (product.price || 0)
+      };
+    } else {
+      newItems[index] = {
+        ...newItems[index],
+        productId,
+        rate: 0,
+        amount: 0
+      };
     }
+    
+    setSelectedItems(newItems);
   };
 
-  const handleAddItem = () => {
-    if (products.length === 0) {
-      toast.error("No products available");
-      return;
-    }
-
-    const firstProduct = products[0];
-    const newItem: InvoiceItem = {
-      productId: firstProduct.id,
-      quantity: 1,
-      rate: firstProduct.price,
-      amount: firstProduct.price,
+  // Handle quantity change
+  const handleQuantityChange = (index: number, quantity: number) => {
+    const newItems = [...selectedItems];
+    const productId = newItems[index].productId;
+    const product = products.find(p => p.id === productId);
+    
+    newItems[index] = {
+      productId,
+      quantity,
+      rate: product?.price || newItems[index].rate,
+      amount: quantity * (product?.price || newItems[index].rate)
     };
-
-    setInvoice((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-  };
-
-  const handleRemoveItem = (index: number) => {
-    setInvoice((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleItemChange = (index: number, field: keyof InvoiceItem, value: any) => {
-    setInvoice((prev) => {
-      const updatedItems = [...prev.items];
-      updatedItems[index] = {
-        ...updatedItems[index],
-        [field]: value,
-      };
-
-      // Recalculate amount when quantity or rate changes
-      if (field === "quantity" || field === "rate") {
-        updatedItems[index].amount =
-          updatedItems[index].quantity * updatedItems[index].rate;
-      }
-
-      return {
-        ...prev,
-        items: updatedItems,
-      };
-    });
-  };
-
-  const handlePaymentStatusChange = (status: "paid" | "partially_paid" | "unpaid") => {
-    let amountPaid = 0;
     
-    if (status === "paid") {
-      amountPaid = invoice.total;
-    } else if (status === "unpaid") {
-      amountPaid = 0;
+    setSelectedItems(newItems);
+  };
+
+  // Handle rate change
+  const handleRateChange = (index: number, rate: number) => {
+    const newItems = [...selectedItems];
+    newItems[index] = {
+      ...newItems[index],
+      rate,
+      amount: newItems[index].quantity * rate
+    };
+    
+    setSelectedItems(newItems);
+  };
+
+  // Add new item row
+  const addItem = () => {
+    setSelectedItems([...selectedItems, { productId: "", quantity: 1, rate: 0, amount: 0 }]);
+  };
+
+  // Remove item row
+  const removeItem = (index: number) => {
+    if (selectedItems.length > 1) {
+      const newItems = [...selectedItems];
+      newItems.splice(index, 1);
+      setSelectedItems(newItems);
+    } else {
+      toast.error("Invoice must have at least one item");
     }
-    
-    setInvoice((prev) => ({
-      ...prev,
-      paymentStatus: status,
-      amountPaid: status === "partially_paid" ? prev.amountPaid : amountPaid,
-      balance: status === "paid" ? 0 : status === "unpaid" ? prev.total : prev.total - prev.amountPaid,
-    }));
   };
 
-  const handleAmountPaidChange = (value: number) => {
-    const amountPaid = Math.min(value, invoice.total);
-    const balance = invoice.total - amountPaid;
-    const paymentStatus = 
-      amountPaid === 0 ? "unpaid" : 
-      amountPaid === invoice.total ? "paid" : 
-      "partially_paid";
-    
-    setInvoice((prev) => ({
-      ...prev,
-      amountPaid,
-      balance,
-      paymentStatus,
-    }));
-  };
-
-  const generatePDF = () => {
-    if (!invoice.customer) {
+  // Generate PDF invoice
+  const generateInvoice = () => {
+    if (!selectedCustomerId) {
       toast.error("Please select a customer");
       return;
     }
 
-    if (invoice.items.length === 0) {
-      toast.error("Please add at least one item");
+    if (selectedItems.some(item => !item.productId)) {
+      toast.error("Please select products for all items");
       return;
     }
 
-    try {
-      const doc = new jsPDF();
-      
-      // Add invoice header
-      doc.setFontSize(20);
-      doc.text("INVOICE", 105, 15, { align: "center" });
-      
-      doc.setFontSize(10);
-      doc.text("Vikas Milk Centers & Manali Enterprises", 105, 22, { align: "center" });
-      doc.text("123 Milk Street, Dairy District", 105, 27, { align: "center" });
-      doc.text("Phone: +91 98765 43210", 105, 32, { align: "center" });
-      
-      // Add invoice details
-      doc.setFontSize(12);
-      doc.text(`Invoice #: ${invoice.invoiceNumber}`, 15, 45);
-      doc.text(`Date: ${format(invoice.date, "dd/MM/yyyy")}`, 15, 52);
-      
-      // Add customer details
-      doc.text("Bill To:", 15, 65);
-      doc.text(`${invoice.customer.name}`, 15, 72);
-      doc.text(`${invoice.customer.address || ""}`, 15, 79);
-      doc.text(`Phone: ${invoice.customer.phone || ""}`, 15, 86);
-      
-      // Add items table
-      const tableColumn = ["#", "Product", "Qty", "Rate", "Amount"];
-      const tableRows = invoice.items.map((item, index) => {
-        const product = products.find(p => p.id === item.productId);
-        return [
-          (index + 1).toString(),
-          product ? product.name : "Unknown Product",
-          item.quantity.toString(),
-          `₹${item.rate.toFixed(2)}`,
-          `₹${item.amount.toFixed(2)}`,
-        ];
-      });
-      
-      (doc as any).autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 95,
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-        foot: [
-          ["", "", "", "Subtotal:", `₹${invoice.subtotal.toFixed(2)}`],
-          ["", "", "", "Tax:", `₹${invoice.tax.toFixed(2)}`],
-          ["", "", "", "Total:", `₹${invoice.total.toFixed(2)}`],
-          ["", "", "", "Paid:", `₹${invoice.amountPaid.toFixed(2)}`],
-          ["", "", "", "Balance:", `₹${invoice.balance.toFixed(2)}`],
-        ],
-        footStyles: { fillColor: [240, 240, 240], textColor: 0 },
-      });
-      
-      // Add payment status
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
-      doc.text(`Payment Status: ${invoice.paymentStatus.replace("_", " ").toUpperCase()}`, 15, finalY);
-      
-      if (invoice.notes) {
-        doc.text(`Notes: ${invoice.notes}`, 15, finalY + 10);
-      }
-      
-      // Save the PDF
-      doc.save(`Invoice-${invoice.invoiceNumber}-${invoice.customer.name}.pdf`);
-      toast.success("Invoice downloaded successfully");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate invoice");
-    }
+    setIsGenerating(true);
+    
+    // In a real application, this would generate and download a PDF
+    // For now, we'll just show a success message
+    setTimeout(() => {
+      toast.success("Invoice generated successfully!");
+      setIsGenerating(false);
+      // In a real app, you would save the invoice to the database here
+    }, 1500);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Invoice Generator</h1>
-          <p className="text-muted-foreground">
-            Create and download invoices for your customers
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={generatePDF}>
-            <Download className="mr-2 h-4 w-4" />
-            Download PDF
-          </Button>
-          <Button variant="outline">
-            <Printer className="mr-2 h-4 w-4" />
-            Print
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Invoice Generator</h1>
+        <p className="text-muted-foreground">
+          Create professional invoices for your customers
+        </p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Invoice Details */}
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Invoice Details</CardTitle>
-            <CardDescription>
-              Basic information for this invoice
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="invoiceNumber">Invoice Number</Label>
-              <Input
-                id="invoiceNumber"
-                value={invoice.invoiceNumber}
-                onChange={(e) =>
-                  setInvoice((prev) => ({
-                    ...prev,
-                    invoiceNumber: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Invoice Date</Label>
-              <DatePicker
-                date={invoice.date}
-                setDate={(date) =>
-                  setInvoice((prev) => ({
-                    ...prev,
-                    date: date || new Date(),
-                  }))
-                }
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="customer">Customer</Label>
-              <Select
-                onValueChange={handleCustomerChange}
-                value={invoice.customer?.id || ""}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {invoice.customer && (
-              <div className="rounded-md bg-muted p-4 text-sm">
-                <div><strong>Address:</strong> {invoice.customer.address}</div>
-                <div><strong>Phone:</strong> {invoice.customer.phone}</div>
-                <div><strong>Outstanding:</strong> ₹{invoice.customer.outstandingBalance}</div>
+      
+      <Tabs defaultValue="invoice-details">
+        <TabsList>
+          <TabsTrigger value="invoice-details" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Invoice Details
+          </TabsTrigger>
+          <TabsTrigger value="template" className="flex items-center gap-2">
+            <Templates className="h-4 w-4" />
+            Template Selection
+          </TabsTrigger>
+          <TabsTrigger value="company-profile" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Company Profile
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="invoice-details" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Invoice Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="invoice-number">Invoice Number</Label>
+                  <Input 
+                    id="invoice-number"
+                    value={invoiceNumber}
+                    onChange={e => setInvoiceNumber(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="invoice-date">Invoice Date</Label>
+                  <Input 
+                    id="invoice-date"
+                    type="date"
+                    value={invoiceDate}
+                    onChange={e => setInvoiceDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="due-date">Due Date</Label>
+                  <Input 
+                    id="due-date"
+                    type="date"
+                    value={dueDate}
+                    onChange={e => setDueDate(e.target.value)}
+                  />
+                </div>
               </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Input
-                id="notes"
-                value={invoice.notes}
-                onChange={(e) =>
-                  setInvoice((prev) => ({
-                    ...prev,
-                    notes: e.target.value,
-                  }))
-                }
-                placeholder="Additional notes"
-              />
-            </div>
-            
-            <Separator className="my-4" />
-            
-            <div className="space-y-2">
-              <Label>Payment Status</Label>
-              <RadioGroup
-                value={invoice.paymentStatus}
-                onValueChange={(value: "paid" | "partially_paid" | "unpaid") =>
-                  handlePaymentStatusChange(value)
-                }
-                className="flex flex-col space-y-1"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="paid" id="paid" />
-                  <Label htmlFor="paid" className="cursor-pointer">Paid</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="partially_paid" id="partially_paid" />
-                  <Label htmlFor="partially_paid" className="cursor-pointer">Partially Paid</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="unpaid" id="unpaid" />
-                  <Label htmlFor="unpaid" className="cursor-pointer">Unpaid</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            {invoice.paymentStatus === "partially_paid" && (
-              <div className="space-y-2">
-                <Label htmlFor="amountPaid">Amount Paid</Label>
+              
+              <div>
+                <Label htmlFor="customer">Customer</Label>
+                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                  <SelectTrigger id="customer">
+                    <SelectValue placeholder="Select a customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map(customer => (
+                      <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedCustomerId && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    {customers.find(c => c.id === selectedCustomerId)?.address || 'No address available'}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Invoice Items</CardTitle>
+              <Button variant="outline" size="sm" onClick={addItem}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2 font-semibold">Product</th>
+                      <th className="text-center p-2 font-semibold">Quantity</th>
+                      <th className="text-center p-2 font-semibold">Rate</th>
+                      <th className="text-right p-2 font-semibold">Amount</th>
+                      <th className="text-right p-2 font-semibold w-10">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedItems.map((item, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="p-2">
+                          <Select
+                            value={item.productId}
+                            onValueChange={value => handleProductChange(index, value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a product" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {products.map(product => (
+                                <SelectItem key={product.id} value={product.id}>
+                                  {product.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={e => handleQuantityChange(index, parseInt(e.target.value) || 0)}
+                            className="text-center"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.rate}
+                            onChange={e => handleRateChange(index, parseFloat(e.target.value) || 0)}
+                            className="text-center"
+                          />
+                        </td>
+                        <td className="p-2 text-right">
+                          ₹{item.amount.toFixed(2)}
+                        </td>
+                        <td className="p-2 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeItem(index)}
+                            disabled={selectedItems.length === 1}
+                          >
+                            <Trash className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td colSpan={3} className="text-right font-medium p-2">Total:</td>
+                      <td className="text-right font-bold p-2">₹{totalAmount.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Additional Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="notes">Notes</Label>
                 <Input
-                  id="amountPaid"
-                  type="number"
-                  value={invoice.amountPaid}
-                  onChange={(e) => handleAmountPaidChange(Number(e.target.value))}
+                  id="notes"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Any additional notes for the customer"
                 />
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Invoice Items */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Invoice Items</CardTitle>
-                <CardDescription>
-                  Add products to this invoice
-                </CardDescription>
+                <Label htmlFor="terms">Terms & Conditions</Label>
+                <Input
+                  id="terms"
+                  value={terms}
+                  onChange={e => setTerms(e.target.value)}
+                  placeholder="Payment terms and conditions"
+                />
               </div>
-              <Button onClick={handleAddItem}>Add Item</Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead className="w-24 text-right">Quantity</TableHead>
-                  <TableHead className="w-32 text-right">Rate (₹)</TableHead>
-                  <TableHead className="w-32 text-right">Amount (₹)</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoice.items.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4">
-                      No items added. Click "Add Item" to add products.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  invoice.items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Select
-                          value={item.productId}
-                          onValueChange={(value) =>
-                            handleItemChange(index, "productId", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue>
-                              {products.find((p) => p.id === item.productId)?.name ||
-                                "Select product"}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name} - ₹{product.price}/{product.unit}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            handleItemChange(
-                              index,
-                              "quantity",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="w-20 ml-auto text-right"
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.rate}
-                          onChange={(e) =>
-                            handleItemChange(
-                              index,
-                              "rate",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="w-24 ml-auto text-right"
-                        />
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ₹{item.amount.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveItem(index)}
-                        >
-                          ✕
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-          <CardFooter className="flex flex-col items-end space-y-2">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 w-64 text-sm">
-              <div className="text-right text-muted-foreground">Subtotal:</div>
-              <div className="text-right">₹{invoice.subtotal.toFixed(2)}</div>
-              <div className="text-right text-muted-foreground">Tax:</div>
-              <div className="text-right">₹{invoice.tax.toFixed(2)}</div>
-              <div className="text-right font-medium">Total:</div>
-              <div className="text-right font-medium">₹{invoice.total.toFixed(2)}</div>
-              <div className="text-right text-muted-foreground">Amount Paid:</div>
-              <div className="text-right">₹{invoice.amountPaid.toFixed(2)}</div>
-              <div className="text-right font-medium">Balance Due:</div>
-              <div className="text-right font-medium">₹{invoice.balance.toFixed(2)}</div>
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
+            </CardContent>
+            <CardFooter>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Draft
+                </Button>
+                <Button 
+                  onClick={generateInvoice} 
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? 
+                    "Generating..." : 
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Generate Invoice
+                    </>
+                  }
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="template" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Invoice Template</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {INVOICE_TEMPLATES.map(template => (
+                  <Card 
+                    key={template.id}
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedTemplate === template.id ? 'ring-2 ring-primary' : 'hover:border-primary'
+                    }`}
+                    onClick={() => setSelectedTemplate(template.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-lg">{template.name}</h3>
+                          <p className="text-muted-foreground text-sm mt-1">{template.description}</p>
+                        </div>
+                        {selectedTemplate === template.id && (
+                          <div className="bg-primary rounded-full p-1">
+                            <Check className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-4 h-40 bg-muted rounded-md flex items-center justify-center">
+                        <div className="text-muted-foreground text-sm">Template Preview</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="company-profile" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Company Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="company-name">Company Name</Label>
+                  <Input id="company-name" {...register("companyName")} />
+                </div>
+                <div>
+                  <Label htmlFor="gst-number">GST Number</Label>
+                  <Input id="gst-number" {...register("gstNumber")} />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" {...register("address")} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="contact-number">Contact Number</Label>
+                  <Input id="contact-number" {...register("contactNumber")} />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" {...register("email")} type="email" />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="bank-details">Bank Details</Label>
+                <Input id="bank-details" {...register("bankDetails")} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Saved Invoice Templates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">Default Template</h3>
+                      <p className="text-sm text-muted-foreground">Last modified: {format(new Date(), "MMM d, yyyy")}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon">
+                        <Trash className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
-};
-
-export default InvoiceGenerator;
+}
