@@ -25,9 +25,11 @@ export default {
           secondary: "#1A1E23",
         },
         foreground: {
-          DEFAULT: "#FFFFFF", // Changed from #E9EAEC to pure white for better visibility
-          muted: "#B0B0B8", // Brightened from #8E8E93
+          DEFAULT: "#FFFFFF", 
+          muted: "#B0B0B8",
         },
+        card: "#1A1E23", // Added card background color
+        "card-foreground": "#FFFFFF", // Added card foreground color
         primary: {
           DEFAULT: "#38BD95", // Teal green
           foreground: "#FFFFFF",
@@ -42,7 +44,7 @@ export default {
         },
         muted: {
           DEFAULT: "#222428",
-          foreground: "#B0B0B8", // Brightened from #8E8E93
+          foreground: "#B0B0B8",
         },
         accent: {
           DEFAULT: "#38BD95",

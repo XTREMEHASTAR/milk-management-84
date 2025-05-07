@@ -105,6 +105,11 @@
   .table-text-muted {
     @apply text-foreground/80;
   }
+
+  /* Updated card styles for better visibility */
+  .card-visible {
+    @apply bg-background-secondary text-white;
+  }
 }
 
 /* Custom global styles */
@@ -163,11 +168,6 @@
 /* Input field with better visibility */
 .input-visible {
   @apply bg-muted/50 text-foreground border-muted;
-}
-
-/* Updated card styles for better visibility */
-.card-visible {
-  @apply bg-card text-card-foreground;
 }
 
 /* White text on dark backgrounds */
