@@ -28,8 +28,10 @@ export default {
           DEFAULT: "#FFFFFF", 
           muted: "#B0B0B8",
         },
-        card: "#1A1E23", // Added card background color
-        "card-foreground": "#FFFFFF", // Added card foreground color
+        card: {
+          DEFAULT: "#1A1E23", // Card background color
+          foreground: "#FFFFFF", // Card foreground color
+        },
         primary: {
           DEFAULT: "#38BD95", // Teal green
           foreground: "#FFFFFF",
@@ -52,6 +54,13 @@ export default {
         },
         border: {
           DEFAULT: "rgba(255,255,255,0.1)",
+        },
+        // Adding print-specific colors for track sheets
+        print: {
+          background: "#FFFFFF",
+          text: "#000000",
+          border: "#CCCCCC",
+          header: "#F3F4F6",
         },
       },
       borderRadius: {

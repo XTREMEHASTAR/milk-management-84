@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -173,4 +172,59 @@
 /* White text on dark backgrounds */
 .text-visible {
   @apply text-white font-medium;
+}
+
+/* Updated table styles specifically for track sheets */
+.track-sheet-table {
+  @apply w-full border-collapse;
+}
+
+.track-sheet-table th,
+.track-sheet-table td {
+  @apply border border-gray-300 text-center py-1 px-2;
+}
+
+.track-sheet-table th {
+  @apply bg-gray-100 font-medium text-black;
+}
+
+.track-sheet-table td {
+  @apply text-center;
+}
+
+/* Track sheet empty cell styles */
+.track-sheet-cell-empty {
+  @apply text-gray-400;
+}
+
+/* Track sheet total row styles */
+.track-sheet-total-row {
+  @apply bg-gray-100 font-medium;
+}
+
+/* Customize PDF appearance */
+.pdf-preview-wrapper {
+  @apply bg-white p-4 rounded-lg shadow-lg max-h-[80vh] overflow-auto;
+}
+
+/* Track sheet compact layout */
+.track-sheet-compact td,
+.track-sheet-compact th {
+  @apply py-0.5 px-1 text-xs;
+}
+
+/* Add special styles for printed track sheets */
+@media print {
+  .track-sheet-table {
+    @apply border-collapse w-full;
+  }
+  
+  .track-sheet-table th,
+  .track-sheet-table td {
+    @apply border border-gray-400 p-1 text-xs;
+  }
+  
+  body {
+    @apply text-black bg-white;
+  }
 }

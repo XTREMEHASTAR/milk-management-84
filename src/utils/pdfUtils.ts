@@ -21,6 +21,8 @@ interface PdfExportOptions {
   columnWidths?: string[];
   cellPadding?: number; // Option to control cell padding
   lineHeight?: number;  // Option to control line height
+  showTitle?: boolean;  // Option to hide title section
+  compactLayout?: boolean; // Option for more compact track sheet layout
 }
 
 export const exportToPdf = (
@@ -37,44 +39,49 @@ export const exportToPdf = (
   // Calculate available width for proper scaling
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margins = 20; // margin on each side
+  const margins = options.compactLayout ? 10 : 20; // Smaller margins for compact layout
   const availableWidth = pageWidth - (margins * 2);
   
   // Set default font size with adjustment
-  const baseFontSize = 10;
+  const baseFontSize = options.compactLayout ? 8 : 10;
   const fontSize = baseFontSize + (options.fontSizeAdjustment || 0);
   doc.setFontSize(fontSize);
   
-  // Create header with gradient background
-  doc.setFillColor(16, 185, 129); // Teal color
-  doc.rect(0, 0, pageWidth, 20, 'F');
+  let yPosition = 20;
   
-  // Add title with styling
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text(options.title, pageWidth / 2, 10, { align: 'center' });
-  
-  // Add subtitle
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(14);
-  doc.text(options.subtitle || "", 14, 30);
-  
-  let yPosition = 40;
-  
-  // Add date if provided
-  if (options.dateInfo) {
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(options.dateInfo, 14, yPosition);
-    yPosition += 8;
-  }
-  
-  // Add additional info if provided
-  if (options.additionalInfo) {
-    options.additionalInfo.forEach(info => {
-      doc.text(`${info.label}: ${info.value}`, pageWidth - 20, yPosition - 8, { align: 'right' });
-    });
+  // Only add title/header if showTitle is not false
+  if (options.showTitle !== false) {
+    // Create header with gradient background
+    doc.setFillColor(16, 185, 129); // Teal color
+    doc.rect(0, 0, pageWidth, 20, 'F');
+    
+    // Add title with styling
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(options.title, pageWidth / 2, 10, { align: 'center' });
+    
+    // Add subtitle
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text(options.subtitle || "", 14, 30);
+    
+    yPosition = 40;
+    
+    // Add date if provided
+    if (options.dateInfo) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(options.dateInfo, 14, yPosition);
+      yPosition += 8;
+    }
+    
+    // Add additional info if provided
+    if (options.additionalInfo) {
+      options.additionalInfo.forEach(info => {
+        doc.text(`${info.label}: ${info.value}`, pageWidth - 20, yPosition - 8, { align: 'right' });
+      });
+    }
   }
   
   // Calculate column widths - either use provided widths or calculate automatically
@@ -90,56 +97,50 @@ export const exportToPdf = (
     });
   }
   
-  // Default cell padding
-  const cellPadding = options.cellPadding || 4; 
-  const lineHeightValue = options.lineHeight || 1.3;
+  // Default cell padding - more compact for track sheet
+  const cellPadding = options.compactLayout ? 2 : (options.cellPadding || 4);
+  const lineHeightValue = options.compactLayout ? 1.1 : (options.lineHeight || 1.3);
   
-  // Generate the PDF table with improved styling
+  // Generate the PDF table with improved styling for track sheet layout
   autoTable(doc, {
     head: [columns],
     body: data,
-    startY: yPosition,
+    startY: options.showTitle !== false ? yPosition : 10,
     styles: { 
       fontSize: fontSize,
       cellPadding: cellPadding,
-      lineColor: [120, 120, 120],
-      lineWidth: 0.2, // Slightly thicker lines for better visibility
+      lineColor: [80, 80, 80],
+      lineWidth: 0.1, // Thinner lines for track sheet look
       overflow: 'linebreak',
-      halign: 'center', // Center align for better readability
+      halign: options.compactLayout ? 'center' : 'center',
       valign: 'middle',
-      minCellHeight: 12, // Ensure minimum cell height
+      minCellHeight: options.compactLayout ? 8 : 12,
     },
     headStyles: { 
-      fillColor: options.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
-      textColor: [255, 255, 255],
+      fillColor: options.theme === "dark" ? [22, 78, 99] : [240, 240, 240], // Light gray header for track sheet look
+      textColor: options.theme === "dark" ? [255, 255, 255] : [0, 0, 0],  // Black text for track sheet
       fontStyle: 'bold',
-      minCellHeight: 14,
-      cellPadding: cellPadding + 1, // Slightly more padding for headers
+      minCellHeight: options.compactLayout ? 10 : 14,
+      cellPadding: cellPadding,
       halign: 'center',
     },
     alternateRowStyles: { 
-      fillColor: options.theme === "dark" ? [40, 54, 60] : [243, 244, 246]
+      fillColor: options.theme === "dark" ? [40, 54, 60] : [255, 255, 255]  // White background for track sheet
     },
     footStyles: { 
-      fillColor: options.theme === "dark" ? [16, 65, 82] : [220, 252, 231],
+      fillColor: options.theme === "dark" ? [16, 65, 82] : [240, 240, 240],
       fontStyle: 'bold',
-      cellPadding: cellPadding + 1, // Slightly more padding for footers
+      cellPadding: cellPadding,
     },
-    theme: 'grid',
+    theme: 'grid', // Use grid theme for track sheet look
     columnStyles: colWidths.length > 0 ? colWidths.reduce((acc, width, index) => {
       if (width !== undefined) {
         acc[index] = { cellWidth: width };
       }
       return acc;
     }, {}) : {},
-    margin: { top: 10, right: margins, bottom: 15, left: margins },
+    margin: { top: options.compactLayout ? 5 : 10, right: margins, bottom: options.compactLayout ? 5 : 15, left: margins },
     tableWidth: 'auto',
-    didParseCell: (data) => {
-      // For the first column (customer names), align left
-      if (data.column.index === 0) {
-        data.cell.styles.halign = 'left';
-      }
-    },
     willDrawCell: (data) => {
       // Apply custom line height by adjusting cell height
       if (lineHeightValue > 1) {
@@ -150,18 +151,20 @@ export const exportToPdf = (
     }
   });
   
-  // Add footer with date and page numbers
-  const pageCount = doc.internal.pages.length - 1;
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(
-      `Generated on: ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: 'center' }
-    );
+  // Add footer with date and page numbers (only for non-compact layouts)
+  if (!options.compactLayout) {
+    const pageCount = doc.internal.pages.length - 1;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Generated on: ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
   }
   
   // Save the PDF
@@ -184,44 +187,49 @@ export const generatePdfPreview = (
   // Calculate available width for proper scaling
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margins = 20; // margin on each side
+  const margins = options.compactLayout ? 10 : 20; // Smaller margins for track sheet
   const availableWidth = pageWidth - (margins * 2);
   
   // Set default font size with adjustment
-  const baseFontSize = 10;
+  const baseFontSize = options.compactLayout ? 8 : 10;
   const fontSize = baseFontSize + (options.fontSizeAdjustment || 0);
   doc.setFontSize(fontSize);
   
-  // Create header with gradient background
-  doc.setFillColor(16, 185, 129); // Teal color
-  doc.rect(0, 0, pageWidth, 20, 'F');
+  let yPosition = 20;
   
-  // Add title with styling
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text(options.title, pageWidth / 2, 10, { align: 'center' });
-  
-  // Add subtitle
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(14);
-  doc.text(options.subtitle || "", 14, 30);
-  
-  let yPosition = 40;
-  
-  // Add date if provided
-  if (options.dateInfo) {
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(options.dateInfo, 14, yPosition);
-    yPosition += 8;
-  }
-  
-  // Add additional info if provided
-  if (options.additionalInfo) {
-    options.additionalInfo.forEach(info => {
-      doc.text(`${info.label}: ${info.value}`, pageWidth - 20, yPosition - 8, { align: 'right' });
-    });
+  // Only add title section if showTitle is not false
+  if (options.showTitle !== false) {
+    // Create header with gradient background
+    doc.setFillColor(16, 185, 129); // Teal color
+    doc.rect(0, 0, pageWidth, 20, 'F');
+    
+    // Add title with styling
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(options.title, pageWidth / 2, 10, { align: 'center' });
+    
+    // Add subtitle
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text(options.subtitle || "", 14, 30);
+    
+    yPosition = 40;
+    
+    // Add date if provided
+    if (options.dateInfo) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(options.dateInfo, 14, yPosition);
+      yPosition += 8;
+    }
+    
+    // Add additional info if provided
+    if (options.additionalInfo) {
+      options.additionalInfo.forEach(info => {
+        doc.text(`${info.label}: ${info.value}`, pageWidth - 20, yPosition - 8, { align: 'right' });
+      });
+    }
   }
   
   // Calculate column widths - either use provided widths or calculate automatically
@@ -237,56 +245,50 @@ export const generatePdfPreview = (
     });
   }
   
-  // Default cell padding
-  const cellPadding = options.cellPadding || 4; 
-  const lineHeightValue = options.lineHeight || 1.3;
+  // Default cell padding - more compact for track sheet
+  const cellPadding = options.compactLayout ? 2 : (options.cellPadding || 4);
+  const lineHeightValue = options.compactLayout ? 1.1 : (options.lineHeight || 1.3);
   
-  // Generate the PDF table with improved styling
+  // Generate the PDF table with improved styling for track sheet
   autoTable(doc, {
     head: [columns],
     body: data,
-    startY: yPosition,
+    startY: options.showTitle !== false ? yPosition : 10,
     styles: { 
       fontSize: fontSize,
       cellPadding: cellPadding,
-      lineColor: [120, 120, 120],
-      lineWidth: 0.2, // Slightly thicker lines for better visibility
+      lineColor: [80, 80, 80],
+      lineWidth: 0.1, // Thinner lines for track sheet look
       overflow: 'linebreak',
-      halign: 'center', // Center align for better readability
+      halign: options.compactLayout ? 'center' : 'center',
       valign: 'middle',
-      minCellHeight: 12, // Ensure minimum cell height
+      minCellHeight: options.compactLayout ? 8 : 12,
     },
     headStyles: { 
-      fillColor: options.theme === "dark" ? [22, 78, 99] : [22, 163, 74],
-      textColor: [255, 255, 255],
+      fillColor: options.theme === "dark" ? [22, 78, 99] : [240, 240, 240], // Light gray header for track sheet
+      textColor: options.theme === "dark" ? [255, 255, 255] : [0, 0, 0],  // Black text for track sheet
       fontStyle: 'bold',
-      minCellHeight: 14,
-      cellPadding: cellPadding + 1, // Slightly more padding for headers
+      minCellHeight: options.compactLayout ? 10 : 14,
+      cellPadding: cellPadding,
       halign: 'center',
     },
     alternateRowStyles: { 
-      fillColor: options.theme === "dark" ? [40, 54, 60] : [243, 244, 246]
+      fillColor: options.theme === "dark" ? [40, 54, 60] : [255, 255, 255] // White background for track sheet
     },
     footStyles: { 
-      fillColor: options.theme === "dark" ? [16, 65, 82] : [220, 252, 231],
+      fillColor: options.theme === "dark" ? [16, 65, 82] : [240, 240, 240],
       fontStyle: 'bold',
-      cellPadding: cellPadding + 1, // Slightly more padding for footers
+      cellPadding: cellPadding,
     },
-    theme: 'grid',
+    theme: 'grid', // Use grid theme for track sheet look
     columnStyles: colWidths.length > 0 ? colWidths.reduce((acc, width, index) => {
       if (width !== undefined) {
         acc[index] = { cellWidth: width };
       }
       return acc;
     }, {}) : {},
-    margin: { top: 10, right: margins, bottom: 15, left: margins },
+    margin: { top: options.compactLayout ? 5 : 10, right: margins, bottom: options.compactLayout ? 5 : 15, left: margins },
     tableWidth: 'auto',
-    didParseCell: (data) => {
-      // For the first column (customer names), align left
-      if (data.column.index === 0) {
-        data.cell.styles.halign = 'left';
-      }
-    },
     willDrawCell: (data) => {
       // Apply custom line height by adjusting cell height
       if (lineHeightValue > 1) {
@@ -297,24 +299,58 @@ export const generatePdfPreview = (
     }
   });
   
-  // Add footer with date and page numbers
-  const pageCount = doc.internal.pages.length - 1;
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(
-      `Generated on: ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: 'center' }
-    );
+  // Add footer with date and page numbers (only for non-compact layouts)
+  if (!options.compactLayout) {
+    const pageCount = doc.internal.pages.length - 1;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Generated on: ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
   }
   
   // Return as data URL
   return doc.output('datauristring');
 };
 
+// Create a special function for track sheet exports
+export const exportTrackSheet = (
+  headers: string[],
+  data: any[][],
+  title: string,
+  filename: string,
+  options: {
+    dateInfo?: string;
+    landscape?: boolean;
+    theme?: UISettings["theme"];
+    columnWidths?: string[];
+  } = {}
+) => {
+  return exportToPdf(
+    headers,
+    data,
+    {
+      title,
+      filename,
+      landscape: true, // Track sheets are typically landscape
+      theme: options.theme || "light",
+      compactLayout: true, // Use compact layout for track sheet
+      showTitle: false, // Don't show title section for track sheet
+      columnWidths: options.columnWidths,
+      cellPadding: 2, // Very small padding for compact track sheet
+      lineHeight: 1.1, // Reduced line height for track sheet
+      dateInfo: options.dateInfo
+    }
+  );
+};
+
+// Export regular data table with default styling
 export const exportDataTable = (
   headers: string[],
   data: any[][],
