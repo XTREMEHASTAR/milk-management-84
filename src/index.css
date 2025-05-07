@@ -60,8 +60,18 @@
     @apply bg-secondary/20 text-secondary;
   }
 
+  /* Updated for better visibility */
   .table-row {
     @apply hover:bg-muted/50 transition-colors;
+  }
+  
+  /* Table headers and cells now have improved contrast */
+  .table-header {
+    @apply bg-muted/80 text-foreground font-medium;
+  }
+  
+  .table-cell {
+    @apply text-foreground/90;
   }
 
   .glow-border {
@@ -70,7 +80,7 @@
            border-gradient-to-br from-primary/80 to-secondary/50;
   }
   
-  /* New vibrant color classes */
+  /* Enhanced vibrant color classes */
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400;
   }
@@ -85,6 +95,15 @@
   
   .input-glow:focus {
     @apply border-purple-400 ring-2 ring-purple-400/20;
+  }
+  
+  /* New styles for better text visibility on tables */
+  .table-text-visible {
+    @apply text-foreground font-medium;
+  }
+  
+  .table-text-muted {
+    @apply text-foreground/80;
   }
 }
 
@@ -119,10 +138,39 @@
   text-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
 }
 
+/* Updated table styles for better visibility */
 .table-modern th {
   @apply bg-gradient-to-r from-indigo-900/60 to-purple-900/60 text-white;
 }
 
 .table-modern tr:nth-child(even) {
   @apply bg-purple-900/10;
+}
+
+/* New styles for table visibility */
+.table-striped tbody tr:nth-child(odd) {
+  @apply bg-muted/30;
+}
+
+.table-striped tbody tr:nth-child(even) {
+  @apply bg-muted/10;
+}
+
+.table-striped th {
+  @apply bg-muted/80 text-foreground;
+}
+
+/* Input field with better visibility */
+.input-visible {
+  @apply bg-muted/50 text-foreground border-muted;
+}
+
+/* Updated card styles for better visibility */
+.card-visible {
+  @apply bg-card text-card-foreground;
+}
+
+/* White text on dark backgrounds */
+.text-visible {
+  @apply text-white font-medium;
 }

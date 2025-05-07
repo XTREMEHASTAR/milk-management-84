@@ -38,33 +38,33 @@ export function useUISettingsState() {
       // Apply accent color as CSS variable
       let accentHue = "259"; // Purple default
       let accentSaturation = "94%";
-      let accentLightness = "51%";
+      let accentLightness = "61%"; // Increased from 51% for better visibility
       
       switch (uiSettings.accentColor) {
         case "teal":
           accentHue = "164";
-          accentSaturation = "54%";
-          accentLightness = "48%";
+          accentSaturation = "70%"; // Increased from 54%
+          accentLightness = "58%"; // Increased from 48%
           break;
         case "blue":
           accentHue = "217";
           accentSaturation = "91%";
-          accentLightness = "60%";
+          accentLightness = "70%"; // Increased from 60%
           break;
         case "purple":
           accentHue = "259";
           accentSaturation = "94%";
-          accentLightness = "51%";
+          accentLightness = "61%"; // Increased from 51%
           break;
         case "pink":
           accentHue = "330";
           accentSaturation = "90%";
-          accentLightness = "56%";
+          accentLightness = "66%"; // Increased from 56%
           break;
         case "orange":
           accentHue = "24";
           accentSaturation = "95%";
-          accentLightness = "53%";
+          accentLightness = "63%"; // Increased from 53%
           break;
       }
       

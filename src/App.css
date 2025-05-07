@@ -141,3 +141,43 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
+
+/* Improved text visibility in tables */
+.table-header-visible {
+  background: #1a1e23;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.table-row-visible {
+  color: #ffffff;
+}
+
+.table-row-visible:nth-child(odd) {
+  background-color: rgba(26, 30, 35, 0.7);
+}
+
+.table-row-visible:nth-child(even) {
+  background-color: rgba(26, 30, 35, 0.3);
+}
+
+/* Input styling with better text visibility */
+input.input-dark {
+  background-color: #1a1e23;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+input.input-dark::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* White text for better visibility in dark interface */
+.text-high-contrast {
+  color: #ffffff !important;
+}
+
+/* Better visibility for table row hover */
+tr.table-row-dark:hover {
+  background-color: rgba(56, 189, 149, 0.1);
+}

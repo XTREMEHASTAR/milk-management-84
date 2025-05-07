@@ -25,8 +25,8 @@ export default {
           secondary: "#1A1E23",
         },
         foreground: {
-          DEFAULT: "#E9EAEC",
-          muted: "#8E8E93",
+          DEFAULT: "#FFFFFF", // Changed from #E9EAEC to pure white for better visibility
+          muted: "#B0B0B8", // Brightened from #8E8E93
         },
         primary: {
           DEFAULT: "#38BD95", // Teal green
@@ -42,7 +42,7 @@ export default {
         },
         muted: {
           DEFAULT: "#222428",
-          foreground: "#8E8E93",
+          foreground: "#B0B0B8", // Brightened from #8E8E93
         },
         accent: {
           DEFAULT: "#38BD95",
