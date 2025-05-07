@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ import {
 import {
   FileDown, FileText, Printer, Maximize, 
   ZoomIn, ZoomOut, TruckIcon, UserIcon,
-  Spacing, ArrowDown
+  AlignCenter, ArrowDown
 } from "lucide-react";
 import { format } from "date-fns";
 import { Order, OrderItem, Vehicle, Salesman } from "@/types";
