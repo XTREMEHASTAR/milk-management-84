@@ -30,7 +30,9 @@ export const generateTrackSheetPdf = (
     
     // Add quantities for each column
     for (const col of columnNames) {
-      rowData.push(row.quantities[col] || "—"); // Use em dash for empty cells
+      // Convert any numeric values to strings since the exportTrackSheet function expects string values
+      const value = row.quantities[col];
+      rowData.push(value !== undefined && value !== "" ? String(value) : "—"); // Use em dash for empty cells
     }
     
     // Add total and amount
