@@ -26,7 +26,8 @@ import SupplierPayments from './pages/SupplierPayments';
 import SupplierLedger from './pages/SupplierLedger';
 import InvoiceGenerator from './pages/InvoiceGenerator';
 import CustomerStatement from './pages/CustomerStatement';
-import OutstandingAmounts from './pages/OutstandingAmounts';
+import Outstanding from './pages/Outstanding';
+import CustomerLedger from './pages/CustomerLedger';
 import CustomerLedgerReport from './pages/CustomerLedgerReport';
 import Communication from './pages/Communication';
 import ProductCategories from './pages/ProductCategories';
@@ -81,7 +82,8 @@ function App() {
                 <Route path="supplier-ledger" element={<SupplierLedger />} />
                 <Route path="invoice-generator" element={<InvoiceGenerator />} />
                 <Route path="customer-statement" element={<CustomerStatement />} />
-                <Route path="outstanding-amounts" element={<OutstandingAmounts />} />
+                <Route path="outstanding" element={<Outstanding />} />
+                <Route path="customer-ledger" element={<CustomerLedger />} />
                 <Route path="customer-ledger-report" element={<CustomerLedgerReport />} />
                 <Route path="communication" element={<Communication />} />
                 <Route path="product-categories" element={<ProductCategories />} />

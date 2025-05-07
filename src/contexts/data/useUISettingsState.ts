@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 import { UISettings } from '@/types';
 
 const defaultUISettings: UISettings = {
-  theme: "light",
-  accentColor: "teal",
-  sidebarStyle: "default",
-  sidebarColor: "default",
-  tableStyle: "default",
+  theme: "dark",
+  accentColor: "purple",
+  sidebarStyle: "gradient",
+  sidebarColor: "purple",
+  tableStyle: "modern",
   compactMode: false,
   paymentReminders: true,
   lowStockAlerts: true
@@ -34,6 +34,43 @@ export function useUISettingsState() {
       } else {
         document.documentElement.classList.remove("dark");
       }
+      
+      // Apply accent color as CSS variable
+      let accentHue = "259"; // Purple default
+      let accentSaturation = "94%";
+      let accentLightness = "51%";
+      
+      switch (uiSettings.accentColor) {
+        case "teal":
+          accentHue = "164";
+          accentSaturation = "54%";
+          accentLightness = "48%";
+          break;
+        case "blue":
+          accentHue = "217";
+          accentSaturation = "91%";
+          accentLightness = "60%";
+          break;
+        case "purple":
+          accentHue = "259";
+          accentSaturation = "94%";
+          accentLightness = "51%";
+          break;
+        case "pink":
+          accentHue = "330";
+          accentSaturation = "90%";
+          accentLightness = "56%";
+          break;
+        case "orange":
+          accentHue = "24";
+          accentSaturation = "95%";
+          accentLightness = "53%";
+          break;
+      }
+      
+      document.documentElement.style.setProperty('--accent-hue', accentHue);
+      document.documentElement.style.setProperty('--accent-saturation', accentSaturation);
+      document.documentElement.style.setProperty('--accent-lightness', accentLightness);
       
     } catch (error) {
       console.error("Error saving UI settings:", error);

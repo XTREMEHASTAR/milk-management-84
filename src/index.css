@@ -14,7 +14,7 @@
     --popover: 229 20% 12%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 164 54% 48%;
+    --primary: var(--accent-hue) var(--accent-saturation) var(--accent-lightness);
     --primary-foreground: 0 0% 98%;
  
     --secondary: 217 91% 60%;
@@ -23,7 +23,7 @@
     --muted: 225 14% 15%;
     --muted-foreground: 215 20% 65%;
  
-    --accent: 164 54% 48%;
+    --accent: var(--accent-hue) var(--accent-saturation) var(--accent-lightness);
     --accent-foreground: 0 0% 98%;
  
     --destructive: 0 84.2% 60.2%;
@@ -31,9 +31,14 @@
  
     --border: 225 14% 15%;
     --input: 225 14% 15%;
-    --ring: 164 54% 48%;
+    --ring: var(--accent-hue) var(--accent-saturation) var(--accent-lightness);
  
     --radius: 0.75rem;
+
+    /* Default accent color values */
+    --accent-hue: 259;
+    --accent-saturation: 94%;
+    --accent-lightness: 51%;
   }
 }
  
@@ -64,6 +69,23 @@
            bg-gradient-to-br from-background to-background 
            border-gradient-to-br from-primary/80 to-secondary/50;
   }
+  
+  /* New vibrant color classes */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400;
+  }
+  
+  .bg-gradient-card {
+    @apply bg-gradient-to-br from-indigo-900/90 to-purple-900/90 text-white border-0 shadow-lg;
+  }
+  
+  .bg-gradient-button {
+    @apply bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white;
+  }
+  
+  .input-glow:focus {
+    @apply border-purple-400 ring-2 ring-purple-400/20;
+  }
 }
 
 /* Custom global styles */
@@ -82,4 +104,25 @@
 .hover-lift:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* New vibrant styling */
+.card-highlight {
+  @apply border-l-4 border-purple-500;
+}
+
+.vibrant-shadow {
+  box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.3);
+}
+
+.purple-glow {
+  text-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+
+.table-modern th {
+  @apply bg-gradient-to-r from-indigo-900/60 to-purple-900/60 text-white;
+}
+
+.table-modern tr:nth-child(even) {
+  @apply bg-purple-900/10;
 }
