@@ -7,7 +7,7 @@ const defaultUISettings: UISettings = {
   accentColor: "purple",
   sidebarStyle: "gradient",
   sidebarColor: "purple",
-  tableStyle: "modern",
+  tableStyle: "striped",  // Changed from "modern" to "striped"
   compactMode: false,
   paymentReminders: true,
   lowStockAlerts: true
