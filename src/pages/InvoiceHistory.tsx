@@ -19,7 +19,7 @@ export default function InvoiceHistory() {
     from: undefined,
     to: undefined
   });
-  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   // For demonstration, let's create a sample invoice list based on orders
   // In a real app, you'd fetch this from your data context
@@ -65,7 +65,7 @@ export default function InvoiceHistory() {
     }
 
     // Filter by status
-    if (filterStatus) {
+    if (filterStatus !== "all") {
       filtered = filtered.filter(inv => inv.status === filterStatus);
     }
 
@@ -100,7 +100,6 @@ export default function InvoiceHistory() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
-            startAdornment={<Search className="h-4 w-4" />}
           />
         </div>
         
@@ -144,12 +143,12 @@ export default function InvoiceHistory() {
         </div>
         
         <div className="w-full md:w-1/4">
-          <Select onValueChange={setFilterStatus}>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger>
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Paid">Paid</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
               <SelectItem value="Overdue">Overdue</SelectItem>
@@ -160,7 +159,7 @@ export default function InvoiceHistory() {
         <Button onClick={() => {
           setSearchQuery("");
           setDateRange({ from: undefined, to: undefined });
-          setFilterStatus("");
+          setFilterStatus("all");
         }}>
           Reset Filters
         </Button>
