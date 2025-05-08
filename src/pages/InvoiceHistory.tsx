@@ -15,13 +15,15 @@ import InvoiceStatusBadge from "@/components/invoices/InvoiceStatusBadge";
 import InvoiceDownloadButton from "@/components/invoices/InvoiceDownloadButton";
 import { useInvoices } from "@/contexts/InvoiceContext";
 import { InvoiceService } from "@/services/InvoiceService";
+import { DateRange } from "react-day-picker";
 
 export default function InvoiceHistory() {
   const { orders, products } = useData();
   const { invoices, generateInvoicePreview } = useInvoices();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+  // Fix the type definition to match DateRange from react-day-picker
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: undefined,
     to: undefined
   });
@@ -133,13 +135,10 @@ export default function InvoiceHistory() {
                 initialFocus
                 mode="range"
                 defaultMonth={new Date()}
-                selected={{
-                  from: dateRange?.from,
-                  to: dateRange?.to
-                }}
+                selected={dateRange}
                 onSelect={(newDateRange) => {
-                  // Ensure we always set a properly structured object
-                  setDateRange(newDateRange || { from: undefined, to: undefined });
+                  // This now works correctly with the updated type definition
+                  setDateRange(newDateRange);
                 }}
                 numberOfMonths={2}
                 className="pointer-events-auto"
