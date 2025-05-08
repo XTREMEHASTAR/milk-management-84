@@ -7,14 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, Eye, X } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Eye, Trash, X } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import { Invoice } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { generatePdfPreview } from "@/utils/pdfUtils";
+import InvoiceStatusBadge from "@/components/invoices/InvoiceStatusBadge";
+import InvoiceDownloadButton from "@/components/invoices/InvoiceDownloadButton";
+import { useInvoices } from "@/contexts/InvoiceContext";
+import { InvoiceService } from "@/services/InvoiceService";
 
 export default function InvoiceHistory() {
-  const { orders } = useData();
+  const { orders, products } = useData();
+  const { invoices, generateInvoicePreview } = useInvoices();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -22,33 +26,15 @@ export default function InvoiceHistory() {
     to: undefined
   });
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
-
-  // For demonstration, let's create a sample invoice list based on orders
-  // In a real app, you'd fetch this from your data context
-  useEffect(() => {
-    // Convert orders to invoices for this demo
-    // In a real app, you'd have actual invoice data
-    if (orders && orders.length > 0) {
-      const convertedInvoices = orders.map(order => ({
-        id: `INV-${order.id}`,
-        orderId: order.id,
-        customerName: order.customerName || "Unknown Customer",
-        date: order.date,
-        amount: order.totalAmount || 0, // Ensure amount is always a number
-        status: Math.random() > 0.3 ? "Paid" : "Pending",
-        items: order.items
-      }));
-      setInvoices(convertedInvoices);
-      setFilteredInvoices(convertedInvoices);
-    }
-  }, [orders]);
+  const [companyInfo, setCompanyInfo] = useState(() => InvoiceService.getCompanyInfo());
 
   // Filter invoices based on search query, date range, and status
   useEffect(() => {
+    if (!invoices) return;
+    
     let filtered = [...invoices];
 
     // Filter by search query
@@ -56,7 +42,8 @@ export default function InvoiceHistory() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         inv => inv.id.toLowerCase().includes(query) || 
-               (inv.customerName && inv.customerName.toLowerCase().includes(query))
+               (inv.customerName && inv.customerName.toLowerCase().includes(query)) ||
+               (inv.orderId && inv.orderId.toLowerCase().includes(query))
       );
     }
 
@@ -76,40 +63,11 @@ export default function InvoiceHistory() {
     setFilteredInvoices(filtered);
   }, [searchQuery, dateRange, filterStatus, invoices]);
 
-  const handleDownload = (invoiceId: string) => {
-    // In a real app, this would generate and download the invoice PDF
-    console.log(`Downloading invoice: ${invoiceId}`);
-    alert(`Invoice ${invoiceId} would be downloaded in a real app.`);
-  };
-
+  // Show preview of the invoice
   const handleView = (invoice: Invoice) => {
     setPreviewInvoice(invoice);
-    
-    // Generate PDF preview for the selected invoice
-    const columns = ["Item", "Quantity", "Rate", "Amount"];
-    const data = invoice.items.map(item => [
-      "Product Name", // In a real app, you'd get the product name from product ID
-      item.quantity.toString(),
-      "₹" + (100).toFixed(2), // Placeholder rate
-      "₹" + (item.quantity * 100).toFixed(2) // Placeholder amount
-    ]);
-    
-    const pdfUrl = generatePdfPreview(
-      columns,
-      data,
-      {
-        title: "Invoice",
-        subtitle: `Invoice #: ${invoice.id}`,
-        dateInfo: `Date: ${format(new Date(invoice.date), "dd MMMM yyyy")}`,
-        additionalInfo: [
-          { label: "Customer", value: invoice.customerName || "Unknown" },
-          { label: "Status", value: invoice.status }
-        ],
-        filename: `invoice-${invoice.id}.pdf`
-      }
-    );
-    
-    setPreviewUrl(pdfUrl);
+    const previewUrl = generateInvoicePreview(invoice);
+    setPreviewUrl(previewUrl);
     setPreviewOpen(true);
   };
 
@@ -130,7 +88,7 @@ export default function InvoiceHistory() {
       <div className="flex flex-col md:flex-row gap-4 items-end">
         <div className="w-full md:w-1/3">
           <Input
-            placeholder="Search invoices..."
+            placeholder="Search invoices by ID, customer name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
@@ -186,6 +144,8 @@ export default function InvoiceHistory() {
               <SelectItem value="Paid">Paid</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
               <SelectItem value="Overdue">Overdue</SelectItem>
+              <SelectItem value="Draft">Draft</SelectItem>
+              <SelectItem value="Cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -214,6 +174,7 @@ export default function InvoiceHistory() {
                   <th className="p-2 font-semibold">Invoice #</th>
                   <th className="p-2 font-semibold">Date</th>
                   <th className="p-2 font-semibold">Customer</th>
+                  <th className="p-2 font-semibold">Order ID</th>
                   <th className="p-2 font-semibold">Amount</th>
                   <th className="p-2 font-semibold">Status</th>
                   <th className="p-2 font-semibold text-right">Actions</th>
@@ -226,15 +187,10 @@ export default function InvoiceHistory() {
                       <td className="p-2 table-cell">{invoice.id}</td>
                       <td className="p-2 table-cell">{format(new Date(invoice.date), "MMM dd, yyyy")}</td>
                       <td className="p-2 table-cell">{invoice.customerName}</td>
+                      <td className="p-2 table-cell">{invoice.orderId}</td>
                       <td className="p-2 table-cell">{formatCurrency(invoice.amount)}</td>
                       <td className="p-2 table-cell">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          invoice.status === "Paid" ? "bg-green-100 text-green-800" : 
-                          invoice.status === "Pending" ? "bg-yellow-100 text-yellow-800" : 
-                          "bg-red-100 text-red-800"
-                        }`}>
-                          {invoice.status}
-                        </span>
+                        <InvoiceStatusBadge status={invoice.status} />
                       </td>
                       <td className="p-2 table-cell text-right">
                         <Button 
@@ -245,19 +201,17 @@ export default function InvoiceHistory() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button 
+                        <InvoiceDownloadButton 
+                          invoiceId={invoice.id} 
                           variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDownload(invoice.id)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
+                          size="icon" 
+                        />
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                    <td colSpan={7} className="py-6 text-center text-muted-foreground">
                       No invoices found matching your filters
                     </td>
                   </tr>
@@ -301,10 +255,9 @@ export default function InvoiceHistory() {
             <Button variant="outline" onClick={() => setPreviewOpen(false)}>
               Close
             </Button>
-            <Button onClick={() => previewInvoice && handleDownload(previewInvoice.id)}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
+            {previewInvoice && (
+              <InvoiceDownloadButton invoiceId={previewInvoice.id} />
+            )}
           </div>
         </DialogContent>
       </Dialog>

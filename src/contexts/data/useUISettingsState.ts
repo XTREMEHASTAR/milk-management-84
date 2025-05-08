@@ -10,14 +10,35 @@ const defaultUISettings: UISettings = {
   tableStyle: "striped",
   compactMode: false,
   paymentReminders: true,
-  lowStockAlerts: true
+  lowStockAlerts: true,
+  enableAnimations: true,
+  highContrast: false,
+  fontSize: "medium",
+  showTips: true,
+  showQuickActions: true,
+  showRevenueChart: true,
+  showRecentActivities: true,
+  showCustomerStats: true,
+  dateFormat: "MMM dd, yyyy",
+  currencyFormat: "₹#,###.##",
+  timezone: "Asia/Kolkata",
+  defaultView: "dashboard",
+  autoGenerateInvoices: false,
+  defaultInvoiceTemplate: "standard",
+  invoiceDueDays: 15,
+  invoicePrefix: "INV-",
+  invoiceStartNumber: 1000,
+  includeDateInInvoice: false,
+  notificationFrequency: "immediate",
+  orderNotifications: true,
+  invoiceNotifications: true
 };
 
 export function useUISettingsState() {
   const [uiSettings, setUISettings] = useState<UISettings>(() => {
     try {
       const saved = localStorage.getItem("uiSettings");
-      return saved ? JSON.parse(saved) : defaultUISettings;
+      return saved ? { ...defaultUISettings, ...JSON.parse(saved) } : defaultUISettings;
     } catch (error) {
       console.error("Error loading UI settings:", error);
       return defaultUISettings;
@@ -77,6 +98,11 @@ export function useUISettingsState() {
           accentSaturation = "95%";
           accentLightness = "63%";
           break;
+        case "green":
+          accentHue = "142";
+          accentSaturation = "71%";
+          accentLightness = "45%";
+          break;
       }
       
       document.documentElement.style.setProperty('--accent-hue', accentHue);
@@ -102,6 +128,42 @@ export function useUISettingsState() {
         document.documentElement.style.setProperty('--input', '240 3.7% 15.9%');
         document.documentElement.style.setProperty('--muted', '240 3.7% 15.9%');
         document.documentElement.style.setProperty('--muted-foreground', '240 5% 64.9%');
+      }
+      
+      // Apply font size
+      if (uiSettings.fontSize) {
+        let fontSizeBase = "16px"; // Default medium size
+        
+        switch (uiSettings.fontSize) {
+          case "small":
+            fontSizeBase = "14px";
+            break;
+          case "medium":
+            fontSizeBase = "16px";
+            break;
+          case "large":
+            fontSizeBase = "18px";
+            break;
+          case "x-large":
+            fontSizeBase = "20px";
+            break;
+        }
+        
+        document.documentElement.style.setProperty('--font-size-base', fontSizeBase);
+      }
+      
+      // Apply high contrast mode if enabled
+      if (uiSettings.highContrast) {
+        document.documentElement.classList.add("high-contrast");
+      } else {
+        document.documentElement.classList.remove("high-contrast");
+      }
+      
+      // Apply compact mode if enabled
+      if (uiSettings.compactMode) {
+        document.documentElement.classList.add("compact-mode");
+      } else {
+        document.documentElement.classList.remove("compact-mode");
       }
       
     } catch (error) {

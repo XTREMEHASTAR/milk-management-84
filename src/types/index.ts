@@ -33,6 +33,8 @@ export interface Order {
   items: OrderItem[];
   vehicleId?: string;
   salesmanId?: string;
+  totalAmount?: number;
+  customerName?: string;
 }
 
 export interface Payment {
@@ -164,12 +166,40 @@ export interface Salesman {
 export interface UISettings {
   theme: "light" | "dark" | "system";
   accentColor: string;
-  sidebarStyle: "default" | "compact" | "expanded" | "gradient";
+  sidebarStyle: "default" | "compact" | "expanded" | "gradient" | "solid" | "minimal";
   sidebarColor: string;
-  tableStyle: "default" | "bordered" | "striped";
+  tableStyle: "default" | "bordered" | "striped" | "compact" | "minimal";
   compactMode?: boolean;
   paymentReminders?: boolean;
   lowStockAlerts?: boolean;
+  enableAnimations?: boolean;
+  highContrast?: boolean;
+  fontSize?: "small" | "medium" | "large" | "x-large";
+  showTips?: boolean;
+  showQuickActions?: boolean;
+  showRevenueChart?: boolean;
+  showRecentActivities?: boolean;
+  showCustomerStats?: boolean;
+  dateFormat?: string;
+  currencyFormat?: string;
+  timezone?: string;
+  defaultView?: string;
+  autoGenerateInvoices?: boolean;
+  defaultInvoiceTemplate?: string;
+  invoiceDueDays?: number;
+  invoicePrefix?: string;
+  invoiceStartNumber?: number;
+  includeDateInInvoice?: boolean;
+  defaultInvoiceNotes?: string;
+  notificationFrequency?: "immediate" | "hourly" | "daily" | "weekly";
+  orderNotifications?: boolean;
+  invoiceNotifications?: boolean;
+  startWithSystem?: boolean;
+  minimizeToTray?: boolean;
+  defaultPrinter?: string;
+  hardwareAcceleration?: boolean;
+  autoUpdate?: boolean;
+  updateChannel?: "stable" | "beta" | "dev";
 }
 
 export interface Invoice {
@@ -178,6 +208,27 @@ export interface Invoice {
   customerName: string;
   date: string;
   amount: number;
-  status: string;
+  status: "Paid" | "Pending" | "Overdue" | "Draft" | "Cancelled" | "Processing" | "Completed" | string;
   items: OrderItem[];
+  notes?: string;
+  terms?: string;
+  dueDate?: string;
+  discountPercentage?: number;
+  taxRate?: number;
+  templateId?: string;
+  paidAmount?: number;
+  paidDate?: string;
+  paymentMethod?: "cash" | "bank" | "upi" | "other";
+  reference?: string;
+}
+
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  description: string;
+  previewImage: string;
+  primaryColor: string;
+  fontFamily: string;
+  showHeader: boolean;
+  showFooter: boolean;
 }

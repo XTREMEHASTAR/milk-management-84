@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 import appInfo from './appInfo.js';
 import fileSystem from './fileSystem.js';
 import system from './system.js';
+import invoiceApi from './invoiceApi.js';
 
 /**
  * API Registry for centralizing all IPC handlers
@@ -28,16 +29,21 @@ const APIRegistry = {
     ipcMain.handle('get-system-info', () => appInfo.getSystemInfo());
     
     // Register file system APIs
-    ipcMain.handle('export-data', (event, data) => fileSystem.exportData(data));
+    ipcMain.handle('export-data', (event, data) => fileSystem.exportData(event, data));
     ipcMain.handle('import-data', () => fileSystem.importData());
-    ipcMain.handle('save-log', (event, logData) => fileSystem.saveLog(logData));
+    ipcMain.handle('save-log', (event, logData) => fileSystem.saveLog(event, logData));
     
     // Register system APIs
-    ipcMain.handle('open-external', (event, url) => system.openExternal(url));
-    ipcMain.handle('open-path', (event, path) => system.openPath(path));
-    ipcMain.handle('copy-to-clipboard', (event, text) => system.copyToClipboard(text));
+    ipcMain.handle('open-external', (event, url) => system.openExternal(event, url));
+    ipcMain.handle('open-path', (event, path) => system.openPath(event, path));
+    ipcMain.handle('copy-to-clipboard', (event, text) => system.copyToClipboard(event, text));
     ipcMain.handle('read-from-clipboard', () => system.readFromClipboard());
-    ipcMain.handle('is-platform', (event, platform) => system.isPlatform(platform));
+    ipcMain.handle('is-platform', (event, platform) => system.isPlatform(event, platform));
+    
+    // Register invoice APIs
+    ipcMain.handle('download-invoice', (event, data, filename) => invoiceApi.downloadInvoice(event, data, filename));
+    ipcMain.handle('print-invoice', (event, data) => invoiceApi.printInvoice(event, data));
+    ipcMain.handle('get-printers', () => invoiceApi.getPrinters());
     
     console.log('All API handlers registered successfully');
   }
