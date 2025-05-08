@@ -10,41 +10,20 @@ import { useStockState } from './useStockState';
 import { useProductRateState } from './useProductRateState';
 import { useVehicleSalesmanState } from './useVehicleSalesmanState';
 import { useUISettingsState } from './useUISettingsState';
-import { useAuth } from '@/contexts/AuthContext';
-import { useInvoices } from '@/contexts/InvoiceContext';
 
 // Create data context
 const DataContext = createContext<any>(undefined);
 
+interface DataProviderProps {
+  children: ReactNode;
+  createInvoiceFunc?: Function;
+}
+
 // Provider component
-export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  
+export const DataProvider: React.FC<DataProviderProps> = ({ children, createInvoiceFunc }) => {
   // All individual state hooks
   const customerState = useCustomerState();
   const productState = useProductState();
-  
-  // Get invoice context if available, but don't error if it's not
-  let invoiceContext = null;
-  let createInvoiceFunc = null;
-  
-  try {
-    // Try to use the invoice context, but don't crash if it's not available yet
-    // This is safe because we've restructured App.tsx to put DataProvider before InvoiceProvider
-    invoiceContext = useInvoices();
-    if (invoiceContext) {
-      createInvoiceFunc = (orderId: string) => {
-        invoiceContext.createInvoiceFromOrder(
-          orderId, 
-          productState.products, 
-          customerState.customers,
-          orderState.orders
-        );
-      };
-    }
-  } catch (error) {
-    console.log("InvoiceContext not available yet, skipping auto invoice creation");
-  }
   
   // Initialize orderState with the invoice creation function if available
   const orderState = useOrderState(createInvoiceFunc);

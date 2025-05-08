@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { useData } from "@/contexts/DataContext";
+import { useData } from "@/contexts/data/DataContext";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -35,16 +35,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import {
   FileDown, FileText, Printer, Maximize, 
   ZoomIn, ZoomOut, TruckIcon, UserIcon,
-  AlignCenter, ArrowDown
+  Copy, Calendar, Edit, Trash2
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Order, OrderItem, Vehicle, Salesman } from "@/types";
 import { toast } from "sonner";
 import { exportToPdf, previewDataTableAsPdf } from "@/utils/pdfUtils";
+import { createEmptyTrackSheetRows, createTrackSheetTemplate, TrackSheetRow, generateTrackSheetPdf } from "@/utils/trackSheetUtils";
 
 interface TrackItem {
   customerId: string;
@@ -56,8 +63,18 @@ interface TrackItem {
   totalAmount: number;
 }
 
+interface SavedTrackSheet {
+  id: string;
+  name: string;
+  date: string;
+  groupBy: "none" | "vehicle" | "salesman";
+  vehicleId?: string | null;
+  salesmanId?: string | null;
+  items: TrackItem[];
+}
+
 const TrackSheet = () => {
-  const { customers, products, orders, vehicles, salesmen, uiSettings } = useData();
+  const { customers, products, orders, vehicles, salesmen, uiSettings, addOrder } = useData();
   const [trackDate, setTrackDate] = useState<Date>(new Date());
   const [trackItems, setTrackItems] = useState<TrackItem[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -71,6 +88,33 @@ const TrackSheet = () => {
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [columnWidths, setColumnWidths] = useState<string[]>([]);
   const tableRef = useRef<HTMLDivElement>(null);
+  
+  // New state variables for managing multiple track sheets
+  const [savedTrackSheets, setSavedTrackSheets] = useState<SavedTrackSheet[]>([]);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editingSheetId, setEditingSheetId] = useState<string | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState<boolean>(false);
+  const [trackSheetName, setTrackSheetName] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("current");
+  
+  // Load saved track sheets from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("savedTrackSheets");
+    if (saved) {
+      try {
+        setSavedTrackSheets(JSON.parse(saved));
+      } catch (error) {
+        console.error("Error loading saved track sheets:", error);
+      }
+    }
+  }, []);
+  
+  // Save track sheets to localStorage when they change
+  useEffect(() => {
+    if (savedTrackSheets.length > 0) {
+      localStorage.setItem("savedTrackSheets", JSON.stringify(savedTrackSheets));
+    }
+  }, [savedTrackSheets]);
 
   // Find order for the selected date
   useEffect(() => {
@@ -169,8 +213,8 @@ const TrackSheet = () => {
   };
 
   const exportToCSV = () => {
-    if (!selectedOrder) {
-      toast.error("No order data available for the selected date");
+    if (trackItems.length === 0) {
+      toast.error("No data available to export");
       return;
     }
 
@@ -223,8 +267,8 @@ const TrackSheet = () => {
   };
 
   const generatePdfPreview = () => {
-    if (!selectedOrder) {
-      toast.error("No order data available for the selected date");
+    if (trackItems.length === 0) {
+      toast.error("No data available for preview");
       return;
     }
 
@@ -276,7 +320,7 @@ const TrackSheet = () => {
     tableRows.push(totalsRow);
 
     // Get vehicle or salesman info
-    let additionalInfo = [];
+    let additionalInfo: Array<{ label: string; value: string }> = [];
     if (groupBy === "vehicle" && selectedVehicle) {
       const vehicle = vehicles.find(v => v.id === selectedVehicle);
       if (vehicle) {
@@ -299,7 +343,7 @@ const TrackSheet = () => {
     const pdfUrl = previewDataTableAsPdf(
       tableColumn,
       tableRows,
-      "Milk Delivery App",
+      trackSheetName || "Milk Delivery App",
       {
         landscape: true,
         dateInfo: `Date: ${format(trackDate, "dd MMMM yyyy")}`,
@@ -316,8 +360,8 @@ const TrackSheet = () => {
   };
 
   const exportToPDF = () => {
-    if (!selectedOrder) {
-      toast.error("No order data available for the selected date");
+    if (trackItems.length === 0) {
+      toast.error("No data available to export");
       return;
     }
 
@@ -369,7 +413,7 @@ const TrackSheet = () => {
     tableRows.push(totalsRow);
 
     // Get vehicle or salesman info
-    let additionalInfo = [];
+    let additionalInfo: Array<{ label: string; value: string }> = [];
     if (groupBy === "vehicle" && selectedVehicle) {
       const vehicle = vehicles.find(v => v.id === selectedVehicle);
       if (vehicle) {
@@ -393,7 +437,7 @@ const TrackSheet = () => {
       tableColumn,
       tableRows,
       {
-        title: "Milk Delivery App",
+        title: trackSheetName || "Milk Delivery App",
         subtitle: "Daily Delivery Track Sheet",
         dateInfo: `Date: ${format(trackDate, "dd MMMM yyyy")}`,
         additionalInfo: additionalInfo.length > 0 ? additionalInfo : undefined,
@@ -411,8 +455,8 @@ const TrackSheet = () => {
   };
 
   const printTrackSheet = () => {
-    if (!selectedOrder) {
-      toast.error("No order data available for the selected date");
+    if (trackItems.length === 0) {
+      toast.error("No data available to print");
       return;
     }
     
@@ -424,10 +468,137 @@ const TrackSheet = () => {
     generatePdfPreview();
   };
 
-  const handleColumnWidthChange = (index: number, newWidth: string) => {
-    const newColumnWidths = [...columnWidths];
-    newColumnWidths[index] = newWidth;
-    setColumnWidths(newColumnWidths);
+  // New methods for managing multiple track sheets
+  const saveTrackSheet = () => {
+    if (trackItems.length === 0) {
+      toast.error("No data available to save");
+      return;
+    }
+
+    if (!trackSheetName) {
+      toast.error("Please enter a name for the track sheet");
+      return;
+    }
+
+    const sheetToSave: SavedTrackSheet = {
+      id: editingSheetId || `sheet-${Date.now()}`,
+      name: trackSheetName,
+      date: format(trackDate, "yyyy-MM-dd"),
+      groupBy,
+      vehicleId: selectedVehicle,
+      salesmanId: selectedSalesman,
+      items: [...trackItems]
+    };
+
+    if (isEditing && editingSheetId) {
+      setSavedTrackSheets(prev => 
+        prev.map(sheet => sheet.id === editingSheetId ? sheetToSave : sheet)
+      );
+      toast.success(`Track sheet "${trackSheetName}" updated successfully`);
+    } else {
+      setSavedTrackSheets(prev => [...prev, sheetToSave]);
+      toast.success(`Track sheet "${trackSheetName}" saved successfully`);
+    }
+
+    setShowSaveDialog(false);
+    setIsEditing(false);
+    setEditingSheetId(null);
+    setTrackSheetName("");
+  };
+
+  const loadTrackSheet = (sheet: SavedTrackSheet) => {
+    setTrackDate(new Date(sheet.date));
+    setGroupBy(sheet.groupBy);
+    setSelectedVehicle(sheet.vehicleId);
+    setSelectedSalesman(sheet.salesmanId);
+    setTrackItems(sheet.items);
+    setTrackSheetName(sheet.name);
+    setActiveTab("current");
+    toast.success(`Track sheet "${sheet.name}" loaded`);
+  };
+
+  const editTrackSheet = (sheet: SavedTrackSheet) => {
+    setIsEditing(true);
+    setEditingSheetId(sheet.id);
+    setTrackSheetName(sheet.name);
+    loadTrackSheet(sheet);
+    setShowSaveDialog(true);
+  };
+
+  const deleteTrackSheet = (id: string) => {
+    setSavedTrackSheets(prev => prev.filter(sheet => sheet.id !== id));
+    toast.success("Track sheet deleted successfully");
+  };
+
+  const carryForwardToNextDay = () => {
+    if (trackItems.length === 0) {
+      toast.error("No data available to carry forward");
+      return;
+    }
+
+    const nextDate = addDays(trackDate, 1);
+    const nextDateString = format(nextDate, "yyyy-MM-dd");
+
+    // Check if an order already exists for the next day
+    const existingOrder = orders.find(o => o.date === nextDateString);
+    if (existingOrder) {
+      toast.error("An order already exists for the next day. Please edit that order instead.");
+      return;
+    }
+
+    // Create new order items for the next day
+    const orderItems = trackItems.flatMap(item => {
+      return Object.entries(item.products).map(([productId, quantity]) => ({
+        customerId: item.customerId,
+        productId,
+        quantity
+      }));
+    }).filter(item => item.quantity > 0); // Filter out zero quantities
+
+    // Add the new order
+    const newOrder = {
+      date: nextDateString,
+      items: orderItems,
+      vehicleId: selectedVehicle || undefined,
+      salesmanId: selectedSalesman || undefined
+    };
+
+    addOrder(newOrder);
+    toast.success(`Order carried forward to ${format(nextDate, "dd MMM yyyy")}`);
+
+    // Navigate to the next day
+    setTrackDate(nextDate);
+  };
+
+  const startNewTrackSheet = () => {
+    setTrackSheetName("");
+    setIsEditing(false);
+    setEditingSheetId(null);
+    setShowSaveDialog(true);
+  };
+
+  const createEmptyTrackSheet = () => {
+    if (products.length === 0 || customers.length === 0) {
+      toast.error("You need both products and customers to create a track sheet");
+      return;
+    }
+    
+    const templateRows = createEmptyTrackSheetRows(products.map(p => p.name));
+    
+    // Convert template rows to TrackItems
+    const items: TrackItem[] = customers.slice(0, 5).map((customer, index) => {
+      const products: Record<string, number> = {};
+      return {
+        customerId: customer.id,
+        customerName: customer.name,
+        products,
+        totalQuantity: 0,
+        totalAmount: 0
+      };
+    });
+    
+    setTrackItems(items);
+    toast.success("Created empty track sheet template");
   };
 
   const getBgColorClass = () => {
@@ -460,7 +631,7 @@ const TrackSheet = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Delivery Track Sheet</h1>
           <p className="text-muted-foreground">
-            View and print daily delivery track sheets
+            View, print and manage daily delivery track sheets
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -471,7 +642,7 @@ const TrackSheet = () => {
           
           <Dialog open={showPreview} onOpenChange={setShowPreview}>
             <DialogTrigger asChild>
-              <Button variant="outline" onClick={handlePreview} disabled={!selectedOrder}>
+              <Button variant="outline" onClick={handlePreview} disabled={trackItems.length === 0}>
                 <Maximize className="mr-2 h-4 w-4" />
                 Preview PDF
               </Button>
@@ -558,212 +729,335 @@ const TrackSheet = () => {
             <FileText className="mr-2 h-4 w-4" />
             Export PDF
           </Button>
+          
           <Button variant="outline" onClick={printTrackSheet}>
             <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>
+
+          <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+            <DialogTrigger asChild>
+              <Button onClick={startNewTrackSheet}>Save Sheet</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{isEditing ? "Edit Track Sheet" : "Save Track Sheet"}</DialogTitle>
+                <DialogDescription>
+                  Give your track sheet a name to save it for future reference.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={trackSheetName}
+                    onChange={(e) => setTrackSheetName(e.target.value)}
+                    className="col-span-3"
+                    placeholder="e.g., Morning Route Sheet"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowSaveDialog(false)}>Cancel</Button>
+                <Button onClick={saveTrackSheet} disabled={!trackSheetName}>Save</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      <Card className={`print:shadow-none print:border-none ${getBgColorClass()} border-0 shadow-lg rounded-xl`}>
-        <CardHeader className="print:py-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="print:text-xl text-inherit">
-                Delivery Track Sheet - {format(trackDate, "dd MMMM yyyy")}
-              </CardTitle>
-              <CardDescription className="print:hidden text-inherit/80">
-                Daily milk delivery track sheet for delivery personnel
+      <Tabs defaultValue="current" value={activeTab} onValueChange={setActiveTab} className="print:hidden">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="current">Current Track Sheet</TabsTrigger>
+          <TabsTrigger value="saved">Saved Track Sheets</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="current" className="mt-2">
+          <Card className={`print:shadow-none print:border-none ${getBgColorClass()} border-0 shadow-lg rounded-xl`}>
+            <CardHeader className="print:py-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="print:text-xl text-inherit">
+                    {trackSheetName ? trackSheetName : `Delivery Track Sheet - ${format(trackDate, "dd MMMM yyyy")}`}
+                  </CardTitle>
+                  <CardDescription className="print:hidden text-inherit/80">
+                    Daily milk delivery track sheet for delivery personnel
+                  </CardDescription>
+                </div>
+                <div className="print:hidden flex items-center space-x-4">
+                  <DatePicker date={trackDate} setDate={setTrackDate} />
+                  
+                  <Select value={groupBy} onValueChange={(v: "none" | "vehicle" | "salesman") => setGroupBy(v)}>
+                    <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
+                      <SelectValue placeholder="Group by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No grouping</SelectItem>
+                      <SelectItem value="vehicle">By Vehicle</SelectItem>
+                      <SelectItem value="salesman">By Salesman</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {groupBy === "vehicle" && (
+                    <Select 
+                      value={selectedVehicle || ""} 
+                      onValueChange={setSelectedVehicle}
+                      disabled={vehicles.length === 0}
+                    >
+                      <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
+                        <SelectValue placeholder="Select vehicle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicles.map(vehicle => (
+                          <SelectItem key={vehicle.id} value={vehicle.id}>
+                            {vehicle.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {groupBy === "salesman" && (
+                    <Select 
+                      value={selectedSalesman || ""} 
+                      onValueChange={setSelectedSalesman}
+                      disabled={salesmen.length === 0}
+                    >
+                      <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
+                        <SelectValue placeholder="Select salesman" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {salesmen.map(salesman => (
+                          <SelectItem key={salesman.id} value={salesman.id}>
+                            {salesman.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+              
+              {/* Vehicle or Salesman info for print view */}
+              {groupBy === "vehicle" && selectedVehicle && (
+                <div className="hidden print:block mt-2">
+                  <p className="text-sm">
+                    <TruckIcon className="inline-block mr-1 h-4 w-4" />
+                    {vehicles.find(v => v.id === selectedVehicle)?.name} ({vehicles.find(v => v.id === selectedVehicle)?.regNumber})
+                  </p>
+                </div>  
+              )}
+              
+              {groupBy === "salesman" && selectedSalesman && (
+                <div className="hidden print:block mt-2">
+                  <p className="text-sm">
+                    <UserIcon className="inline-block mr-1 h-4 w-4" />
+                    {salesmen.find(s => s.id === selectedSalesman)?.name}
+                  </p>
+                </div>  
+              )}
+            </CardHeader>
+            <CardContent>
+              {!selectedOrder && trackItems.length === 0 ? (
+                <div className="text-center py-10 print:hidden">
+                  <p className="text-inherit/80 mb-4">
+                    No order data available for the selected date
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={() => window.location.href = "/order-entry"} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                      Create Order for This Date
+                    </Button>
+                    <Button variant="outline" onClick={createEmptyTrackSheet}>
+                      Create Empty Sheet
+                    </Button>
+                  </div>
+                </div>
+              ) : trackItems.length === 0 && (groupBy !== "none") ? (
+                <div className="text-center py-10 print:hidden">
+                  <p className="text-inherit/80 mb-4">
+                    No items found for the selected {groupBy === "vehicle" ? "vehicle" : "salesman"}
+                  </p>
+                  <Button onClick={() => {
+                    setGroupBy("none");
+                    setSelectedVehicle(null);
+                    setSelectedSalesman(null);
+                  }} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
+                    Show All Items
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex justify-end mb-4 print:hidden">
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={carryForwardToNextDay}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Carry Forward to Next Day
+                      </Button>
+                    </div>
+                  </div>
+                
+                  <div className="overflow-x-auto rounded-lg" ref={tableRef}>
+                    <Table>
+                      <TableHeader className={getHeaderBgClass()}>
+                        <TableRow>
+                          <TableHead className="w-[200px] text-inherit font-bold">Customer</TableHead>
+                          {products.map((product) => (
+                            <TableHead
+                              key={product.id}
+                              className="text-center whitespace-nowrap text-inherit font-semibold"
+                            >
+                              {product.name}
+                            </TableHead>
+                          ))}
+                          <TableHead className="text-center text-inherit font-bold">Total Qty</TableHead>
+                          <TableHead className="text-center print:hidden text-inherit font-bold">Amount (₹)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className={getTableBodyBgClass()}>
+                        {trackItems.map((item) => (
+                          <TableRow key={item.customerId} className="border-t border-teal-700/20 hover:bg-teal-700/10">
+                            <TableCell className="font-medium text-inherit">
+                              {item.customerName}
+                            </TableCell>
+                            {products.map((product) => (
+                              <TableCell key={product.id} className="text-center text-inherit/80">
+                                {item.products[product.id] || "-"}
+                              </TableCell>
+                            ))}
+                            <TableCell className="text-center font-semibold text-inherit">
+                              {item.totalQuantity}
+                            </TableCell>
+                            <TableCell className="text-center font-semibold print:hidden text-inherit/80">
+                              ₹{item.totalAmount}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className={getFooterRowClass()}>
+                          <TableCell className="font-bold text-inherit">TOTAL</TableCell>
+                          {products.map((product) => {
+                            const total = trackItems.reduce(
+                              (sum, item) => sum + (item.products[product.id] || 0),
+                              0
+                            );
+                            return (
+                              <TableCell
+                                key={product.id}
+                                className="text-center font-semibold text-inherit"
+                              >
+                                {total || "-"}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center font-bold text-inherit">
+                            {trackItems.reduce(
+                              (sum, item) => sum + item.totalQuantity,
+                              0
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center font-bold print:hidden text-inherit">
+                            ₹
+                            {trackItems.reduce(
+                              (sum, item) => sum + item.totalAmount,
+                              0
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="print:hidden">
+              <div className="text-sm text-teal-200">
+                * Font size and table layout in the PDF can be adjusted using the Preview PDF option.
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="saved" className="mt-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Saved Track Sheets</CardTitle>
+              <CardDescription>
+                All your saved track sheets are listed here. You can load, edit or delete them.
               </CardDescription>
-            </div>
-            <div className="print:hidden flex items-center space-x-4">
-              <DatePicker date={trackDate} setDate={setTrackDate} />
-              
-              <Select value={groupBy} onValueChange={(v: "none" | "vehicle" | "salesman") => setGroupBy(v)}>
-                <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
-                  <SelectValue placeholder="Group by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No grouping</SelectItem>
-                  <SelectItem value="vehicle">By Vehicle</SelectItem>
-                  <SelectItem value="salesman">By Salesman</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {groupBy === "vehicle" && (
-                <Select 
-                  value={selectedVehicle || ""} 
-                  onValueChange={setSelectedVehicle}
-                  disabled={vehicles.length === 0}
-                >
-                  <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
-                    <SelectValue placeholder="Select vehicle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vehicles.map(vehicle => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              {groupBy === "salesman" && (
-                <Select 
-                  value={selectedSalesman || ""} 
-                  onValueChange={setSelectedSalesman}
-                  disabled={salesmen.length === 0}
-                >
-                  <SelectTrigger className="w-[180px] bg-white/10 text-inherit border-0">
-                    <SelectValue placeholder="Select salesman" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {salesmen.map(salesman => (
-                      <SelectItem key={salesman.id} value={salesman.id}>
-                        {salesman.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </div>
-          
-          {/* Vehicle or Salesman info for print view */}
-          {groupBy === "vehicle" && selectedVehicle && (
-            <div className="hidden print:block mt-2">
-              <p className="text-sm">
-                <TruckIcon className="inline-block mr-1 h-4 w-4" />
-                {vehicles.find(v => v.id === selectedVehicle)?.name} ({vehicles.find(v => v.id === selectedVehicle)?.regNumber})
-              </p>
-            </div>  
-          )}
-          
-          {groupBy === "salesman" && selectedSalesman && (
-            <div className="hidden print:block mt-2">
-              <p className="text-sm">
-                <UserIcon className="inline-block mr-1 h-4 w-4" />
-                {salesmen.find(s => s.id === selectedSalesman)?.name}
-              </p>
-            </div>  
-          )}
-        </CardHeader>
-        <CardContent>
-          {!selectedOrder ? (
-            <div className="text-center py-10 print:hidden">
-              <p className="text-inherit/80 mb-4">
-                No order data available for the selected date
-              </p>
-              <Button onClick={() => window.location.href = "/order-entry"} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                Create Order for This Date
-              </Button>
-            </div>
-          ) : trackItems.length === 0 && (groupBy !== "none") ? (
-            <div className="text-center py-10 print:hidden">
-              <p className="text-inherit/80 mb-4">
-                No items found for the selected {groupBy === "vehicle" ? "vehicle" : "salesman"}
-              </p>
-              <Button onClick={() => {
-                setGroupBy("none");
-                setSelectedVehicle(null);
-                setSelectedSalesman(null);
-              }} className="bg-teal-600 hover:bg-teal-700 text-white border-none">
-                Show All Items
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-lg" ref={tableRef}>
-              <Table>
-                <TableHeader className={getHeaderBgClass()}>
-                  <TableRow>
-                    <TableHead className="w-[200px] text-inherit font-bold">Customer</TableHead>
-                    {products.map((product) => (
-                      <TableHead
-                        key={product.id}
-                        className="text-center whitespace-nowrap text-inherit font-semibold"
-                      >
-                        {product.name}
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-center text-inherit font-bold">Total Qty</TableHead>
-                    <TableHead className="text-center print:hidden text-inherit font-bold">Amount (₹)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className={getTableBodyBgClass()}>
-                  {trackItems.map((item) => (
-                    <TableRow key={item.customerId} className="border-t border-teal-700/20 hover:bg-teal-700/10">
-                      <TableCell className="font-medium text-inherit">
-                        {item.customerName}
-                      </TableCell>
-                      {products.map((product) => (
-                        <TableCell key={product.id} className="text-center text-inherit/80">
-                          {item.products[product.id] || "-"}
-                        </TableCell>
-                      ))}
-                      <TableCell className="text-center font-semibold text-inherit">
-                        {item.totalQuantity}
-                      </TableCell>
-                      <TableCell className="text-center font-semibold print:hidden text-inherit/80">
-                        ₹{item.totalAmount}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className={getFooterRowClass()}>
-                    <TableCell className="font-bold text-inherit">TOTAL</TableCell>
-                    {products.map((product) => {
-                      const total = trackItems.reduce(
-                        (sum, item) => sum + (item.products[product.id] || 0),
-                        0
-                      );
-                      return (
-                        <TableCell
-                          key={product.id}
-                          className="text-center font-semibold text-inherit"
+            </CardHeader>
+            <CardContent>
+              {savedTrackSheets.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground mb-4">You don't have any saved track sheets yet.</p>
+                  <Button onClick={() => setActiveTab("current")}>Create New Track Sheet</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {savedTrackSheets.map((sheet) => (
+                    <Card key={sheet.id} className="border-teal-100 shadow-sm">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">{sheet.name}</CardTitle>
+                        <CardDescription>
+                          Date: {format(new Date(sheet.date), "dd MMM yyyy")}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0 pb-2">
+                        <p className="text-sm text-muted-foreground">
+                          Items: {sheet.items.length}
+                        </p>
+                        {sheet.groupBy !== "none" && (
+                          <p className="text-sm text-muted-foreground">
+                            Grouped by: {sheet.groupBy === "vehicle" ? "Vehicle" : "Salesman"}
+                          </p>
+                        )}
+                      </CardContent>
+                      <CardFooter className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => deleteTrackSheet(sheet.id)}
                         >
-                          {total || "-"}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-center font-bold text-inherit">
-                      {trackItems.reduce(
-                        (sum, item) => sum + item.totalQuantity,
-                        0
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center font-bold print:hidden text-inherit">
-                      ₹
-                      {trackItems.reduce(
-                        (sum, item) => sum + item.totalAmount,
-                        0
-                      )}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="print:hidden">
-          <div className="text-sm text-teal-200">
-            * Font size and table layout in the PDF can be adjusted using the Preview PDF option.
-          </div>
-        </CardFooter>
-      </Card>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => editTrackSheet(sheet)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="default" 
+                          onClick={() => loadTrackSheet(sheet)}
+                        >
+                          Load
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       
       <div className="print:hidden">
         <Card className="bg-gradient-to-r from-teal-900/80 to-teal-800/80 text-white border-0 shadow-md rounded-xl">
           <CardHeader>
-            <CardTitle className="text-white">Instructions</CardTitle>
+            <CardTitle className="text-white">Track Sheet Features</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="list-disc pl-5 space-y-2 text-teal-100">
-              <li>Select a date to view the track sheet for that day.</li>
-              <li>Group by vehicle or salesman to filter the track sheet.</li>
-              <li>Use the Preview button to check how the PDF will look before exporting.</li>
-              <li>In the preview, you can adjust font size, cell padding, and line height to improve readability.</li>
-              <li>Use the Export buttons to download as CSV/PDF or the Print button to print.</li>
-              <li>If no data is available, create an order for the selected date first.</li>
+              <li><strong>Multiple Track Sheets</strong> - Save and manage multiple track sheets for different routes or time periods.</li>
+              <li><strong>Edit & Delete</strong> - Update or remove previously saved track sheets as needed.</li>
+              <li><strong>Carry Forward</strong> - Automatically create a new order for the next day based on current track sheet data.</li>
+              <li><strong>Custom Grouping</strong> - Group track sheet data by vehicle or salesman for better organization.</li>
+              <li><strong>PDF Customization</strong> - Adjust font size, cell padding and line height to perfect your exports.</li>
+              <li><strong>Print & Export</strong> - Generate CSV, PDF or print your track sheets for physical distribution.</li>
             </ul>
           </CardContent>
         </Card>

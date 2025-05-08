@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { initialOrders } from '@/data/initialData';
 
-export function useOrderState(createInvoiceFromOrder?: Function) {
+export function useOrderState(createInvoiceFromOrderFunc?: Function) {
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem("orders");
     return saved ? JSON.parse(saved) : initialOrders;
@@ -23,9 +23,9 @@ export function useOrderState(createInvoiceFromOrder?: Function) {
     
     // Create invoice from the new order automatically if the function is provided
     try {
-      if (createInvoiceFromOrder) {
+      if (createInvoiceFromOrderFunc) {
         setTimeout(() => {
-          createInvoiceFromOrder(newOrder.id);
+          createInvoiceFromOrderFunc(newOrder.id);
         }, 500); // Short delay to ensure state is updated
       }
     } catch (error) {
@@ -46,10 +46,10 @@ export function useOrderState(createInvoiceFromOrder?: Function) {
     
     // Create invoices for each order if invoice creation function is available
     try {
-      if (createInvoiceFromOrder) {
+      if (createInvoiceFromOrderFunc) {
         setTimeout(() => {
           createdOrders.forEach(order => {
-            createInvoiceFromOrder(order.id);
+            createInvoiceFromOrderFunc(order.id);
           });
         }, 500);
       }

@@ -1,7 +1,7 @@
 
 import { ElectronService } from './ElectronService';
 import { Invoice } from '@/types';
-import { generateInvoicePreview, calculateInvoiceAmounts } from '@/utils/invoiceUtils';
+import { generateInvoicePreview, calculateInvoiceAmounts, INVOICE_TEMPLATES } from '@/utils/invoiceUtils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -112,6 +112,13 @@ export class InvoiceService {
       toast.error('Failed to download invoice');
       return false;
     }
+  }
+  
+  /**
+   * Get invoice templates
+   */
+  static getInvoiceTemplates() {
+    return INVOICE_TEMPLATES;
   }
   
   /**
@@ -276,5 +283,22 @@ export class InvoiceService {
     }
     
     return invoices;
+  }
+  
+  /**
+   * Get template by ID
+   */
+  static getTemplateById(templateId: string) {
+    return INVOICE_TEMPLATES.find(t => t.id === templateId) || INVOICE_TEMPLATES[0];
+  }
+  
+  /**
+   * Generate a unique invoice number
+   */
+  static generateInvoiceNumber() {
+    const prefix = "INV";
+    const timestamp = Date.now().toString().substring(7);
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    return `${prefix}-${timestamp}-${randomNum}`;
   }
 }
