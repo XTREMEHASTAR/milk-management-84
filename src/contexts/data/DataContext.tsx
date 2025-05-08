@@ -11,7 +11,6 @@ import { useProductRateState } from './useProductRateState';
 import { useVehicleSalesmanState } from './useVehicleSalesmanState';
 import { useUISettingsState } from './useUISettingsState';
 import { useAuth } from '@/contexts/AuthContext';
-import { InvoiceProvider } from '@/contexts/InvoiceContext';
 
 // Create data context
 const DataContext = createContext<any>(undefined);
@@ -49,9 +48,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Provide combined state to children
   return (
     <DataContext.Provider value={dataContext}>
-      <InvoiceProvider>
-        {children}
-      </InvoiceProvider>
+      {children}
     </DataContext.Provider>
   );
 };

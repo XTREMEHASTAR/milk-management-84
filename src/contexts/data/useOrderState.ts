@@ -11,7 +11,13 @@ export function useOrderState() {
   });
 
   // Get invoice context to create invoices
-  const { createInvoiceFromOrder } = useInvoices();
+  let invoiceContext;
+  try {
+    invoiceContext = useInvoices();
+  } catch (error) {
+    // If InvoiceContext is not available, just continue without it
+    console.warn("InvoiceContext not available, skipping auto invoice creation");
+  }
 
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
@@ -25,11 +31,11 @@ export function useOrderState() {
     
     setOrders(prev => [...prev, newOrder]);
     
-    // Create invoice from the new order automatically
+    // Create invoice from the new order automatically if invoice context is available
     try {
-      if (createInvoiceFromOrder) {
+      if (invoiceContext && invoiceContext.createInvoiceFromOrder) {
         setTimeout(() => {
-          createInvoiceFromOrder(newOrder.id);
+          invoiceContext.createInvoiceFromOrder(newOrder.id);
         }, 500); // Short delay to ensure state is updated
       }
     } catch (error) {
@@ -37,6 +43,31 @@ export function useOrderState() {
     }
 
     return newOrder;
+  };
+
+  // Batch add multiple orders
+  const addBatchOrders = (newOrders: Omit<Order, "id">[]) => {
+    const createdOrders = newOrders.map(order => ({
+      ...order,
+      id: `o${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    }));
+    
+    setOrders(prev => [...prev, ...createdOrders]);
+    
+    // Create invoices for each order if invoice context is available
+    try {
+      if (invoiceContext && invoiceContext.createInvoiceFromOrder) {
+        setTimeout(() => {
+          createdOrders.forEach(order => {
+            invoiceContext.createInvoiceFromOrder(order.id);
+          });
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Failed to create invoices for batch orders:", error);
+    }
+
+    return createdOrders;
   };
 
   const updateOrder = (id: string, orderData: Partial<Order>) => {
@@ -49,31 +80,6 @@ export function useOrderState() {
 
   const deleteOrder = (id: string) => {
     setOrders(orders.filter((order) => order.id !== id));
-  };
-
-  // Batch add multiple orders
-  const addBatchOrders = (newOrders: Omit<Order, "id">[]) => {
-    const createdOrders = newOrders.map(order => ({
-      ...order,
-      id: `o${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-    }));
-    
-    setOrders(prev => [...prev, ...createdOrders]);
-    
-    // Create invoices for each order
-    try {
-      if (createInvoiceFromOrder) {
-        setTimeout(() => {
-          createdOrders.forEach(order => {
-            createInvoiceFromOrder(order.id);
-          });
-        }, 500);
-      }
-    } catch (error) {
-      console.error("Failed to create invoices for batch orders:", error);
-    }
-
-    return createdOrders;
   };
 
   return {

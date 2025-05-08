@@ -69,14 +69,14 @@ export const generateTrackSheetPdf = (
   ];
   
   // Prepare additional information
-  const additionalInfo = [];
+  const additionalInfo: { label: string; value: string }[] = [];
   
   if (options.vehicleName) {
-    additionalInfo.push(`Vehicle: ${options.vehicleName}`);
+    additionalInfo.push({ label: "Vehicle", value: options.vehicleName });
   }
   
   if (options.salesmanName) {
-    additionalInfo.push(`Salesman: ${options.salesmanName}`);
+    additionalInfo.push({ label: "Salesman", value: options.salesmanName });
   }
   
   // Generate the PDF using the specialized track sheet function
@@ -89,7 +89,7 @@ export const generateTrackSheetPdf = (
       dateInfo: `Date: ${formattedDate}`,
       landscape: true,
       columnWidths,
-      additionalInfo: additionalInfo.length > 0 ? additionalInfo.join(' | ') : undefined
+      additionalInfo: additionalInfo.length > 0 ? additionalInfo : undefined
     }
   );
 };
