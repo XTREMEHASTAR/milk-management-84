@@ -240,31 +240,34 @@ export class InvoiceService {
       }, {} as Record<string, any[]>);
       
       // Process orders for each customer
-      Object.entries(ordersByCustomer).forEach(([custId, customerOrders]) => {
-        const customer = customers.find(c => c.id === custId);
-        
-        if (!customer) return;
-        
-        // Create invoice for each order
-        customerOrders.forEach(order => {
-          // Skip if invoice already exists for this order
-          if (invoices.some(inv => inv.orderId === order.id)) {
-            return;
-          }
+      if (ordersByCustomer && typeof ordersByCustomer === 'object') {
+        // Fix: Use type checking to ensure we can iterate over the object
+        Object.entries(ordersByCustomer).forEach(([custId, customerOrders]) => {
+          const customer = customers.find(c => c.id === custId);
           
-          const invoice = {
-            id: `INV-${Date.now().toString().substring(7)}-${Math.floor(1000 + Math.random() * 9000)}`,
-            orderId: order.id,
-            customerName: customer.name,
-            date: order.date,
-            amount: order.totalAmount || 0,
-            status: "Pending",
-            items: order.items
-          };
+          if (!customer) return;
           
-          invoices.push(invoice);
+          // Create invoice for each order
+          customerOrders.forEach(order => {
+            // Skip if invoice already exists for this order
+            if (invoices.some(inv => inv.orderId === order.id)) {
+              return;
+            }
+            
+            const invoice = {
+              id: `INV-${Date.now().toString().substring(7)}-${Math.floor(1000 + Math.random() * 9000)}`,
+              orderId: order.id,
+              customerName: customer.name,
+              date: order.date,
+              amount: order.totalAmount || 0,
+              status: "Pending",
+              items: order.items
+            };
+            
+            invoices.push(invoice);
+          });
         });
-      });
+      }
     } catch (error) {
       console.error("Error creating batch invoices:", error);
     }
