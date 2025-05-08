@@ -248,24 +248,27 @@ export class InvoiceService {
           if (!customer) return;
           
           // Create invoice for each order
-          customerOrders.forEach(order => {
-            // Skip if invoice already exists for this order
-            if (invoices.some(inv => inv.orderId === order.id)) {
-              return;
-            }
-            
-            const invoice = {
-              id: `INV-${Date.now().toString().substring(7)}-${Math.floor(1000 + Math.random() * 9000)}`,
-              orderId: order.id,
-              customerName: customer.name,
-              date: order.date,
-              amount: order.totalAmount || 0,
-              status: "Pending",
-              items: order.items
-            };
-            
-            invoices.push(invoice);
-          });
+          // Fix: Add type check for customerOrders before using forEach
+          if (Array.isArray(customerOrders)) {
+            customerOrders.forEach(order => {
+              // Skip if invoice already exists for this order
+              if (invoices.some(inv => inv.orderId === order.id)) {
+                return;
+              }
+              
+              const invoice = {
+                id: `INV-${Date.now().toString().substring(7)}-${Math.floor(1000 + Math.random() * 9000)}`,
+                orderId: order.id,
+                customerName: customer.name,
+                date: order.date,
+                amount: order.totalAmount || 0,
+                status: "Pending",
+                items: order.items
+              };
+              
+              invoices.push(invoice);
+            });
+          }
         });
       }
     } catch (error) {
