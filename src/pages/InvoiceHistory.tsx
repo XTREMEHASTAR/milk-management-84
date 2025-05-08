@@ -97,14 +97,15 @@ export default function InvoiceHistory() {
     const pdfUrl = generatePdfPreview(
       columns,
       data,
-      "Invoice",
       {
+        title: "Invoice",
         subtitle: `Invoice #: ${invoice.id}`,
         dateInfo: `Date: ${format(new Date(invoice.date), "dd MMMM yyyy")}`,
         additionalInfo: [
           { label: "Customer", value: invoice.customerName || "Unknown" },
           { label: "Status", value: invoice.status }
-        ]
+        ],
+        filename: `invoice-${invoice.id}.pdf`
       }
     );
     

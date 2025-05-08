@@ -97,13 +97,14 @@ export const generateInvoicePreview = (
   return generatePdfPreview(
     columns,
     data,
-    companyInfo.companyName,
     {
+      title: companyInfo.companyName,
       subtitle: `Invoice #: ${invoice.id}`,
       dateInfo: `Date: ${format(new Date(invoice.date), "dd MMMM yyyy")}`,
       additionalInfo: additionalInfo,
       landscape: templateId === "detailed",
       fontSizeAdjustment: templateId === "modern" ? -1 : 0,
+      filename: `invoice-${invoice.id}.pdf`
     }
   );
 };
