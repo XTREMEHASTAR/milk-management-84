@@ -171,3 +171,13 @@ export interface UISettings {
   paymentReminders?: boolean;
   lowStockAlerts?: boolean;
 }
+
+export interface Invoice {
+  id: string;
+  orderId: string;
+  customerName: string;
+  date: string;
+  amount: number;
+  status: string;
+  items: OrderItem[];
+}

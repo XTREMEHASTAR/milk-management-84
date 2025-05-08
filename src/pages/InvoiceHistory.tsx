@@ -15,7 +15,10 @@ export default function InvoiceHistory() {
   const { orders } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined
+  });
   const [filterStatus, setFilterStatus] = useState<string>("");
 
   // For demonstration, let's create a sample invoice list based on orders
@@ -97,7 +100,7 @@ export default function InvoiceHistory() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
-            icon={<Search className="h-4 w-4" />}
+            startAdornment={<Search className="h-4 w-4" />}
           />
         </div>
         
@@ -128,9 +131,13 @@ export default function InvoiceHistory() {
                 initialFocus
                 mode="range"
                 defaultMonth={new Date()}
-                selected={dateRange}
-                onSelect={setDateRange}
+                selected={{
+                  from: dateRange.from,
+                  to: dateRange.to
+                }}
+                onSelect={setDateRange as any}
                 numberOfMonths={2}
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
@@ -152,7 +159,7 @@ export default function InvoiceHistory() {
         
         <Button onClick={() => {
           setSearchQuery("");
-          setDateRange({});
+          setDateRange({ from: undefined, to: undefined });
           setFilterStatus("");
         }}>
           Reset Filters

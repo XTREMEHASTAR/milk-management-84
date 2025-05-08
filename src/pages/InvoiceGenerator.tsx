@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Check, PlusCircle, Save, Trash, FileText, Download, Copy, Templates } from "lucide-react";
+import { Check, PlusCircle, Save, Trash, FileText, Download, Copy, LayoutTemplate } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import { format } from "date-fns";
 
@@ -189,7 +188,7 @@ export default function InvoiceGenerator() {
             Invoice Details
           </TabsTrigger>
           <TabsTrigger value="template" className="flex items-center gap-2">
-            <Templates className="h-4 w-4" />
+            <LayoutTemplate className="h-4 w-4" />
             Template Selection
           </TabsTrigger>
           <TabsTrigger value="company-profile" className="flex items-center gap-2">

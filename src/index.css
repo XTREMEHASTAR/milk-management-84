@@ -137,7 +137,7 @@
 
   /* Updated card styles for better visibility */
   .card-visible {
-    @apply bg-background-secondary text-white dark:text-white light:text-foreground;
+    @apply bg-background-secondary text-white dark:text-white;
   }
   
   /* Light theme specific adjustments */
@@ -216,7 +216,12 @@
 
 /* White text on dark backgrounds */
 .text-visible {
-  @apply text-white font-medium dark:text-white light:text-gray-800;
+  @apply text-white font-medium dark:text-white;
+}
+
+/* In light mode, use dark text */
+.light .text-visible {
+  @apply text-gray-800;
 }
 
 /* Updated table styles specifically for track sheets */
