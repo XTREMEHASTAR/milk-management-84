@@ -64,32 +64,33 @@ export class InvoiceService {
         throw new Error("Failed to generate PDF");
       }
 
-      // Convert data URL to binary data
+      // Convert data URL to base64 data
       const base64Data = pdfDataUrl.split(',')[1];
-      const binaryData = atob(base64Data);
-      const byteArray = new Uint8Array(binaryData.length);
-      
-      for (let i = 0; i < binaryData.length; i++) {
-        byteArray[i] = binaryData.charCodeAt(i);
-      }
 
       // If running in Electron, use native save dialog
       if (ElectronService.isElectron()) {
         const fileName = `invoice-${invoice.id.replace(/[^\w-]/g, '_')}.pdf`;
-        // Fix: Convert Uint8Array to string for exportData function
-        const result = await ElectronService.exportData(Buffer.from(byteArray).toString('base64'));
+        const result = await ElectronService.exportData(base64Data);
         
         if (result.success) {
           toast.success(`Invoice saved to ${result.filePath}`);
           return true;
         } else {
-          // Fix: Access error property instead of message
           toast.error(`Failed to save invoice: ${result.error || 'Unknown error'}`);
           return false;
         }
       } 
       // In web browser, use download attribute
       else {
+        // Create a Blob from the base64 data
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        
+        const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         

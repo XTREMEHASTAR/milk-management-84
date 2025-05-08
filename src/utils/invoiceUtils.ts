@@ -1,4 +1,3 @@
-
 import { Invoice } from "@/types";
 import { format } from "date-fns";
 import { generatePdfPreview } from "./pdfUtils";
@@ -158,8 +157,8 @@ export const generateInvoicePreview = (
     
     // Add description column for detailed template
     if (templateId === "detailed") {
-      // Fix: Check if product and description exist
-      row.splice(2, 0, (product && product.description) ? product.description : "-");
+      // Fix: Check if product exists and has description property before accessing it
+      row.splice(2, 0, (product && 'description' in product && product.description) ? product.description : "-");
     }
     
     return row;
@@ -215,8 +214,6 @@ export const generateInvoicePreview = (
       landscape: templateId === "detailed",
       fontSizeAdjustment: templateId === "modern" ? -1 : 0,
       filename: `invoice-${invoice.id}.pdf`,
-      // Remove primaryColor, fontFamily, showHeader, showFooter from direct properties
-      // and add them as part of the style object
       style: {
         primaryColor: template.primaryColor,
         fontFamily: template.fontFamily,
@@ -328,4 +325,3 @@ export const generateDueDate = (invoiceDate: string, daysToAdd = 15): string => 
   date.setDate(date.getDate() + daysToAdd);
   return formatDateForInput(date);
 };
-

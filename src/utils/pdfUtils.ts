@@ -18,6 +18,10 @@ interface PdfExportOptions {
     showFooter?: boolean;
   };
   logoUrl?: string;
+  columnWidths?: string[];
+  cellPadding?: number;
+  lineHeight?: number;
+  theme?: string;
 }
 
 /**
@@ -48,7 +52,11 @@ export function generatePdfPreview(
         showHeader: true,
         showFooter: true
       },
-      logoUrl
+      logoUrl,
+      columnWidths,
+      cellPadding = 3,
+      lineHeight = 1.3,
+      theme
     } = options;
 
     // Create PDF document
@@ -117,6 +125,14 @@ export function generatePdfPreview(
     // Add table
     doc.setFontSize(10 + fontSizeAdjustment);
     
+    // Configure column widths if provided
+    let columnStyles = {};
+    if (columnWidths && columnWidths.length > 0) {
+      columnWidths.forEach((width, index) => {
+        columnStyles[index] = { cellWidth: width };
+      });
+    }
+    
     // @ts-ignore - jspdf-autotable types are not fully compatible
     doc.autoTable({
       head: [columns],
@@ -124,7 +140,8 @@ export function generatePdfPreview(
       startY: yPos,
       styles: {
         fontSize: 10 + fontSizeAdjustment,
-        cellPadding: 3,
+        cellPadding: cellPadding || 3,
+        lineHeight: lineHeight || 1.3
       },
       headStyles: {
         fillColor: primaryColor,
@@ -134,6 +151,7 @@ export function generatePdfPreview(
       alternateRowStyles: {
         fillColor: [245, 245, 245],
       },
+      columnStyles: columnStyles,
       margin: { top: yPos, left: margin, right: margin, bottom: showFooter ? 25 : margin }
     });
 
@@ -154,7 +172,7 @@ export function generatePdfPreview(
       doc.text('Thank you for your business!', margin, yPos);
       
       // Page numbers at the bottom
-      const totalPages = doc.internal.getNumberOfPages();
+      const totalPages = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin - 25, pageHeight - 10);
@@ -167,4 +185,93 @@ export function generatePdfPreview(
     console.error('Error generating PDF:', error);
     return '';
   }
+}
+
+/**
+ * Export data as PDF file for download
+ * @param columns - Column headers  
+ * @param data - Table data rows
+ * @param options - PDF generation options
+ */
+export function exportToPdf(
+  columns: string[],
+  data: any[][],
+  options: PdfExportOptions = {}
+): void {
+  try {
+    const { filename = 'document.pdf' } = options;
+    
+    // Generate PDF as data URL
+    const pdfDataUrl = generatePdfPreview(columns, data, options);
+    
+    if (!pdfDataUrl) {
+      throw new Error("Failed to generate PDF");
+    }
+    
+    // Create a download link
+    const link = document.createElement('a');
+    link.href = pdfDataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    throw error;
+  }
+}
+
+/**
+ * Preview data table as PDF and return data URL
+ * @param columns - Column headers
+ * @param data - Table data rows
+ * @param title - Document title
+ * @param options - PDF generation options
+ * @returns Data URL of generated PDF
+ */
+export function previewDataTableAsPdf(
+  columns: string[],
+  data: any[][],
+  title: string = "Data Table",
+  options: PdfExportOptions = {}
+): string {
+  try {
+    return generatePdfPreview(columns, data, {
+      title,
+      subtitle: options.subtitle || "Data Preview",
+      ...options
+    });
+  } catch (error) {
+    console.error('Error previewing data table as PDF:', error);
+    return '';
+  }
+}
+
+/**
+ * Export track sheet as PDF
+ * @param headers - Table headers
+ * @param rows - Table data rows
+ * @param title - Document title
+ * @param filename - Output filename
+ * @param options - PDF export options
+ */
+export function exportTrackSheet(
+  headers: string[],
+  rows: any[][],
+  title: string,
+  filename: string = "track_sheet.pdf",
+  options: PdfExportOptions = {}
+): void {
+  // Use the generic exportToPdf function with track sheet specific settings
+  exportToPdf(
+    headers,
+    rows,
+    {
+      title,
+      subtitle: "Track Sheet",
+      filename,
+      landscape: true,
+      ...options
+    }
+  );
 }
