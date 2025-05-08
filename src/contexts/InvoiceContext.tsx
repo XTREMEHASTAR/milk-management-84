@@ -16,6 +16,7 @@ interface InvoiceContextValue {
   getInvoicesByCustomerId: (customerId: string) => Invoice[];
   downloadInvoice: (id: string, templateId?: string) => Promise<boolean>;
   createInvoiceFromOrder: (orderId: string) => Invoice | null;
+  createBulkInvoicesForParty: (customerId: string, dateRange?: { from: Date, to: Date }) => Invoice[];
   selectedTemplateId: string;
   setSelectedTemplateId: (id: string) => void;
   companyInfo: any;
@@ -50,6 +51,12 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
         setInvoices(generatedInvoices);
       }
     }
+
+    // Load selected template
+    const savedTemplate = localStorage.getItem("selectedInvoiceTemplate");
+    if (savedTemplate) {
+      setSelectedTemplateId(savedTemplate);
+    }
   }, []);
   
   // Save invoices to localStorage when they change
@@ -58,6 +65,11 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
       localStorage.setItem("invoices", JSON.stringify(invoices));
     }
   }, [invoices]);
+
+  // Save selected template to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem("selectedInvoiceTemplate", selectedTemplateId);
+  }, [selectedTemplateId]);
   
   // Generate initial invoices from existing orders
   const generateInitialInvoicesFromOrders = (): Invoice[] => {
@@ -120,16 +132,23 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const createInvoiceFromOrderById = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) {
-      toast.error(`Order ${orderId} not found`);
+      console.error(`Order ${orderId} not found`);
       return null;
     }
     
-    // Find customer for this order
+    // Check if invoice already exists for this order
+    const existingInvoice = invoices.find(inv => inv.orderId === orderId);
+    if (existingInvoice) {
+      console.log(`Invoice already exists for order ${orderId}`);
+      return existingInvoice;
+    }
+    
+    // Find customer for this order (first item's customer)
     const customerId = order.items[0]?.customerId;
     const customer = customers.find(c => c.id === customerId);
     
     if (!customer) {
-      toast.error("Customer not found for this order");
+      console.error("Customer not found for this order");
       return null;
     }
     
@@ -144,6 +163,59 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
     // Add to invoices
     addInvoice(invoice);
     return invoice;
+  };
+
+  // Create invoices in bulk for a specific customer/party
+  const createBulkInvoicesForParty = (customerId: string, dateRange?: { from: Date, to: Date }) => {
+    const customer = customers.find(c => c.id === customerId);
+    if (!customer) {
+      toast.error("Customer not found");
+      return [];
+    }
+    
+    // Filter orders for this customer
+    const customerOrders = orders.filter(order => 
+      order.items.some(item => item.customerId === customerId)
+    );
+    
+    // Filter by date range if provided
+    let filteredOrders = customerOrders;
+    if (dateRange) {
+      filteredOrders = customerOrders.filter(order => {
+        const orderDate = new Date(order.date);
+        return orderDate >= dateRange.from && orderDate <= dateRange.to;
+      });
+    }
+    
+    // Check which orders don't already have invoices
+    const ordersWithoutInvoices = filteredOrders.filter(order => 
+      !invoices.some(invoice => invoice.orderId === order.id)
+    );
+    
+    if (ordersWithoutInvoices.length === 0) {
+      toast.info("No new orders found to create invoices");
+      return [];
+    }
+    
+    // Create new invoices
+    const newInvoices: Invoice[] = [];
+    
+    ordersWithoutInvoices.forEach(order => {
+      const invoice = createInvoiceFromOrder(
+        order,
+        products,
+        customer.id,
+        customer.name
+      );
+      
+      newInvoices.push(invoice);
+    });
+    
+    // Add all new invoices to state
+    setInvoices(prev => [...prev, ...newInvoices]);
+    
+    toast.success(`Created ${newInvoices.length} new invoices for ${customer.name}`);
+    return newInvoices;
   };
   
   // Update company info
@@ -172,6 +244,7 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
     getInvoicesByCustomerId,
     downloadInvoice,
     createInvoiceFromOrder: createInvoiceFromOrderById,
+    createBulkInvoicesForParty,
     selectedTemplateId,
     setSelectedTemplateId,
     companyInfo,

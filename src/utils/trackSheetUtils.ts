@@ -10,12 +10,26 @@ export interface TrackSheetRow {
   amount: number;
 }
 
+export interface TrackSheet {
+  id: string;
+  name: string;
+  date: Date;
+  routeName: string;
+  vehicleId?: string | null;
+  salesmanId?: string | null;
+  rows: TrackSheetRow[];
+}
+
 export const generateTrackSheetPdf = (
   date: Date,
   routeName: string,
   rows: TrackSheetRow[],
   columnNames: string[],
-  filename: string = "track_sheet.pdf"
+  filename: string = "track_sheet.pdf",
+  options: {
+    vehicleName?: string;
+    salesmanName?: string;
+  } = {}
 ) => {
   // Format the date for display
   const formattedDate = format(date, "dd/MM/yyyy");
@@ -54,6 +68,17 @@ export const generateTrackSheetPdf = (
     "10%"                          // Amount - medium
   ];
   
+  // Prepare additional information
+  const additionalInfo = [];
+  
+  if (options.vehicleName) {
+    additionalInfo.push(`Vehicle: ${options.vehicleName}`);
+  }
+  
+  if (options.salesmanName) {
+    additionalInfo.push(`Salesman: ${options.salesmanName}`);
+  }
+  
   // Generate the PDF using the specialized track sheet function
   return exportTrackSheet(
     headers,
@@ -63,7 +88,8 @@ export const generateTrackSheetPdf = (
     {
       dateInfo: `Date: ${formattedDate}`,
       landscape: true,
-      columnWidths
+      columnWidths,
+      additionalInfo: additionalInfo.length > 0 ? additionalInfo.join(' | ') : undefined
     }
   );
 };
@@ -130,4 +156,86 @@ export const createTrackSheetTemplate = (
       amount
     };
   });
+};
+
+// Convert track sheet rows to order items
+export const trackSheetRowsToOrderItems = (
+  rows: TrackSheetRow[],
+  customers: any[],
+  products: any[]
+) => {
+  const orderItems: any[] = [];
+  
+  rows.forEach(row => {
+    // Find or create customer
+    const customer = customers.find(c => c.name === row.name);
+    
+    if (!customer) return; // Skip if customer not found
+    
+    // Add items for each product quantity
+    Object.entries(row.quantities).forEach(([productName, qty]) => {
+      if (!qty || qty === "") return;
+      
+      const product = products.find(p => p.name === productName);
+      if (!product) return;
+      
+      orderItems.push({
+        customerId: customer.id,
+        productId: product.id,
+        quantity: typeof qty === 'string' ? parseInt(qty) : qty,
+        price: product.price || 0
+      });
+    });
+  });
+  
+  return orderItems;
+};
+
+// Convert order items to track sheet rows
+export const orderItemsToTrackSheetRows = (
+  orderItems: any[],
+  customers: any[],
+  products: any[]
+) => {
+  // Group items by customer
+  const customerItems: Record<string, any[]> = {};
+  
+  orderItems.forEach(item => {
+    if (!customerItems[item.customerId]) {
+      customerItems[item.customerId] = [];
+    }
+    customerItems[item.customerId].push(item);
+  });
+  
+  // Create rows for each customer
+  const rows: TrackSheetRow[] = [];
+  
+  Object.entries(customerItems).forEach(([customerId, items], index) => {
+    const customer = customers.find(c => c.id === customerId);
+    if (!customer) return;
+    
+    // Prepare quantities
+    const quantities: Record<string, number> = {};
+    let total = 0;
+    let amount = 0;
+    
+    items.forEach(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return;
+      
+      quantities[product.name] = item.quantity;
+      total += item.quantity;
+      amount += item.quantity * item.price;
+    });
+    
+    rows.push({
+      serialNumber: (index + 1).toString(),
+      name: customer.name,
+      quantities,
+      total,
+      amount
+    });
+  });
+  
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
 };
