@@ -11,7 +11,7 @@ class InvoiceAPI {
   /**
    * Download an invoice as PDF
    * @param {Object} event - IPC event
-   * @param {Uint8Array} data - PDF data as binary array
+   * @param {string} data - PDF data as base64 string
    * @param {string} filename - Default filename
    * @returns {Promise<Object>} Result with success status and file path
    */
@@ -26,11 +26,11 @@ class InvoiceAPI {
       });
       
       if (!filePath) {
-        return { success: false, message: 'Download cancelled' };
+        return { success: false, error: 'Download cancelled' };
       }
       
-      // Write PDF data to file
-      fs.writeFileSync(filePath, Buffer.from(data));
+      // Convert base64 data to buffer and write to file
+      fs.writeFileSync(filePath, Buffer.from(data, 'base64'));
       
       return { success: true, filePath };
     } catch (error) {

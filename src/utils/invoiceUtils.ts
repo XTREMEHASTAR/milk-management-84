@@ -133,6 +133,7 @@ export const generateInvoicePreview = (
     id: string;
     name: string;
     price: number;
+    description?: string;
   }>,
   templateId: string = "standard",
 ) => {
@@ -157,7 +158,8 @@ export const generateInvoicePreview = (
     
     // Add description column for detailed template
     if (templateId === "detailed") {
-      row.splice(2, 0, product?.description || "-");
+      // Fix: Check if product and description exist
+      row.splice(2, 0, (product && product.description) ? product.description : "-");
     }
     
     return row;
@@ -213,10 +215,14 @@ export const generateInvoicePreview = (
       landscape: templateId === "detailed",
       fontSizeAdjustment: templateId === "modern" ? -1 : 0,
       filename: `invoice-${invoice.id}.pdf`,
-      primaryColor: template.primaryColor,
-      fontFamily: template.fontFamily,
-      showHeader: template.showHeader,
-      showFooter: template.showFooter,
+      // Remove primaryColor, fontFamily, showHeader, showFooter from direct properties
+      // and add them as part of the style object
+      style: {
+        primaryColor: template.primaryColor,
+        fontFamily: template.fontFamily,
+        showHeader: template.showHeader,
+        showFooter: template.showFooter
+      },
       logoUrl: companyInfo.logoUrl
     }
   );

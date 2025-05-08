@@ -76,13 +76,15 @@ export class InvoiceService {
       // If running in Electron, use native save dialog
       if (ElectronService.isElectron()) {
         const fileName = `invoice-${invoice.id.replace(/[^\w-]/g, '_')}.pdf`;
-        const result = await ElectronService.exportData(byteArray);
+        // Fix: Convert Uint8Array to string for exportData function
+        const result = await ElectronService.exportData(Buffer.from(byteArray).toString('base64'));
         
         if (result.success) {
           toast.success(`Invoice saved to ${result.filePath}`);
           return true;
         } else {
-          toast.error(`Failed to save invoice: ${result.message || 'Unknown error'}`);
+          // Fix: Access error property instead of message
+          toast.error(`Failed to save invoice: ${result.error || 'Unknown error'}`);
           return false;
         }
       } 
@@ -154,7 +156,7 @@ export class InvoiceService {
   static generatePreviewUrl(
     invoice: Invoice, 
     companyInfo: CompanyInfo, 
-    products: Array<{ id: string; name: string; price: number }>,
+    products: Array<{ id: string; name: string; price: number; description?: string }>,
     templateId: string = "standard"
   ): string {
     try {
@@ -206,6 +208,11 @@ export class InvoiceService {
     const invoices: Invoice[] = [];
     
     try {
+      // Fix: Add type check before using forEach
+      if (!Array.isArray(orders) || orders.length === 0) {
+        return [];
+      }
+      
       // Filter orders by customer if customerId is provided
       const filteredOrders = customerId 
         ? orders.filter(order => order.items.some(item => item.customerId === customerId))
