@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -9,40 +10,20 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Check, PlusCircle, Save, Trash, FileText, Download, Copy, LayoutTemplate } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Check, PlusCircle, Save, Trash, FileText, 
+  Download, Copy, LayoutTemplate, Eye, X, Settings 
+} from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import { format } from "date-fns";
-
-// Define invoice template types
-const INVOICE_TEMPLATES = [
-  {
-    id: "standard",
-    name: "Standard Invoice",
-    description: "Classic invoice format with company details and logo",
-    previewImage: "standard-invoice.png"
-  },
-  {
-    id: "modern",
-    name: "Modern Invoice",
-    description: "Clean, contemporary design with minimalist layout",
-    previewImage: "modern-invoice.png"
-  },
-  {
-    id: "detailed",
-    name: "Detailed Invoice",
-    description: "Comprehensive format with item details and tax breakdown",
-    previewImage: "detailed-invoice.png"
-  },
-  {
-    id: "simple",
-    name: "Simple Invoice",
-    description: "Streamlined format with just the essentials",
-    previewImage: "simple-invoice.png"
-  },
-];
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { INVOICE_TEMPLATES, generateInvoiceNumber, generateInvoicePreview, createInvoiceFromFormData } from "@/utils/invoiceUtils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function InvoiceGenerator() {
-  const { customers, products } = useData();
+  const { customers, products, orders, addOrder } = useData();
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedItems, setSelectedItems] = useState([{ productId: "", quantity: 1, rate: 0, amount: 0 }]);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -53,6 +34,12 @@ export default function InvoiceGenerator() {
   const [terms, setTerms] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("standard");
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [discount, setDiscount] = useState(0);
+  const [taxRate, setTaxRate] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
 
   // Company profile form
   const { register, watch } = useForm({
@@ -70,15 +57,22 @@ export default function InvoiceGenerator() {
 
   // Generate random invoice number on load
   useEffect(() => {
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    setInvoiceNumber(`INV-${randomNum}`);
+    setInvoiceNumber(generateInvoiceNumber());
   }, []);
 
   // Calculate total amount whenever selected items change
   useEffect(() => {
-    const total = selectedItems.reduce((sum, item) => sum + item.amount, 0);
+    let subtotal = selectedItems.reduce((sum, item) => sum + item.amount, 0);
+    // Apply discount if any
+    const discountAmount = (subtotal * discount) / 100;
+    subtotal -= discountAmount;
+    
+    // Apply tax if any
+    const taxAmount = (subtotal * taxRate) / 100;
+    const total = subtotal + taxAmount;
+    
     setTotalAmount(total);
-  }, [selectedItems]);
+  }, [selectedItems, discount, taxRate]);
 
   // Handle product selection
   const handleProductChange = (index: number, productId: string) => {
@@ -148,8 +142,61 @@ export default function InvoiceGenerator() {
       toast.error("Invoice must have at least one item");
     }
   };
+  
+  // Update customer address when customer changes
+  useEffect(() => {
+    if (selectedCustomerId) {
+      const customer = customers.find(c => c.id === selectedCustomerId);
+      if (customer) {
+        setCustomerAddress(customer.address);
+      }
+    } else {
+      setCustomerAddress("");
+    }
+  }, [selectedCustomerId, customers]);
 
-  // Generate PDF invoice
+  // Show preview of the invoice
+  const handleShowPreview = () => {
+    if (!selectedCustomerId) {
+      toast.error("Please select a customer");
+      return;
+    }
+
+    if (selectedItems.some(item => !item.productId)) {
+      toast.error("Please select products for all items");
+      return;
+    }
+    
+    const customer = customers.find(c => c.id === selectedCustomerId);
+    
+    if (!customer) {
+      toast.error("Customer not found");
+      return;
+    }
+    
+    const invoiceData = {
+      id: invoiceNumber,
+      customerName: customer.name,
+      date: invoiceDate,
+      items: selectedItems,
+      totalAmount: totalAmount,
+      notes: notes,
+      terms: terms,
+      status: "Draft"
+    };
+    
+    const previewUrl = generateInvoicePreview(
+      invoiceData, 
+      companyFormValues, 
+      products,
+      selectedTemplate
+    );
+    
+    setPreviewUrl(previewUrl);
+    setShowPreview(true);
+  };
+
+  // Generate and save invoice
   const generateInvoice = () => {
     if (!selectedCustomerId) {
       toast.error("Please select a customer");
@@ -163,13 +210,57 @@ export default function InvoiceGenerator() {
 
     setIsGenerating(true);
     
-    // In a real application, this would generate and download a PDF
-    // For now, we'll just show a success message
-    setTimeout(() => {
-      toast.success("Invoice generated successfully!");
-      setIsGenerating(false);
+    try {
+      const customer = customers.find(c => c.id === selectedCustomerId);
+      
+      if (!customer) {
+        throw new Error("Customer not found");
+      }
+      
+      // Create invoice object
+      const invoiceData = {
+        invoiceNumber: invoiceNumber,
+        invoiceDate: invoiceDate,
+        dueDate: dueDate,
+        customerId: selectedCustomerId,
+        customerName: customer.name,
+        items: selectedItems,
+        notes: notes,
+        terms: terms
+      };
+      
+      // Create new invoice
+      const newInvoice = createInvoiceFromFormData(invoiceData);
+      
       // In a real app, you would save the invoice to the database here
-    }, 1500);
+      // For now, we'll just simulate by creating a new order
+      const newOrder = {
+        id: newInvoice.orderId,
+        date: invoiceDate,
+        customerName: customer.name,
+        items: newInvoice.items,
+        totalAmount: totalAmount
+      };
+      
+      // Add the new order to the data context
+      addOrder(newOrder as any);
+      
+      toast.success("Invoice generated successfully!");
+      
+      // Reset form after successful generation
+      setSelectedItems([{ productId: "", quantity: 1, rate: 0, amount: 0 }]);
+      setSelectedCustomerId("");
+      setInvoiceNumber(generateInvoiceNumber());
+      setNotes("");
+      setTerms("");
+      setDiscount(0);
+      setTaxRate(0);
+      
+    } catch (error) {
+      toast.error("Failed to generate invoice: " + (error as Error).message);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -199,8 +290,17 @@ export default function InvoiceGenerator() {
         
         <TabsContent value="invoice-details" className="space-y-4 mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Invoice Information</CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="flex items-center gap-1"
+              >
+                <Settings className="h-4 w-4" />
+                {showAdvancedOptions ? "Hide" : "Show"} Advanced Options
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -232,24 +332,82 @@ export default function InvoiceGenerator() {
                 </div>
               </div>
               
-              <div>
-                <Label htmlFor="customer">Customer</Label>
-                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                  <SelectTrigger id="customer">
-                    <SelectValue placeholder="Select a customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map(customer => (
-                      <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="customer">Customer</Label>
+                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                    <SelectTrigger id="customer">
+                      <SelectValue placeholder="Select a customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map(customer => (
+                        <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 {selectedCustomerId && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    {customers.find(c => c.id === selectedCustomerId)?.address || 'No address available'}
+                  <div>
+                    <Label htmlFor="customer-address">Customer Address</Label>
+                    <Textarea 
+                      id="customer-address"
+                      value={customerAddress}
+                      readOnly
+                      className="h-[80px] bg-muted/50"
+                    />
                   </div>
                 )}
               </div>
+              
+              {showAdvancedOptions && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border">
+                  <div>
+                    <Label htmlFor="discount">Discount (%)</Label>
+                    <Input 
+                      id="discount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={discount}
+                      onChange={e => setDiscount(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tax">Tax Rate (%)</Label>
+                    <Input 
+                      id="tax"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={taxRate}
+                      onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Switch id="auto-calculate" defaultChecked />
+                      <Label htmlFor="auto-calculate">Auto-calculate tax</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch id="include-tax" defaultChecked />
+                      <Label htmlFor="include-tax">Show tax separately on invoice</Label>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Switch id="round-amounts" defaultChecked />
+                      <Label htmlFor="round-amounts">Round amounts to nearest rupee</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch id="include-qr" defaultChecked />
+                      <Label htmlFor="include-qr">Include payment QR code</Label>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -263,20 +421,20 @@ export default function InvoiceGenerator() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-semibold">Product</th>
-                      <th className="text-center p-2 font-semibold">Quantity</th>
-                      <th className="text-center p-2 font-semibold">Rate</th>
-                      <th className="text-right p-2 font-semibold">Amount</th>
-                      <th className="text-right p-2 font-semibold w-10">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead className="text-center">Quantity</TableHead>
+                      <TableHead className="text-center">Rate</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right w-10">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {selectedItems.map((item, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="p-2">
+                      <TableRow key={index}>
+                        <TableCell>
                           <Select
                             value={item.productId}
                             onValueChange={value => handleProductChange(index, value)}
@@ -292,8 +450,8 @@ export default function InvoiceGenerator() {
                               ))}
                             </SelectContent>
                           </Select>
-                        </td>
-                        <td className="p-2">
+                        </TableCell>
+                        <TableCell>
                           <Input
                             type="number"
                             min="1"
@@ -301,8 +459,8 @@ export default function InvoiceGenerator() {
                             onChange={e => handleQuantityChange(index, parseInt(e.target.value) || 0)}
                             className="text-center"
                           />
-                        </td>
-                        <td className="p-2">
+                        </TableCell>
+                        <TableCell>
                           <Input
                             type="number"
                             min="0"
@@ -311,11 +469,11 @@ export default function InvoiceGenerator() {
                             onChange={e => handleRateChange(index, parseFloat(e.target.value) || 0)}
                             className="text-center"
                           />
-                        </td>
-                        <td className="p-2 text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           ₹{item.amount.toFixed(2)}
-                        </td>
-                        <td className="p-2 text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -324,16 +482,41 @@ export default function InvoiceGenerator() {
                           >
                             <Trash className="h-4 w-4 text-destructive" />
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                    <tr>
-                      <td colSpan={3} className="text-right font-medium p-2">Total:</td>
-                      <td className="text-right font-bold p-2">₹{totalAmount.toFixed(2)}</td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+                    
+                    {showAdvancedOptions && (
+                      <>
+                        {discount > 0 && (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-right font-medium">Discount ({discount}%):</TableCell>
+                            <TableCell className="text-right font-medium">
+                              -₹{(selectedItems.reduce((sum, item) => sum + item.amount, 0) * discount / 100).toFixed(2)}
+                            </TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        )}
+                        
+                        {taxRate > 0 && (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-right font-medium">Tax ({taxRate}%):</TableCell>
+                            <TableCell className="text-right font-medium">
+                              +₹{(selectedItems.reduce((sum, item) => sum + item.amount, 0) * (1 - discount / 100) * taxRate / 100).toFixed(2)}
+                            </TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    )}
+                    
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-right font-medium">Total:</TableCell>
+                      <TableCell className="text-right font-bold">₹{totalAmount.toFixed(2)}</TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -345,25 +528,34 @@ export default function InvoiceGenerator() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="notes">Notes</Label>
-                <Input
+                <Textarea
                   id="notes"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="Any additional notes for the customer"
+                  className="min-h-[80px]"
                 />
               </div>
               <div>
                 <Label htmlFor="terms">Terms & Conditions</Label>
-                <Input
+                <Textarea
                   id="terms"
                   value={terms}
                   onChange={e => setTerms(e.target.value)}
                   placeholder="Payment terms and conditions"
+                  className="min-h-[80px]"
                 />
               </div>
             </CardContent>
             <CardFooter>
               <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={handleShowPreview}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
                 <Button variant="outline">
                   <Save className="h-4 w-4 mr-2" />
                   Save Draft
@@ -421,6 +613,42 @@ export default function InvoiceGenerator() {
               </div>
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Color Scheme</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label>Primary Color</Label>
+                  <div className="grid grid-cols-6 gap-2 mt-2">
+                    {["#8B5CF6", "#D946EF", "#F97316", "#0EA5E9", "#16A34A", "#3F3F46"].map(color => (
+                      <div 
+                        key={color}
+                        className={`h-8 rounded-md cursor-pointer border-2 ${color === "#8B5CF6" ? 'border-primary' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Background Style</Label>
+                  <div className="grid grid-cols-3 gap-4 mt-2">
+                    {["None", "Gradient", "Pattern"].map(style => (
+                      <div 
+                        key={style}
+                        className={`h-12 rounded-md cursor-pointer border-2 flex items-center justify-center ${style === "None" ? 'border-primary bg-muted' : 'border-transparent bg-muted/50'}`}
+                      >
+                        {style}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="company-profile" className="space-y-4 mt-4">
@@ -455,7 +683,22 @@ export default function InvoiceGenerator() {
               </div>
               <div>
                 <Label htmlFor="bank-details">Bank Details</Label>
-                <Input id="bank-details" {...register("bankDetails")} />
+                <Textarea 
+                  id="bank-details" 
+                  {...register("bankDetails")} 
+                  className="min-h-[100px]"
+                />
+              </div>
+              
+              <div className="mt-4">
+                <Label>Company Logo</Label>
+                <div className="mt-2 border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center">
+                  <div className="w-32 h-32 bg-muted/50 rounded-md flex items-center justify-center">
+                    <span className="text-muted-foreground">No logo uploaded</span>
+                  </div>
+                  <Button className="mt-4" variant="outline">Upload Logo</Button>
+                  <p className="text-xs text-muted-foreground mt-2">Recommended size: 200x200px, PNG or JPG</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -487,6 +730,44 @@ export default function InvoiceGenerator() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Invoice Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span>Invoice Preview</span>
+              <Button variant="ghost" size="icon" onClick={() => setShowPreview(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="w-full aspect-[1/1.414] bg-white">
+            {previewUrl ? (
+              <iframe 
+                src={previewUrl} 
+                className="w-full h-full border-0" 
+                title="Invoice Preview"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                Loading preview...
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowPreview(false)}>
+              Close
+            </Button>
+            <Button onClick={generateInvoice}>
+              <Download className="h-4 w-4 mr-2" />
+              Generate Invoice
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

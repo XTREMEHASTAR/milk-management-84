@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, Eye } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Eye, X } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import { Invoice } from "@/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { generatePdfPreview } from "@/utils/pdfUtils";
 
 export default function InvoiceHistory() {
   const { orders } = useData();
@@ -20,11 +22,13 @@ export default function InvoiceHistory() {
     to: undefined
   });
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
 
   // For demonstration, let's create a sample invoice list based on orders
   // In a real app, you'd fetch this from your data context
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-
   useEffect(() => {
     // Convert orders to invoices for this demo
     // In a real app, you'd have actual invoice data
@@ -78,10 +82,34 @@ export default function InvoiceHistory() {
     alert(`Invoice ${invoiceId} would be downloaded in a real app.`);
   };
 
-  const handleView = (invoiceId: string) => {
-    // In a real app, this would navigate to the invoice details page
-    console.log(`Viewing invoice: ${invoiceId}`);
-    alert(`Viewing invoice details for ${invoiceId} would open in a real app.`);
+  const handleView = (invoice: Invoice) => {
+    setPreviewInvoice(invoice);
+    
+    // Generate PDF preview for the selected invoice
+    const columns = ["Item", "Quantity", "Rate", "Amount"];
+    const data = invoice.items.map(item => [
+      "Product Name", // In a real app, you'd get the product name from product ID
+      item.quantity.toString(),
+      "₹" + (100).toFixed(2), // Placeholder rate
+      "₹" + (item.quantity * 100).toFixed(2) // Placeholder amount
+    ]);
+    
+    const pdfUrl = generatePdfPreview(
+      columns,
+      data,
+      "Invoice",
+      {
+        subtitle: `Invoice #: ${invoice.id}`,
+        dateInfo: `Date: ${format(new Date(invoice.date), "dd MMMM yyyy")}`,
+        additionalInfo: [
+          { label: "Customer", value: invoice.customerName || "Unknown" },
+          { label: "Status", value: invoice.status }
+        ]
+      }
+    );
+    
+    setPreviewUrl(pdfUrl);
+    setPreviewOpen(true);
   };
 
   // Helper function to safely format currency 
@@ -211,7 +239,7 @@ export default function InvoiceHistory() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => handleView(invoice.id)}
+                          onClick={() => handleView(invoice)}
                           className="mr-1"
                         >
                           <Eye className="h-4 w-4" />
@@ -238,6 +266,47 @@ export default function InvoiceHistory() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Invoice Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span>Invoice Preview: {previewInvoice?.id}</span>
+              <Button variant="ghost" size="icon" onClick={() => setPreviewOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+            <DialogDescription>
+              {previewInvoice?.customerName} • {previewInvoice && format(new Date(previewInvoice.date), "MMMM dd, yyyy")}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="w-full aspect-[1/1.414] bg-white">
+            {previewUrl ? (
+              <iframe 
+                src={previewUrl} 
+                className="w-full h-full border-0" 
+                title="Invoice Preview"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                Loading preview...
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => previewInvoice && handleDownload(previewInvoice.id)}>
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
