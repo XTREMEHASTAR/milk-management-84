@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, Eye, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Eye } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import { Invoice } from "@/types";
 
@@ -32,9 +32,9 @@ export default function InvoiceHistory() {
       const convertedInvoices = orders.map(order => ({
         id: `INV-${order.id}`,
         orderId: order.id,
-        customerName: order.customerName,
+        customerName: order.customerName || "Unknown Customer",
         date: order.date,
-        amount: order.totalAmount,
+        amount: order.totalAmount || 0, // Ensure amount is always a number
         status: Math.random() > 0.3 ? "Paid" : "Pending",
         items: order.items
       }));
@@ -52,7 +52,7 @@ export default function InvoiceHistory() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         inv => inv.id.toLowerCase().includes(query) || 
-               inv.customerName.toLowerCase().includes(query)
+               (inv.customerName && inv.customerName.toLowerCase().includes(query))
       );
     }
 
@@ -82,6 +82,11 @@ export default function InvoiceHistory() {
     // In a real app, this would navigate to the invoice details page
     console.log(`Viewing invoice: ${invoiceId}`);
     alert(`Viewing invoice details for ${invoiceId} would open in a real app.`);
+  };
+
+  // Helper function to safely format currency 
+  const formatCurrency = (amount: number | undefined): string => {
+    return amount !== undefined ? `₹${amount.toFixed(2)}` : "₹0.00";
   };
 
   return (
@@ -192,7 +197,7 @@ export default function InvoiceHistory() {
                       <td className="p-2 table-cell">{invoice.id}</td>
                       <td className="p-2 table-cell">{format(new Date(invoice.date), "MMM dd, yyyy")}</td>
                       <td className="p-2 table-cell">{invoice.customerName}</td>
-                      <td className="p-2 table-cell">₹{invoice.amount.toFixed(2)}</td>
+                      <td className="p-2 table-cell">{formatCurrency(invoice.amount)}</td>
                       <td className="p-2 table-cell">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           invoice.status === "Paid" ? "bg-green-100 text-green-800" : 
