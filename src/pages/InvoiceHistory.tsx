@@ -48,10 +48,10 @@ export default function InvoiceHistory() {
     }
 
     // Filter by date range
-    if (dateRange.from) {
+    if (dateRange && dateRange.from) {
       filtered = filtered.filter(inv => new Date(inv.date) >= dateRange.from!);
     }
-    if (dateRange.to) {
+    if (dateRange && dateRange.to) {
       filtered = filtered.filter(inv => new Date(inv.date) <= dateRange.to!);
     }
 
@@ -74,6 +74,28 @@ export default function InvoiceHistory() {
   // Helper function to safely format currency 
   const formatCurrency = (amount: number | undefined): string => {
     return amount !== undefined ? `₹${amount.toFixed(2)}` : "₹0.00";
+  };
+
+  // Helper function to safely format date from calendar component
+  const formatCalendarDate = (date: Date | undefined): string => {
+    return date ? format(date, "LLL dd, y") : "";
+  };
+
+  // Safe calendar date display text
+  const calendarDateRangeText = () => {
+    if (!dateRange) return <span>Date Range</span>;
+    
+    if (dateRange.from) {
+      return dateRange.to ? (
+        <>
+          {formatCalendarDate(dateRange.from)} - {formatCalendarDate(dateRange.to)}
+        </>
+      ) : (
+        formatCalendarDate(dateRange.from)
+      );
+    }
+    
+    return <span>Date Range</span>;
   };
 
   return (
@@ -103,18 +125,7 @@ export default function InvoiceHistory() {
                 className="w-full justify-start text-left font-normal"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "LLL dd, y")} -{" "}
-                      {format(dateRange.to, "LLL dd, y")}
-                    </>
-                  ) : (
-                    format(dateRange.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Date Range</span>
-                )}
+                {calendarDateRangeText()}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -123,10 +134,13 @@ export default function InvoiceHistory() {
                 mode="range"
                 defaultMonth={new Date()}
                 selected={{
-                  from: dateRange.from,
-                  to: dateRange.to
+                  from: dateRange?.from,
+                  to: dateRange?.to
                 }}
-                onSelect={setDateRange as any}
+                onSelect={(newDateRange) => {
+                  // Ensure we always set a properly structured object
+                  setDateRange(newDateRange || { from: undefined, to: undefined });
+                }}
                 numberOfMonths={2}
                 className="pointer-events-auto"
               />
