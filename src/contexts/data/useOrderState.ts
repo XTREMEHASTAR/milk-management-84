@@ -2,22 +2,12 @@
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { initialOrders } from '@/data/initialData';
-import { useInvoices } from '@/contexts/InvoiceContext';
 
-export function useOrderState() {
+export function useOrderState(createInvoiceFromOrder?: Function) {
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem("orders");
     return saved ? JSON.parse(saved) : initialOrders;
   });
-
-  // Get invoice context to create invoices
-  let invoiceContext;
-  try {
-    invoiceContext = useInvoices();
-  } catch (error) {
-    // If InvoiceContext is not available, just continue without it
-    console.warn("InvoiceContext not available, skipping auto invoice creation");
-  }
 
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
@@ -31,11 +21,11 @@ export function useOrderState() {
     
     setOrders(prev => [...prev, newOrder]);
     
-    // Create invoice from the new order automatically if invoice context is available
+    // Create invoice from the new order automatically if the function is provided
     try {
-      if (invoiceContext && invoiceContext.createInvoiceFromOrder) {
+      if (createInvoiceFromOrder) {
         setTimeout(() => {
-          invoiceContext.createInvoiceFromOrder(newOrder.id);
+          createInvoiceFromOrder(newOrder.id);
         }, 500); // Short delay to ensure state is updated
       }
     } catch (error) {
@@ -54,12 +44,12 @@ export function useOrderState() {
     
     setOrders(prev => [...prev, ...createdOrders]);
     
-    // Create invoices for each order if invoice context is available
+    // Create invoices for each order if invoice creation function is available
     try {
-      if (invoiceContext && invoiceContext.createInvoiceFromOrder) {
+      if (createInvoiceFromOrder) {
         setTimeout(() => {
           createdOrders.forEach(order => {
-            invoiceContext.createInvoiceFromOrder(order.id);
+            createInvoiceFromOrder(order.id);
           });
         }, 500);
       }

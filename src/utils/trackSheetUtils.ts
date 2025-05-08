@@ -1,155 +1,38 @@
 
-import { exportTrackSheet } from "@/utils/pdfUtils";
-import { format } from "date-fns";
+import { format } from 'date-fns';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export interface TrackSheetRow {
-  serialNumber: string;
   name: string;
-  quantities: Record<string, string | number>;
+  quantities: Record<string, number | string>;
   total: number;
   amount: number;
 }
 
-export interface TrackSheet {
-  id: string;
-  name: string;
-  date: Date;
-  routeName: string;
-  vehicleId?: string | null;
-  salesmanId?: string | null;
-  rows: TrackSheetRow[];
-}
-
-export const generateTrackSheetPdf = (
-  date: Date,
-  routeName: string,
-  rows: TrackSheetRow[],
-  columnNames: string[],
-  filename: string = "track_sheet.pdf",
-  options: {
-    vehicleName?: string;
-    salesmanName?: string;
-  } = {}
-) => {
-  // Format the date for display
-  const formattedDate = format(date, "dd/MM/yyyy");
-  
-  // Prepare the header row - Serial No, Name, then all product columns, Total, Amount
-  const headers = ["Sr.No", "Name", ...columnNames, "Total", "Amount"];
-  
-  // Prepare the data rows
-  const data = rows.map(row => {
-    // Start with serial number and name
-    const rowData = [row.serialNumber, row.name];
-    
-    // Add quantities for each column
-    for (const col of columnNames) {
-      // Convert any numeric values to strings since the exportTrackSheet function expects string values
-      const value = row.quantities[col];
-      rowData.push(value !== undefined && value !== "" ? String(value) : "—"); // Use em dash for empty cells
-    }
-    
-    // Add total and amount
-    rowData.push(row.total.toString());
-    rowData.push(`${row.amount.toFixed(2)}`);
-    
-    return rowData;
-  });
-  
-  // Calculate column widths (percentages) - these will need to be adjusted based on content
-  // Serial is narrow, name is wider, product columns are equal, total and amount are medium
-  const baseWidth = 100 / (headers.length); // Start with equal distribution
-  
-  const columnWidths = [
-    "5%",                          // Serial number - narrow
-    "15%",                         // Name - wider
-    ...Array(columnNames.length).fill(`${baseWidth}%`), // Product columns - equal
-    "8%",                          // Total - medium
-    "10%"                          // Amount - medium
-  ];
-  
-  // Prepare additional information
-  const additionalInfo: { label: string; value: string }[] = [];
-  
-  if (options.vehicleName) {
-    additionalInfo.push({ label: "Vehicle", value: options.vehicleName });
-  }
-  
-  if (options.salesmanName) {
-    additionalInfo.push({ label: "Salesman", value: options.salesmanName });
-  }
-  
-  // Generate the PDF using the specialized track sheet function
-  return exportTrackSheet(
-    headers,
-    data,
-    `Track Sheet - ${routeName} - ${formattedDate}`,
-    filename,
-    {
-      dateInfo: `Date: ${formattedDate}`,
-      landscape: true,
-      columnWidths,
-      additionalInfo: additionalInfo.length > 0 ? additionalInfo : undefined
-    }
-  );
-};
-
-// Helper function to create empty track sheet rows
+// Create an empty track sheet template with sample customers
 export const createEmptyTrackSheetRows = (
-  count: number, 
-  columnNames: string[]
+  productNames: string[]
 ): TrackSheetRow[] => {
-  return Array(count).fill(0).map((_, index) => ({
-    serialNumber: (index + 1).toString(),
-    name: "",
-    quantities: columnNames.reduce((acc, col) => ({...acc, [col]: ""}), {}),
-    total: 0,
-    amount: 0
-  }));
-};
-
-// Helper function to create a track sheet template with example data
-export const createTrackSheetTemplate = (
-  columnNames: string[],
-  date: Date = new Date(),
-  routeName: string = "Main Route"
-): TrackSheetRow[] => {
-  // Create some example customers
-  const exampleCustomers = [
-    "Rahul Sharma",
-    "Priya Patel",
-    "Amit Singh",
-    "Sunita Desai",
-    "Vijay Kumar",
-    "Neha Gupta",
-    "Rajesh Verma",
-    "Anita Sharma",
-    "Suresh Patel",
-    "Meena Singh"
+  const sampleCustomers = [
+    'Customer 1',
+    'Customer 2',
+    'Customer 3',
+    'Customer 4',
+    'Customer 5',
   ];
-  
-  return exampleCustomers.map((name, index) => {
-    // Generate random quantities for each product column
-    const quantities: Record<string, string | number> = {};
+
+  return sampleCustomers.map(name => {
+    const quantities: Record<string, number | string> = {};
     let total = 0;
-    
-    columnNames.forEach(col => {
-      // 70% chance of having a quantity for this product
-      if (Math.random() > 0.3) {
-        const qty = Math.floor(Math.random() * 5) + 1;
-        quantities[col] = qty;
-        total += qty;
-      } else {
-        quantities[col] = "";
-      }
+    let amount = 0;
+
+    productNames.forEach(product => {
+      quantities[product] = '';
     });
-    
-    // Calculate a random price per unit between 25-60
-    const pricePerUnit = 25 + Math.floor(Math.random() * 35);
-    const amount = total * pricePerUnit;
-    
+
     return {
-      serialNumber: (index + 1).toString(),
       name,
       quantities,
       total,
@@ -158,84 +41,138 @@ export const createTrackSheetTemplate = (
   });
 };
 
-// Convert track sheet rows to order items
-export const trackSheetRowsToOrderItems = (
-  rows: TrackSheetRow[],
-  customers: any[],
-  products: any[]
-) => {
-  const orderItems: any[] = [];
-  
-  rows.forEach(row => {
-    // Find or create customer
-    const customer = customers.find(c => c.name === row.name);
-    
-    if (!customer) return; // Skip if customer not found
-    
-    // Add items for each product quantity
-    Object.entries(row.quantities).forEach(([productName, qty]) => {
-      if (!qty || qty === "") return;
-      
-      const product = products.find(p => p.name === productName);
-      if (!product) return;
-      
-      orderItems.push({
-        customerId: customer.id,
-        productId: product.id,
-        quantity: typeof qty === 'string' ? parseInt(qty) : qty,
-        price: product.price || 0
-      });
-    });
-  });
-  
-  return orderItems;
-};
+// Create a track sheet template with random data
+export const createTrackSheetTemplate = (
+  productNames: string[],
+  date: Date,
+  routeName: string
+): TrackSheetRow[] => {
+  const sampleCustomers = [
+    'Delhi Dairy',
+    'Golden Milk Supply',
+    'Sunrise Foods',
+    'Sweet Treats Bakery',
+    'Mountain View Cafe',
+    'Green Valley Store',
+    'Fresh Basket Market',
+    'Family Restaurant',
+    'City Hospital Canteen',
+    'Sunlight Hotel'
+  ];
 
-// Convert order items to track sheet rows
-export const orderItemsToTrackSheetRows = (
-  orderItems: any[],
-  customers: any[],
-  products: any[]
-) => {
-  // Group items by customer
-  const customerItems: Record<string, any[]> = {};
-  
-  orderItems.forEach(item => {
-    if (!customerItems[item.customerId]) {
-      customerItems[item.customerId] = [];
-    }
-    customerItems[item.customerId].push(item);
-  });
-  
-  // Create rows for each customer
-  const rows: TrackSheetRow[] = [];
-  
-  Object.entries(customerItems).forEach(([customerId, items], index) => {
-    const customer = customers.find(c => c.id === customerId);
-    if (!customer) return;
-    
-    // Prepare quantities
-    const quantities: Record<string, number> = {};
+  return sampleCustomers.map(name => {
+    const quantities: Record<string, number | string> = {};
     let total = 0;
-    let amount = 0;
     
-    items.forEach(item => {
-      const product = products.find(p => p.id === item.productId);
-      if (!product) return;
-      
-      quantities[product.name] = item.quantity;
-      total += item.quantity;
-      amount += item.quantity * item.price;
+    productNames.forEach(product => {
+      // Generate random quantity between 0 and 10, with some empty values
+      const quantity = Math.random() > 0.2 ? Math.floor(Math.random() * 10) : 0;
+      quantities[product] = quantity;
+      total += quantity;
     });
     
-    rows.push({
-      serialNumber: (index + 1).toString(),
-      name: customer.name,
+    // Generate a random amount
+    const amount = total * (Math.floor(Math.random() * 30) + 40);
+
+    return {
+      name,
       quantities,
       total,
       amount
+    };
+  });
+};
+
+// Generate PDF for track sheet
+export const generateTrackSheetPdf = (
+  title: string,
+  date: Date,
+  rows: TrackSheetRow[],
+  productNames: string[],
+  additionalInfo?: Array<{label: string; value: string}>
+) => {
+  // Create new PDF document
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  // Add title and date
+  doc.setFontSize(16);
+  doc.text(title, 14, 15);
+  
+  doc.setFontSize(10);
+  doc.text(`Date: ${format(date, 'dd/MM/yyyy')}`, 14, 22);
+  
+  // Add additional info if provided
+  if (additionalInfo && additionalInfo.length > 0) {
+    let yPos = 27;
+    additionalInfo.forEach(info => {
+      doc.text(`${info.label}: ${info.value}`, 14, yPos);
+      yPos += 5;
     });
+  }
+
+  // Prepare table data
+  const tableColumn = ['Customer'];
+  productNames.forEach(product => {
+    tableColumn.push(product);
+  });
+  tableColumn.push('Total', 'Amount');
+  
+  const tableRows = rows.map(row => {
+    const rowData = [row.name];
+    
+    productNames.forEach(product => {
+      rowData.push(row.quantities[product]?.toString() || '-');
+    });
+    
+    rowData.push(row.total.toString());
+    rowData.push(`₹${row.amount}`);
+    
+    return rowData;
   });
   
-  return rows.sort((a, b) => a.name.localeCompare(b.name));
+  // Add totals row
+  const totals = ['TOTAL'];
+  
+  productNames.forEach(product => {
+    const total = rows.reduce(
+      (sum, row) => {
+        const qty = row.quantities[product];
+        return sum + (typeof qty === 'number' ? qty : 0);
+      },
+      0
+    );
+    totals.push(total.toString());
+  });
+  
+  const grandTotalQty = rows.reduce((sum, row) => sum + row.total, 0);
+  const grandTotalAmount = rows.reduce((sum, row) => sum + row.amount, 0);
+  
+  totals.push(grandTotalQty.toString());
+  totals.push(`₹${grandTotalAmount}`);
+  
+  tableRows.push(totals);
+
+  // Create table
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: additionalInfo && additionalInfo.length > 0 ? 35 : 27,
+    theme: 'grid',
+    styles: {
+      fontSize: 9
+    },
+    headStyles: {
+      fillColor: [75, 75, 75]
+    },
+    footStyles: {
+      fillColor: [200, 200, 200]
+    }
+  });
+
+  // Save the PDF
+  return doc.save(`track-sheet-${format(date, 'yyyy-MM-dd')}.pdf`);
 };

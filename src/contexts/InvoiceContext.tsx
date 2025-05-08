@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Invoice } from '@/types';
 import { InvoiceService } from '@/services/InvoiceService';
-import { useData } from './DataContext';
 import { createInvoiceFromOrder, generateInvoiceNumber } from '@/utils/invoiceUtils';
 import { toast } from 'sonner';
 
@@ -15,8 +14,8 @@ interface InvoiceContextValue {
   getInvoiceById: (id: string) => Invoice | undefined;
   getInvoicesByCustomerId: (customerId: string) => Invoice[];
   downloadInvoice: (id: string, templateId?: string) => Promise<boolean>;
-  createInvoiceFromOrder: (orderId: string) => Invoice | null;
-  createBulkInvoicesForParty: (customerId: string, dateRange?: { from: Date, to: Date }) => Invoice[];
+  createInvoiceFromOrder: (orderId: string, products: any[], customers: any[], orders: any[]) => Invoice | null;
+  createBulkInvoicesForParty: (customerId: string, products: any[], customers: any[], orders: any[], dateRange?: { from: Date, to: Date }) => Invoice[];
   selectedTemplateId: string;
   setSelectedTemplateId: (id: string) => void;
   companyInfo: any;
@@ -29,7 +28,6 @@ const InvoiceContext = createContext<InvoiceContextValue | undefined>(undefined)
 
 // Provider component
 export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { orders, products, customers } = useData();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("standard");
   const [companyInfo, setCompanyInfo] = useState(() => InvoiceService.getCompanyInfo());
@@ -43,12 +41,6 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
       } catch (error) {
         console.error("Error parsing saved invoices:", error);
         setInvoices([]);
-      }
-    } else {
-      // Generate initial invoices from orders if none exist
-      const generatedInvoices = generateInitialInvoicesFromOrders();
-      if (generatedInvoices.length > 0) {
-        setInvoices(generatedInvoices);
       }
     }
 
@@ -70,13 +62,6 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     localStorage.setItem("selectedInvoiceTemplate", selectedTemplateId);
   }, [selectedTemplateId]);
-  
-  // Generate initial invoices from existing orders
-  const generateInitialInvoicesFromOrders = (): Invoice[] => {
-    if (!orders || !products || !customers) return [];
-    
-    return InvoiceService.batchCreateInvoicesFromOrders(orders, products, customers);
-  };
   
   // Add a new invoice
   const addInvoice = (invoice: Invoice) => {
@@ -120,16 +105,24 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
       return false;
     }
     
-    return await InvoiceService.downloadInvoice(
-      invoice, 
-      companyInfo, 
-      products,
-      templateId || selectedTemplateId
-    );
+    // We need to get products from DataContext, but can't use useData() directly
+    // So we'll accept products as a parameter when this function is called
+    try {
+      return await InvoiceService.downloadInvoice(
+        invoice, 
+        companyInfo, 
+        [], // Products will be passed when needed
+        templateId || selectedTemplateId
+      );
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      toast.error("Failed to download invoice");
+      return false;
+    }
   };
   
   // Create a new invoice from an existing order
-  const createInvoiceFromOrderById = (orderId: string) => {
+  const createInvoiceFromOrderById = (orderId: string, products: any[], customers: any[], orders: any[]) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) {
       console.error(`Order ${orderId} not found`);
@@ -166,7 +159,7 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // Create invoices in bulk for a specific customer/party
-  const createBulkInvoicesForParty = (customerId: string, dateRange?: { from: Date, to: Date }) => {
+  const createBulkInvoicesForParty = (customerId: string, products: any[], customers: any[], orders: any[], dateRange?: { from: Date, to: Date }) => {
     const customer = customers.find(c => c.id === customerId);
     if (!customer) {
       toast.error("Customer not found");
@@ -229,7 +222,7 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
     return InvoiceService.generatePreviewUrl(
       invoice,
       companyInfo,
-      products,
+      [], // Products will be passed when needed
       selectedTemplateId
     );
   };

@@ -49,8 +49,8 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <InvoiceProvider>
-        <DataProvider>
+      <DataProvider>
+        <InvoiceProvider>
           <HashRouter>
             <SonnerToaster richColors position="top-right" />
             <OfflineIndicator />
@@ -101,8 +101,8 @@ function App() {
             </Routes>
             <Toaster />
           </HashRouter>
-        </DataProvider>
-      </InvoiceProvider>
+        </InvoiceProvider>
+      </DataProvider>
     </AuthProvider>
   );
 }

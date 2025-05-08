@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,15 +11,82 @@ import { Calendar as CalendarIcon, Download, Eye, Trash, X } from "lucide-react"
 import { useData } from "@/contexts/DataContext";
 import { Invoice } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import InvoiceStatusBadge from "@/components/invoices/InvoiceStatusBadge";
-import InvoiceDownloadButton from "@/components/invoices/InvoiceDownloadButton";
 import { useInvoices } from "@/contexts/InvoiceContext";
-import { InvoiceService } from "@/services/InvoiceService";
-import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
+import { DateRange } from "react-day-picker";
+
+// Create a component to display invoice status with appropriate styling
+const InvoiceStatusBadge = ({ status }: { status: string }) => {
+  const getStatusStyles = () => {
+    switch (status) {
+      case 'Paid':
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      case 'Pending':
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case 'Overdue':
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case 'Draft':
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
+      case 'Cancelled':
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 line-through";
+      default:
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+    }
+  };
+  
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusStyles()}`}>
+      {status}
+    </span>
+  );
+};
+
+// Create a download button component for invoices
+const InvoiceDownloadButton = ({ 
+  invoiceId, 
+  variant = "default", 
+  size = "default"
+}: { 
+  invoiceId: string, 
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link", 
+  size?: "default" | "sm" | "lg" | "icon" 
+}) => {
+  const { downloadInvoice } = useInvoices();
+  const [loading, setLoading] = useState(false);
+  
+  const handleDownload = async () => {
+    setLoading(true);
+    try {
+      await downloadInvoice(invoiceId);
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      toast.error("Failed to download invoice");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <Button 
+      variant={variant} 
+      size={size} 
+      onClick={handleDownload} 
+      disabled={loading}
+    >
+      {size === "icon" ? (
+        <Download className="h-4 w-4" />
+      ) : (
+        <>
+          <Download className="mr-2 h-4 w-4" />
+          Download
+        </>
+      )}
+    </Button>
+  );
+};
 
 export default function InvoiceHistory() {
-  const { orders, products } = useData();
+  const { products } = useData();
   const { invoices, generateInvoicePreview, deleteInvoice } = useInvoices();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
@@ -30,69 +98,84 @@ export default function InvoiceHistory() {
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [companyInfo, setCompanyInfo] = useState(() => InvoiceService.getCompanyInfo());
   const [isLoading, setIsLoading] = useState(false);
 
+  // Filter invoices based on search query, date range, and status
   useEffect(() => {
+    if (!invoices) return;
+    
     setIsLoading(true);
-    // Simulate loading delay
-    setTimeout(() => {
-      applyFilters();
+    
+    try {
+      let filtered = [...invoices];
+  
+      // Filter by search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(
+          inv => inv.id.toLowerCase().includes(query) || 
+                 (inv.customerName && inv.customerName.toLowerCase().includes(query)) ||
+                 (inv.orderId && inv.orderId.toLowerCase().includes(query))
+        );
+      }
+  
+      // Filter by date range
+      if (dateRange && dateRange.from) {
+        filtered = filtered.filter(inv => {
+          const invDate = new Date(inv.date);
+          return invDate >= dateRange.from!;
+        });
+      }
+      
+      if (dateRange && dateRange.to) {
+        filtered = filtered.filter(inv => {
+          const invDate = new Date(inv.date);
+          return invDate <= dateRange.to!;
+        });
+      }
+  
+      // Filter by status
+      if (filterStatus !== "all") {
+        filtered = filtered.filter(inv => inv.status === filterStatus);
+      }
+  
+      // Sort by date, newest first
+      filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      setFilteredInvoices(filtered);
+    } catch (error) {
+      console.error("Error filtering invoices:", error);
+      toast.error("Error filtering invoices");
+    } finally {
       setIsLoading(false);
-    }, 200);
-  }, [invoices, searchQuery, dateRange, filterStatus]);
-
-  const applyFilters = () => {
-    let results = [...invoices];
-
-    // Apply search query filter
-    if (searchQuery) {
-      results = results.filter(invoice =>
-        invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.orderId.toLowerCase().includes(searchQuery.toLowerCase())
-      );
     }
+  }, [searchQuery, dateRange, filterStatus, invoices]);
 
-    // Apply date range filter
-    if (dateRange?.from && dateRange?.to) {
-      results = results.filter(invoice => {
-        const invoiceDate = new Date(invoice.date);
-        const fromDate = dateRange.from;
-        const toDate = dateRange.to;
-        return invoiceDate >= fromDate && invoiceDate <= toDate;
-      });
-    }
-
-    // Apply status filter
-    if (filterStatus !== "all") {
-      results = results.filter(invoice => invoice.status === filterStatus);
-    }
-
-    setFilteredInvoices(results);
-  };
-
+  // Show preview of the invoice
   const handleView = (invoice: Invoice) => {
     setPreviewInvoice(invoice);
-    const preview = generateInvoicePreview(
-      invoice,
-      companyInfo,
-      products,
-    );
-    setPreviewUrl(preview);
-    setPreviewOpen(true);
+    try {
+      const previewUrl = generateInvoicePreview(invoice);
+      setPreviewUrl(previewUrl);
+      setPreviewOpen(true);
+    } catch (error) {
+      console.error("Error generating invoice preview:", error);
+      toast.error("Error generating invoice preview");
+    }
   };
-
+  
+  // Handle invoice deletion
   const handleDelete = (id: string) => {
-    deleteInvoice(id);
-    toast.success(`Invoice ${id} deleted successfully`);
+    if (window.confirm("Are you sure you want to delete this invoice?")) {
+      deleteInvoice(id);
+      toast.success(`Invoice ${id} deleted successfully`);
+    }
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
+  // Helper function to safely format currency 
+  const formatCurrency = (amount: number | undefined): string => {
+    if (amount === undefined) return "₹0.00";
+    return `₹${amount.toFixed(2)}`;
   };
 
   // Helper function to safely format date
@@ -106,6 +189,35 @@ export default function InvoiceHistory() {
     }
   };
 
+  // Safe calendar date display text
+  const calendarDateRangeText = () => {
+    if (!dateRange) return <span>Date Range</span>;
+    
+    if (dateRange.from) {
+      if (dateRange.to) {
+        return (
+          <>
+            {formatCalendarDate(dateRange.from)} - {formatCalendarDate(dateRange.to)}
+          </>
+        );
+      }
+      return formatCalendarDate(dateRange.from);
+    }
+    
+    return <span>Date Range</span>;
+  };
+  
+  // Helper function to safely format date from calendar component
+  const formatCalendarDate = (date: Date | undefined): string => {
+    if (!date) return "";
+    try {
+      return format(date, "LLL dd, y");
+    } catch (error) {
+      console.error("Error formatting calendar date:", error);
+      return "";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -115,47 +227,63 @@ export default function InvoiceHistory() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          type="search"
-          placeholder="Search invoice..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
-
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={format(dateRange?.from as Date, 'MMM dd, yyyy') + " - " + format(dateRange?.to as Date, 'MMM dd, yyyy') || "Pick a date"}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              <span>{dateRange?.from ? format(dateRange?.from as Date, 'MMM dd, yyyy') + " - " + format(dateRange?.to as Date, 'MMM dd, yyyy') : "Pick a date"}</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              defaultMonth={new Date()}
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
-
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Paid">Paid</SelectItem>
-            <SelectItem value="Draft">Draft</SelectItem>
-            <SelectItem value="Overdue">Overdue</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col md:flex-row gap-4 items-end">
+        <div className="w-full md:w-1/3">
+          <Input
+            placeholder="Search invoices by ID, customer name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        
+        <div className="w-full md:w-1/4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {calendarDateRangeText()}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={new Date()}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="w-full md:w-1/4">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="Paid">Paid</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Overdue">Overdue</SelectItem>
+              <SelectItem value="Draft">Draft</SelectItem>
+              <SelectItem value="Cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <Button onClick={() => {
+          setSearchQuery("");
+          setDateRange({ from: undefined, to: undefined });
+          setFilterStatus("all");
+        }}>
+          Reset Filters
+        </Button>
       </div>
 
       <Card>
@@ -235,25 +363,26 @@ export default function InvoiceHistory() {
         </CardContent>
       </Card>
 
+      {/* Invoice Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex justify-between items-center">
-              <span>Invoice Preview</span>
+              <span>Invoice Preview: {previewInvoice?.id}</span>
               <Button variant="ghost" size="icon" onClick={() => setPreviewOpen(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>
             <DialogDescription>
-              This is a preview of the invoice.
+              {previewInvoice?.customerName || "Unknown"} • {previewInvoice && formatDate(previewInvoice.date)}
             </DialogDescription>
           </DialogHeader>
-
+          
           <div className="w-full aspect-[1/1.414] bg-white">
             {previewUrl ? (
-              <iframe
-                src={previewUrl}
-                className="w-full h-full border-0"
+              <iframe 
+                src={previewUrl} 
+                className="w-full h-full border-0" 
                 title="Invoice Preview"
               />
             ) : (
@@ -262,12 +391,14 @@ export default function InvoiceHistory() {
               </div>
             )}
           </div>
-
+          
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setPreviewOpen(false)}>
               Close
             </Button>
-            <InvoiceDownloadButton invoiceId={previewInvoice?.id || ""} />
+            {previewInvoice && (
+              <InvoiceDownloadButton invoiceId={previewInvoice.id} />
+            )}
           </div>
         </DialogContent>
       </Dialog>
