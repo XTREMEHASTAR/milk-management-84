@@ -44,69 +44,80 @@ function App() {
   return (
     <AuthProvider>
       <DataProvider createInvoiceFunc={createInvoiceFunc}>
-        {(dataContext) => (
-          <InvoiceProvider 
-            products={dataContext.products} 
-            customers={dataContext.customers}
-            orders={dataContext.orders}
-          >
-            <Router>
-              <Routes>
-                <Route path="/login" element={
-                  <LoginLayout>
-                    <Login />
-                  </LoginLayout>
-                } />
-                
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<Layout />}>
-                    {/* Dashboard and Main Routes */}
-                    <Route index element={<Index />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    
-                    {/* Order Management */}
-                    <Route path="order-entry" element={<OrderEntry />} />
-                    <Route path="orders" element={<OrderList />} />
-                    <Route path="track-sheet" element={<TrackSheet />} />
-                    
-                    {/* Invoice Management */}
-                    <Route path="invoice-generator" element={<InvoiceGenerator />} />
-                    <Route path="invoice-history" element={<InvoiceHistory />} />
-                    <Route path="invoice-create" element={<InvoiceCreate />} />
-                    
-                    {/* Customer Management */}
-                    <Route path="customers" element={<Customers />} />
-                    <Route path="customer-list" element={<CustomerList />} />
-                    <Route path="customer/:id" element={<CustomerDetail />} />
-                    <Route path="customer/:id/statement" element={<CustomerStatement />} />
-                    
-                    {/* Payment Management */}
-                    <Route path="payments" element={<Payments />} />
-                    <Route path="payment-list" element={<PaymentList />} />
-                    <Route path="payment-create" element={<PaymentCreate />} />
-                    
-                    {/* Product Management */}
-                    <Route path="products" element={<Products />} />
-                    <Route path="product-list" element={<ProductList />} />
-                    <Route path="product/:id" element={<ProductDetail />} />
-                    <Route path="product-rates" element={<ProductRates />} />
-                    <Route path="product-categories" element={<ProductCategories />} />
-                    
-                    {/* Settings */}
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="company-profile" element={<CompanyProfile />} />
-                    
-                    <Route path="*" element={<NotFound />} />
+        <DataConsumer>
+          {(dataContext) => (
+            <InvoiceProvider 
+              products={dataContext.products} 
+              customers={dataContext.customers}
+              orders={dataContext.orders}
+            >
+              <Router>
+                <Routes>
+                  <Route path="/login" element={
+                    <LoginLayout>
+                      <Login />
+                    </LoginLayout>
+                  } />
+                  
+                  <Route element={<ProtectedRoute />}>
+                    <Route element={<Layout />}>
+                      {/* Dashboard and Main Routes */}
+                      <Route index element={<Index />} />
+                      <Route path="dashboard" element={<Dashboard />} />
+                      
+                      {/* Order Management */}
+                      <Route path="order-entry" element={<OrderEntry />} />
+                      <Route path="orders" element={<OrderList />} />
+                      <Route path="track-sheet" element={<TrackSheet />} />
+                      
+                      {/* Invoice Management */}
+                      <Route path="invoice-generator" element={<InvoiceGenerator />} />
+                      <Route path="invoice-history" element={<InvoiceHistory />} />
+                      <Route path="invoice-create" element={<InvoiceCreate />} />
+                      
+                      {/* Customer Management */}
+                      <Route path="customers" element={<Customers />} />
+                      <Route path="customer-list" element={<CustomerList />} />
+                      <Route path="customer/:id" element={<CustomerDetail />} />
+                      <Route path="customer/:id/statement" element={<CustomerStatement />} />
+                      
+                      {/* Payment Management */}
+                      <Route path="payments" element={<Payments />} />
+                      <Route path="payment-list" element={<PaymentList />} />
+                      <Route path="payment-create" element={<PaymentCreate />} />
+                      
+                      {/* Product Management */}
+                      <Route path="products" element={<Products />} />
+                      <Route path="product-list" element={<ProductList />} />
+                      <Route path="product/:id" element={<ProductDetail />} />
+                      <Route path="product-rates" element={<ProductRates />} />
+                      <Route path="product-categories" element={<ProductCategories />} />
+                      
+                      {/* Settings */}
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="company-profile" element={<CompanyProfile />} />
+                      
+                      <Route path="*" element={<NotFound />} />
+                    </Route>
                   </Route>
-                </Route>
-              </Routes>
-              <Toaster />
-            </Router>
-          </InvoiceProvider>
-        )}
+                </Routes>
+                <Toaster />
+              </Router>
+            </InvoiceProvider>
+          )}
+        </DataConsumer>
       </DataProvider>
     </AuthProvider>
   );
 }
 
+// Create a DataConsumer component to use the render prop pattern correctly
+const DataConsumer = ({ children }) => {
+  const dataContext = useData();
+  return children(dataContext);
+};
+
+import { useData } from "./contexts/data/DataContext";
+
 export default App;
+
