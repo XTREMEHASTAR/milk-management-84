@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useCustomerState } from './useCustomerState';
 import { useProductState } from './useProductState';
@@ -15,12 +14,15 @@ import { useUISettingsState } from './useUISettingsState';
 const DataContext = createContext<any>(undefined);
 
 interface DataProviderProps {
-  children: ReactNode;
-  createInvoiceFunc?: Function;
+  children: React.ReactNode;
+  createInvoiceFunc?: Function | null;
 }
 
 // Provider component
-export const DataProvider: React.FC<DataProviderProps> = ({ children, createInvoiceFunc }) => {
+export const DataProvider: React.FC<DataProviderProps> = ({ 
+  children, 
+  createInvoiceFunc = null 
+}) => {
   // All individual state hooks
   const customerState = useCustomerState();
   const productState = useProductState();
@@ -52,7 +54,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, createInvo
 
   // Provide combined state to children
   return (
-    <DataContext.Provider value={dataContext}>
+    <DataContext.Provider value={{
+      ...dataContext,
+      createInvoiceFunc,
+    }}>
       {children}
     </DataContext.Provider>
   );
