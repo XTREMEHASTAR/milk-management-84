@@ -125,8 +125,12 @@ export default function Expenses() {
     }
   }
   
-  // Calculate total expenses for filtered results
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  // Calculate total expenses for filtered results - Fix type issues here
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => {
+    // Ensure expense.amount is a number before adding
+    const amount = typeof expense.amount === 'number' ? expense.amount : 0;
+    return sum + amount;
+  }, 0);
   
   // Export expenses to CSV
   const exportToCSV = () => {
