@@ -23,6 +23,11 @@ import {
   ChevronLeft,
   Home,
   BarChart4,
+  UserRound,
+  Database,
+  Tag,
+  Warehouse,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 interface SidebarItemProps {
@@ -170,11 +175,18 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
         <SidebarItem
           icon={Users}
           title="Customers"
-          active={isActive('/customers') || isActive('/customer-directory')}
+          active={isActive('/customer') || isActive('/customers') || isActive('/customer-directory') || isActive('/customer-rates') || isActive('/customer-ledger')}
           expanded={expanded}
         >
           <SidebarItem
             icon={Users}
+            title="Customers"
+            path="/customers"
+            active={isActive('/customers')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={UserRound}
             title="Customer Directory"
             path="/customer-directory"
             active={isActive('/customer-directory')}
@@ -188,10 +200,17 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
             expanded={expanded}
           />
           <SidebarItem
-            icon={FileText}
+            icon={FileSpreadsheet}
             title="Customer Ledger"
             path="/customer-ledger"
             active={isActive('/customer-ledger')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={FileText}
+            title="Customer Statement"
+            path="/customer-statement"
+            active={isActive('/customer-statement')}
             expanded={expanded}
           />
         </SidebarItem>
@@ -202,6 +221,13 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
           active={isActive('/orders') || isActive('/order-entry')}
           expanded={expanded}
         >
+          <SidebarItem
+            icon={ShoppingCart}
+            title="Order Entry"
+            path="/order-entry"
+            active={isActive('/order-entry')}
+            expanded={expanded}
+          />
           <SidebarItem
             icon={ShoppingCart}
             title="Order List"
@@ -221,7 +247,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
         <SidebarItem
           icon={Truck}
           title="Delivery"
-          active={isActive('/delivery')}
+          active={isActive('/delivery') || isActive('/vehicle-tracking') || isActive('/track-sheet')}
           expanded={expanded}
         >
           <SidebarItem
@@ -243,7 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
         <SidebarItem
           icon={Package}
           title="Stock"
-          active={isActive('/stock-management')}
+          active={isActive('/stock') || isActive('/stock-management') || isActive('/supplier') || isActive('/product')}
           expanded={expanded}
         >
           <SidebarItem
@@ -254,14 +280,56 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
             expanded={expanded}
           />
           <SidebarItem
+            icon={Package}
+            title="Products"
+            path="/products"
+            active={isActive('/products')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={Tag}
+            title="Product Rates"
+            path="/product-rates"
+            active={isActive('/product-rates')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={Tag}
+            title="Product Categories"
+            path="/product-categories"
+            active={isActive('/product-categories')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={Tag}
+            title="Bulk Rates"
+            path="/bulk-rates"
+            active={isActive('/bulk-rates')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={Warehouse}
+            title="Stock Settings"
+            path="/stock-settings"
+            active={isActive('/stock-settings')}
+            expanded={expanded}
+          />
+          <SidebarItem
             icon={Truck}
             title="Suppliers"
+            path="/suppliers"
+            active={isActive('/suppliers')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={UserRound}
+            title="Supplier Directory"
             path="/supplier-directory"
             active={isActive('/supplier-directory')}
             expanded={expanded}
           />
           <SidebarItem
-            icon={FileText}
+            icon={FileSpreadsheet}
             title="Supplier Ledger"
             path="/supplier-ledger"
             active={isActive('/supplier-ledger')}
@@ -274,19 +342,33 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
             active={isActive('/purchase-history')}
             expanded={expanded}
           />
+          <SidebarItem
+            icon={CreditCard}
+            title="Supplier Payments"
+            path="/supplier-payments"
+            active={isActive('/supplier-payments')}
+            expanded={expanded}
+          />
         </SidebarItem>
         
         <SidebarItem
           icon={Receipt}
           title="Invoices"
-          active={isActive('/invoice')}
+          active={isActive('/invoice') || isActive('/invoice-generator') || isActive('/invoice-history') || isActive('/invoice-create') || isActive('/invoice-list')}
           expanded={expanded}
         >
           <SidebarItem
             icon={Receipt}
-            title="Invoice List"
-            path="/invoice-list"
-            active={isActive('/invoice-list')}
+            title="Invoice Generator"
+            path="/invoice-generator"
+            active={isActive('/invoice-generator')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={Receipt}
+            title="Invoice History"
+            path="/invoice-history"
+            active={isActive('/invoice-history')}
             expanded={expanded}
           />
           <SidebarItem
@@ -296,19 +378,54 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
             active={isActive('/invoice-create')}
             expanded={expanded}
           />
+          <SidebarItem
+            icon={Receipt}
+            title="Invoice List"
+            path="/invoice-list"
+            active={isActive('/invoice-list')}
+            expanded={expanded}
+          />
         </SidebarItem>
         
         <SidebarItem
           icon={CreditCard}
           title="Payments"
-          active={isActive('/payments')}
+          active={isActive('/payments') || isActive('/payment-list') || isActive('/payment-create') || isActive('/payment-history') || isActive('/outstanding') || isActive('/outstanding-dues')}
           expanded={expanded}
         >
+          <SidebarItem
+            icon={CreditCard}
+            title="Payments"
+            path="/payments"
+            active={isActive('/payments')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={CreditCard}
+            title="Payment List"
+            path="/payment-list"
+            active={isActive('/payment-list')}
+            expanded={expanded}
+          />
           <SidebarItem
             icon={CreditCard}
             title="Payment History"
             path="/payment-history"
             active={isActive('/payment-history')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={CreditCard}
+            title="Create Payment"
+            path="/payment-create"
+            active={isActive('/payment-create')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={DollarSign}
+            title="Outstanding"
+            path="/outstanding"
+            active={isActive('/outstanding')}
             expanded={expanded}
           />
           <SidebarItem
@@ -335,16 +452,59 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
         >
           <SidebarItem
             icon={BarChart4}
-            title="Sales Report"
+            title="All Reports"
+            path="/reports"
+            active={isActive('/reports')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={BarChart4}
+            title="Sales Reports"
             path="/reports/sales"
             active={isActive('/reports/sales')}
             expanded={expanded}
           />
           <SidebarItem
             icon={BarChart4}
-            title="Customer Report"
+            title="Customer Reports"
             path="/reports/customers"
             active={isActive('/reports/customers')}
+            expanded={expanded}
+          />
+        </SidebarItem>
+        
+        <SidebarItem
+          icon={Database}
+          title="Master"
+          active={isActive('/master')}
+          expanded={expanded}
+        >
+          <SidebarItem
+            icon={Database}
+            title="Master Module"
+            path="/master"
+            active={isActive('/master')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={Users}
+            title="User Access"
+            path="/user-access"
+            active={isActive('/user-access')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={FileText}
+            title="Financial Year"
+            path="/financial-year"
+            active={isActive('/financial-year')}
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={FileText}
+            title="Communication"
+            path="/communication"
+            active={isActive('/communication')}
             expanded={expanded}
           />
         </SidebarItem>
@@ -356,6 +516,13 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
           title="Settings"
           path="/settings"
           active={isActive('/settings')}
+          expanded={expanded}
+        />
+        <SidebarItem
+          icon={FileText}
+          title="Company Profile"
+          path="/company-profile"
+          active={isActive('/company-profile')}
           expanded={expanded}
         />
       </div>

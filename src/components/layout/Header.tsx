@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 
 interface HeaderProps {
   toggleSidebar?: () => void;
@@ -27,21 +28,30 @@ interface HeaderProps {
 const Header = ({ toggleSidebar }: HeaderProps) => {
   const { user, logout } = useAuth();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const { toast } = useToast();
 
   // Toggle dark mode
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
     if (isDarkMode) {
       document.documentElement.classList.remove('dark');
+      toast({
+        title: "Light mode activated",
+        description: "Application switched to light mode",
+      });
     } else {
       document.documentElement.classList.add('dark');
+      toast({
+        title: "Dark mode activated",
+        description: "Application switched to dark mode",
+      });
     }
   };
 
   return (
     <header className="h-16 border-b flex items-center justify-between px-6 bg-background">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
+        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
           <Menu className="h-5 w-5" />
         </Button>
         <div className="hidden md:flex items-center gap-2 w-72">

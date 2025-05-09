@@ -46,6 +46,16 @@ import VehicleTracking from "./pages/VehicleTracking";
 import AreaManagement from "./pages/AreaManagement";
 import CustomerDirectory from "./pages/CustomerDirectory";
 import Expenses from "./pages/Expenses";
+import CustomerLedger from "./pages/CustomerLedger";
+import SupplierLedger from "./pages/SupplierLedger";
+import PurchaseHistory from "./pages/PurchaseHistory";
+import SupplierPayments from "./pages/SupplierPayments";
+import Outstanding from "./pages/Outstanding";
+import OutstandingDues from "./pages/OutstandingDues";
+import FinancialYear from "./pages/FinancialYear";
+import Communication from "./pages/Communication";
+import StockManagement from "./pages/StockManagement";
+import BulkRates from "./pages/BulkRates";
 
 function App() {
   const [createInvoiceFunc, setCreateInvoiceFunc] = useState<Function | null>(null);
@@ -106,7 +116,8 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
               <Route path="customer-directory" element={<CustomerDirectory />} />
               <Route path="customer/:id" element={<CustomerDetail />} />
               <Route path="customer/:id/statement" element={<CustomerStatement />} />
-              <Route path="customer-ledger" element={<CustomerList />} />
+              <Route path="customer-statement" element={<CustomerStatement />} />
+              <Route path="customer-ledger" element={<CustomerLedger />} />
               <Route path="customer-rates" element={<CustomerList />} />
               
               {/* Payment Management */}
@@ -121,28 +132,30 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
               <Route path="product/:id" element={<ProductDetail />} />
               <Route path="product-rates" element={<ProductRates />} />
               <Route path="product-categories" element={<ProductCategories />} />
-              <Route path="stock-management" element={<ProductList />} />
+              <Route path="stock-management" element={<StockManagement />} />
               <Route path="stock-settings" element={<StockSettings />} />
-              <Route path="bulk-rates" element={<ProductRates />} />
+              <Route path="bulk-rates" element={<BulkRates />} />
               
               {/* Supplier Management */}
               <Route path="suppliers" element={<Suppliers />} />
               <Route path="supplier-directory" element={<SupplierDirectory />} />
-              <Route path="supplier-ledger" element={<SupplierDirectory />} />
-              <Route path="supplier-payments" element={<Suppliers />} />
-              <Route path="purchase-history" element={<Suppliers />} />
+              <Route path="supplier-ledger" element={<SupplierLedger />} />
+              <Route path="supplier-payments" element={<SupplierPayments />} />
+              <Route path="purchase-history" element={<PurchaseHistory />} />
               
               {/* Financial Management */}
               <Route path="expenses" element={<Expenses />} />
-              <Route path="outstanding" element={<Reports />} />
-              <Route path="outstanding-dues" element={<Reports />} />
+              <Route path="outstanding" element={<Outstanding />} />
+              <Route path="outstanding-dues" element={<OutstandingDues />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="reports/sales" element={<Reports />} />
+              <Route path="reports/customers" element={<Reports />} />
               
               {/* Master Module */}
               <Route path="master" element={<Master />} />
               <Route path="user-access" element={<UserAccess />} />
-              <Route path="financial-year" element={<CompanyProfile />} />
-              <Route path="communication" element={<CompanyProfile />} />
+              <Route path="financial-year" element={<FinancialYear />} />
+              <Route path="communication" element={<Communication />} />
               
               {/* Settings */}
               <Route path="settings" element={<Settings />} />
