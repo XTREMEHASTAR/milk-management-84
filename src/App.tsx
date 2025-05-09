@@ -44,6 +44,8 @@ import SupplierDirectory from "./pages/SupplierDirectory";
 import UserAccess from "./pages/UserAccess";
 import VehicleTracking from "./pages/VehicleTracking";
 import AreaManagement from "./pages/AreaManagement";
+import CustomerDirectory from "./pages/CustomerDirectory";
+import Expenses from "./pages/Expenses";
 
 function App() {
   const [createInvoiceFunc, setCreateInvoiceFunc] = useState<Function | null>(null);
@@ -96,11 +98,12 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
               <Route path="invoice-generator" element={<InvoiceGenerator />} />
               <Route path="invoice-history" element={<InvoiceHistory />} />
               <Route path="invoice-create" element={<InvoiceCreate />} />
+              <Route path="invoice-list" element={<InvoiceHistory />} />
               
               {/* Customer Management */}
               <Route path="customers" element={<Customers />} />
               <Route path="customer-list" element={<CustomerList />} />
-              <Route path="customer-directory" element={<CustomerList />} />
+              <Route path="customer-directory" element={<CustomerDirectory />} />
               <Route path="customer/:id" element={<CustomerDetail />} />
               <Route path="customer/:id/statement" element={<CustomerStatement />} />
               <Route path="customer-ledger" element={<CustomerList />} />
@@ -110,6 +113,7 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
               <Route path="payments" element={<Payments />} />
               <Route path="payment-list" element={<PaymentList />} />
               <Route path="payment-create" element={<PaymentCreate />} />
+              <Route path="payment-history" element={<PaymentList />} />
               
               {/* Product Management */}
               <Route path="products" element={<Products />} />
@@ -129,8 +133,10 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
               <Route path="purchase-history" element={<Suppliers />} />
               
               {/* Financial Management */}
-              <Route path="expenses" element={<Reports />} />
+              <Route path="expenses" element={<Expenses />} />
               <Route path="outstanding" element={<Reports />} />
+              <Route path="outstanding-dues" element={<Reports />} />
+              <Route path="reports" element={<Reports />} />
               
               {/* Master Module */}
               <Route path="master" element={<Master />} />

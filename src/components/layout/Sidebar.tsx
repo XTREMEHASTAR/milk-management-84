@@ -35,6 +35,11 @@ interface SidebarItemProps {
   onClick?: () => void;
 }
 
+interface SidebarProps {
+  collapsed: boolean;
+  toggleSidebar: () => void;
+}
+
 const SidebarItem: React.FC<SidebarItemProps> = ({
   icon: Icon,
   title,
@@ -112,9 +117,9 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   );
 };
 
-export default function Sidebar() {
+const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggleSidebar }) => {
   const location = useLocation();
-  const [expanded, setExpanded] = useState(true);
+  const expanded = !collapsed;
 
   // Function to check if a path is active (exact match or starts with for nested routes)
   const isActive = (path: string) => {
@@ -142,7 +147,7 @@ export default function Sidebar() {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => setExpanded(!expanded)}
+          onClick={toggleSidebar}
           className="h-8 w-8"
         >
           {expanded ? (
@@ -165,7 +170,7 @@ export default function Sidebar() {
         <SidebarItem
           icon={Users}
           title="Customers"
-          active={isActive('/customers')}
+          active={isActive('/customers') || isActive('/customer-directory')}
           expanded={expanded}
         >
           <SidebarItem
@@ -194,14 +199,14 @@ export default function Sidebar() {
         <SidebarItem
           icon={ShoppingCart}
           title="Orders"
-          active={isActive('/orders')}
+          active={isActive('/orders') || isActive('/order-entry')}
           expanded={expanded}
         >
           <SidebarItem
             icon={ShoppingCart}
             title="Order List"
-            path="/order-list"
-            active={isActive('/order-list')}
+            path="/orders"
+            active={isActive('/orders')}
             expanded={expanded}
           />
           <SidebarItem
@@ -228,9 +233,9 @@ export default function Sidebar() {
           />
           <SidebarItem
             icon={Clock}
-            title="Delivery Schedule"
-            path="/delivery-schedule"
-            active={isActive('/delivery-schedule')}
+            title="Track Sheet"
+            path="/track-sheet"
+            active={isActive('/track-sheet')}
             expanded={expanded}
           />
         </SidebarItem>
@@ -238,7 +243,7 @@ export default function Sidebar() {
         <SidebarItem
           icon={Package}
           title="Stock"
-          active={isActive('/stock')}
+          active={isActive('/stock-management')}
           expanded={expanded}
         >
           <SidebarItem
@@ -274,7 +279,7 @@ export default function Sidebar() {
         <SidebarItem
           icon={Receipt}
           title="Invoices"
-          active={isActive('/invoices')}
+          active={isActive('/invoice')}
           expanded={expanded}
         >
           <SidebarItem
@@ -356,4 +361,6 @@ export default function Sidebar() {
       </div>
     </div>
   );
-}
+};
+
+export default Sidebar;
