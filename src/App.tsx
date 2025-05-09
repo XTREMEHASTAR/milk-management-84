@@ -42,8 +42,8 @@ function App() {
 
   return (
     <AuthProvider>
-      <DataProvider createInvoiceFunc={createInvoiceFunc}>
-        <InvoiceProvider>
+      <InvoiceProvider>
+        <DataProvider createInvoiceFunc={createInvoiceFunc}>
           <Router>
             <Routes>
               <Route path="/login" element={
@@ -95,8 +95,8 @@ function App() {
             </Routes>
             <Toaster />
           </Router>
-        </InvoiceProvider>
-      </DataProvider>
+        </DataProvider>
+      </InvoiceProvider>
     </AuthProvider>
   );
 }
