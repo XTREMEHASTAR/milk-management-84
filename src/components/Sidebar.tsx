@@ -22,9 +22,8 @@ import {
   Truck,
   Receipt,
   Menu,
-  PaintBucket,
+  MapPin,
   Bell,
-  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
@@ -48,7 +47,6 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const isMobile = useMobile();
-  const [open, setOpen] = useState(true);
 
   const navGroups: NavGroup[] = [
     {
@@ -70,6 +68,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           icon: ClipboardList,
         },
         {
+          title: "Order List",
+          href: "/orders",
+          icon: ClipboardList,
+        },
+        {
           title: "Invoice Generator",
           href: "/invoice-generator",
           icon: Receipt,
@@ -83,6 +86,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           title: "Track Sheet",
           href: "/track-sheet",
           icon: Truck,
+        },
+      ]
+    },
+    {
+      title: "Assignment Management",
+      items: [
+        {
+          title: "Vehicle Tracking",
+          href: "/vehicle-tracking",
+          icon: TruckIcon,
+        },
+        {
+          title: "Area Management",
+          href: "/area-management",
+          icon: MapPin,
         },
       ]
     },
@@ -150,9 +168,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           icon: Truck,
         },
         {
+          title: "Supplier Directory",
+          href: "/supplier-directory",
+          icon: ShoppingBag,
+        },
+        {
           title: "Supplier Payments",
           href: "/supplier-payments",
-          icon: ShoppingBag,
+          icon: CreditCard,
         },
         {
           title: "Supplier Ledger",
@@ -208,6 +231,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           title: "Stock Settings",
           href: "/stock-settings",
           icon: Settings,
+        },
+        {
+          title: "User Access",
+          href: "/user-access",
+          icon: Users,
         },
       ]
     },

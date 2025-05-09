@@ -42,6 +42,8 @@ import StockSettings from "./pages/StockSettings";
 import Suppliers from "./pages/Suppliers";
 import SupplierDirectory from "./pages/SupplierDirectory";
 import UserAccess from "./pages/UserAccess";
+import VehicleTracking from "./pages/VehicleTracking";
+import AreaManagement from "./pages/AreaManagement";
 
 function App() {
   const [createInvoiceFunc, setCreateInvoiceFunc] = useState<Function | null>(null);
@@ -87,6 +89,8 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
               <Route path="order-entry" element={<OrderEntry />} />
               <Route path="orders" element={<OrderList />} />
               <Route path="track-sheet" element={<TrackSheet />} />
+              <Route path="vehicle-tracking" element={<VehicleTracking />} />
+              <Route path="area-management" element={<AreaManagement />} />
               
               {/* Invoice Management */}
               <Route path="invoice-generator" element={<InvoiceGenerator />} />
