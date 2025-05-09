@@ -3,7 +3,6 @@ import React, { createContext, useContext, ReactNode, useState, useEffect } from
 import { InvoiceService } from '@/services/InvoiceService';
 import { Invoice } from '@/types';
 import { toast } from 'sonner';
-import { useData } from './DataContext';
 import { format } from 'date-fns';
 
 // Define the context types
@@ -42,11 +41,17 @@ const InvoiceContext = createContext<InvoiceContextType | undefined>(undefined);
 
 interface InvoiceProviderProps {
   children: ReactNode;
+  products?: any[];
+  customers?: any[];
+  orders?: any[];
 }
 
-export const InvoiceProvider: React.FC<InvoiceProviderProps> = ({ children }) => {
-  const { products, customers, orders } = useData();
-  
+export const InvoiceProvider: React.FC<InvoiceProviderProps> = ({ 
+  children,
+  products = [],
+  customers = [],
+  orders = []
+}) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [companyInfo, setCompanyInfo] = useState(() => InvoiceService.getCompanyInfo());
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("standard");
