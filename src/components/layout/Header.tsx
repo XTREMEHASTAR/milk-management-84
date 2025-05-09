@@ -20,7 +20,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 
-const Header = () => {
+interface HeaderProps {
+  toggleSidebar?: () => void;
+}
+
+const Header = ({ toggleSidebar }: HeaderProps) => {
   const { user, logout } = useAuth();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
 
@@ -37,7 +41,7 @@ const Header = () => {
   return (
     <header className="h-16 border-b flex items-center justify-between px-6 bg-background">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="md:hidden">
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
           <Menu className="h-5 w-5" />
         </Button>
         <div className="hidden md:flex items-center gap-2 w-72">
