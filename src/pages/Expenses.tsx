@@ -95,9 +95,9 @@ export default function Expenses() {
       (filterCategory === "all" || expense.category === filterCategory) &&
       (filterDate === "all" || filterDateByRange(expense.date, filterDate))
     )
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   
-  // Filter expenses by date range
+  // Filter expenses by date range - Fixed to properly compare dates as numbers
   function filterDateByRange(date, range) {
     const expenseDate = new Date(date);
     const today = new Date();
@@ -108,7 +108,7 @@ export default function Expenses() {
       case "thisWeek": {
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDate() - today.getDay());
-        return expenseDate >= startOfWeek;
+        return expenseDate.getTime() >= startOfWeek.getTime();
       }
       case "thisMonth": {
         return expenseDate.getMonth() === today.getMonth() && 
