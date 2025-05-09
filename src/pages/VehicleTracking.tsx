@@ -358,10 +358,10 @@ const VehicleTracking = () => {
                           <TableCell>
                             <select 
                               className="border rounded p-1 w-full"
-                              value={order.vehicleId || ''}
-                              onChange={(e) => assignOrderToVehicle(order.id, e.target.value)}
+                              value={order.vehicleId || 'unassigned'}
+                              onChange={(e) => assignOrderToVehicle(order.id, e.target.value === 'unassigned' ? '' : e.target.value)}
                             >
-                              <option value="">Select Vehicle</option>
+                              <option value="unassigned">Select Vehicle</option>
                               {vehicles.filter(v => v.isActive).map(vehicle => (
                                 <option key={vehicle.id} value={vehicle.id}>
                                   {vehicle.name} ({vehicle.regNumber})
@@ -372,10 +372,10 @@ const VehicleTracking = () => {
                           <TableCell>
                             <select 
                               className="border rounded p-1 w-full"
-                              value={order.salesmanId || ''}
-                              onChange={(e) => assignOrderToSalesman(order.id, e.target.value)}
+                              value={order.salesmanId || 'unassigned'}
+                              onChange={(e) => assignOrderToSalesman(order.id, e.target.value === 'unassigned' ? '' : e.target.value)}
                             >
-                              <option value="">Select Salesman</option>
+                              <option value="unassigned">Select Salesman</option>
                               {salesmen.filter(s => s.isActive).map(salesman => (
                                 <option key={salesman.id} value={salesman.id}>
                                   {salesman.name}

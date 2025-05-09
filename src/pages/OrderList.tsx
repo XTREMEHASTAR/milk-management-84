@@ -198,7 +198,7 @@ export default function OrderList() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Vehicles</SelectItem>
+                <SelectItem value="all">All Vehicles</SelectItem>
                 {vehicles.map(vehicle => (
                   <SelectItem key={vehicle.id} value={vehicle.id}>
                     {vehicle.name} ({vehicle.regNumber})
@@ -218,7 +218,7 @@ export default function OrderList() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Salesmen</SelectItem>
+                <SelectItem value="all">All Salesmen</SelectItem>
                 {salesmen.map(salesman => (
                   <SelectItem key={salesman.id} value={salesman.id}>
                     {salesman.name}
@@ -241,7 +241,7 @@ export default function OrderList() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Time</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
                 <SelectItem value="today">Today</SelectItem>
                 <SelectItem value="week">This Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
@@ -373,10 +373,10 @@ export default function OrderList() {
                                 <div className="flex space-x-2 items-center">
                                   <select 
                                     className="border rounded p-2 flex-1"
-                                    value={order.vehicleId || ''}
-                                    onChange={(e) => handleAssignVehicle(order.id, e.target.value)}
+                                    value={order.vehicleId || 'none'}
+                                    onChange={(e) => handleAssignVehicle(order.id, e.target.value === 'none' ? '' : e.target.value)}
                                   >
-                                    <option value="">Select Vehicle</option>
+                                    <option value="none">Select Vehicle</option>
                                     {vehicles.filter(v => v.isActive).map(vehicle => (
                                       <option key={vehicle.id} value={vehicle.id}>
                                         {vehicle.name} ({vehicle.regNumber})
@@ -405,10 +405,10 @@ export default function OrderList() {
                                 <div className="flex space-x-2 items-center">
                                   <select 
                                     className="border rounded p-2 flex-1"
-                                    value={order.salesmanId || ''}
-                                    onChange={(e) => handleAssignSalesman(order.id, e.target.value)}
+                                    value={order.salesmanId || 'none'}
+                                    onChange={(e) => handleAssignSalesman(order.id, e.target.value === 'none' ? '' : e.target.value)}
                                   >
-                                    <option value="">Select Salesman</option>
+                                    <option value="none">Select Salesman</option>
                                     {salesmen.filter(s => s.isActive).map(salesman => (
                                       <option key={salesman.id} value={salesman.id}>
                                         {salesman.name}
