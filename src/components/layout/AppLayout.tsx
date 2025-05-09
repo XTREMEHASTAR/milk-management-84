@@ -1,12 +1,15 @@
 
-import { Outlet } from "react-router-dom";
+import { useState, useEffect, ReactNode } from "react";
 import Sidebar from "../Sidebar";
-import { useState, useEffect } from "react";
 import { useMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Menu, Bell, Moon, Sun } from "lucide-react";
 
-export default function AppLayout() {
+interface AppLayoutProps {
+  children: ReactNode;
+}
+
+export default function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -54,7 +57,7 @@ export default function AppLayout() {
         
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-6 bg-background">
-          <Outlet />
+          {children}
         </main>
         
         {/* Footer */}
