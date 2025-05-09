@@ -106,7 +106,7 @@ export default function OutstandingDues() {
       customerId: selectedCustomerId,
       amount: amount,
       date: format(new Date(), "yyyy-MM-dd"),
-      notes: `Payment received for outstanding dues`
+      notes: "Payment received for outstanding dues"
     };
     
     addPayment(payment);
@@ -290,7 +290,7 @@ export default function OutstandingDues() {
                   <SelectItem value="all">All Amounts</SelectItem>
                   <SelectItem value="high">High (≥₹5000)</SelectItem>
                   <SelectItem value="medium">Medium (₹1000-₹4999)</SelectItem>
-                  <SelectItem value="low">Low (<₹1000)</SelectItem>
+                  <SelectItem value="low">Low (&lt;₹1000)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
