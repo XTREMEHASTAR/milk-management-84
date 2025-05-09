@@ -1,429 +1,364 @@
 
-import { useState } from "react";
-import { useData } from "@/contexts/DataContext";
+import React, { useState } from 'react';
+import { useData } from '@/contexts/data/DataContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DatePicker } from "@/components/ui/date-picker";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Expense } from "@/types";
-import { Plus, Search, Trash2, PieChart } from "lucide-react";
-import { toast } from "sonner";
 import { format } from "date-fns";
+import { PlusCircle, FileDown, Search, Filter } from "lucide-react";
+import { toast } from "sonner";
 
-const expenseCategories = [
-  "Transport",
-  "Electricity",
-  "Rent",
-  "Salary",
-  "Supplies",
-  "Maintenance",
-  "Taxes",
-  "Other",
-];
-
-const Expenses = () => {
+export default function Expenses() {
   const { expenses, addExpense, deleteExpense } = useData();
-  const [open, setOpen] = useState(false);
-  const [expenseDate, setExpenseDate] = useState<Date>(new Date());
-  const [formData, setFormData] = useState({
-    amount: "",
-    category: "",
-    description: "",
-    paymentMethod: "cash",
-  });
   const [searchQuery, setSearchQuery] = useState("");
-
-  const resetForm = () => {
-    setFormData({
-      amount: "",
-      category: "",
-      description: "",
-      paymentMethod: "cash",
-    });
-    setExpenseDate(new Date());
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    setOpen(open);
-    if (!open) {
-      resetForm();
-    }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    
-    if (name === "amount") {
-      // Only allow numbers with up to 2 decimal places
-      if (value === "" || /^\d+(\.\d{0,2})?$/.test(value)) {
-        setFormData({
-          ...formData,
-          [name]: value,
-        });
-      }
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({
-      ...formData,
-      [name]: value,
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterDate, setFilterDate] = useState("all");
+  
+  // Form state for adding new expense
+  const [newExpense, setNewExpense] = useState({
+    title: "",
+    amount: "",
+    category: "utilities",
+    date: format(new Date(), "yyyy-MM-dd"),
+    description: ""
+  });
+  
+  // Handle expense form input changes
+  const handleInputChange = (field, value) => {
+    setNewExpense({
+      ...newExpense,
+      [field]: value
     });
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.category || !formData.amount || parseFloat(formData.amount) <= 0) {
-      toast.error("Category and amount are required");
+  
+  // Add new expense
+  const handleAddExpense = () => {
+    if (!newExpense.title || !newExpense.amount) {
+      toast.error("Title and amount are required");
       return;
     }
-
+    
+    const amount = parseFloat(newExpense.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    
     addExpense({
-      date: format(expenseDate, "yyyy-MM-dd"),
-      amount: parseFloat(formData.amount),
-      category: formData.category,
-      description: formData.description,
-      paymentMethod: formData.paymentMethod as "cash" | "bank" | "upi" | "other",
+      ...newExpense,
+      id: `exp-${Date.now()}`,
+      amount: amount,
+      date: newExpense.date || format(new Date(), "yyyy-MM-dd")
     });
-
-    toast.success("Expense recorded successfully");
-    setOpen(false);
-    resetForm();
+    
+    setIsAddDialogOpen(false);
+    setNewExpense({
+      title: "",
+      amount: "",
+      category: "utilities",
+      date: format(new Date(), "yyyy-MM-dd"),
+      description: ""
+    });
+    
+    toast.success("Expense added successfully");
   };
-
-  const handleDeleteExpense = (expense: Expense) => {
-    if (confirm("Are you sure you want to delete this expense?")) {
-      deleteExpense(expense.id);
-      toast.success("Expense deleted successfully");
-    }
+  
+  // Delete expense
+  const handleDeleteExpense = (id) => {
+    deleteExpense(id);
+    toast.success("Expense deleted successfully");
   };
-
-  // Filter expenses based on search query
+  
+  // Get expense categories
+  const expenseCategories = [
+    { id: "utilities", name: "Utilities" },
+    { id: "rent", name: "Rent" },
+    { id: "salaries", name: "Salaries" },
+    { id: "maintenance", name: "Maintenance" },
+    { id: "supplies", name: "Supplies" },
+    { id: "transportation", name: "Transportation" },
+    { id: "marketing", name: "Marketing" },
+    { id: "other", name: "Other" }
+  ];
+  
+  // Filter and sort expenses
   const filteredExpenses = expenses
-    .filter(
-      (expense) =>
-        expense.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        expense.date.includes(searchQuery) ||
-        expense.amount.toString().includes(searchQuery)
+    .filter(expense => 
+      (expense.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       expense.description?.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (filterCategory === "all" || expense.category === filterCategory) &&
+      (filterDate === "all" || filterDateByRange(expense.date, filterDate))
     )
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  // Calculate total expenses
-  const totalExpenses = expenses.reduce(
-    (total, expense) => total + expense.amount,
-    0
-  );
-
-  // Calculate expenses by category
-  const expensesByCategory: Record<string, number> = {};
-  expenses.forEach((expense) => {
-    if (!expensesByCategory[expense.category]) {
-      expensesByCategory[expense.category] = 0;
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  // Filter expenses by date range
+  function filterDateByRange(date, range) {
+    const expenseDate = new Date(date);
+    const today = new Date();
+    
+    switch (range) {
+      case "today":
+        return format(expenseDate, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
+      case "thisWeek": {
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        return expenseDate >= startOfWeek;
+      }
+      case "thisMonth": {
+        return expenseDate.getMonth() === today.getMonth() && 
+               expenseDate.getFullYear() === today.getFullYear();
+      }
+      case "lastMonth": {
+        const lastMonth = new Date(today);
+        lastMonth.setMonth(today.getMonth() - 1);
+        return expenseDate.getMonth() === lastMonth.getMonth() && 
+               expenseDate.getFullYear() === lastMonth.getFullYear();
+      }
+      default:
+        return true;
     }
-    expensesByCategory[expense.category] += expense.amount;
-  });
-
+  }
+  
+  // Calculate total expenses for filtered results
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
+  // Export expenses to CSV
+  const exportToCSV = () => {
+    let csvContent = "Title,Category,Amount,Date,Description\n";
+    
+    filteredExpenses.forEach((expense) => {
+      csvContent += `"${expense.title}","${expense.category}","${expense.amount}","${expense.date}","${expense.description || ''}"\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `expenses-${format(new Date(), "yyyy-MM-dd")}.csv`);
+    link.click();
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
           <p className="text-muted-foreground">
-            Track and manage business expenses
+            Track and manage your business expenses
           </p>
         </div>
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Expense
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Expense</DialogTitle>
-              <DialogDescription>
-                Record a new business expense
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={exportToCSV}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Expense
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Expense</DialogTitle>
+                <DialogDescription>
+                  Enter the details for your new expense.
+                </DialogDescription>
+              </DialogHeader>
+              
               <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Expense Date</Label>
-                  <DatePicker date={expenseDate} setDate={setExpenseDate} />
+                <div className="space-y-2">
+                  <Label htmlFor="title">Expense Title</Label>
+                  <Input 
+                    id="title" 
+                    value={newExpense.title} 
+                    onChange={(e) => handleInputChange("title", e.target.value)} 
+                    placeholder="e.g., Electricity Bill"
+                  />
                 </div>
-                <div className="grid gap-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount</Label>
+                    <Input 
+                      id="amount" 
+                      type="number" 
+                      min="0" 
+                      step="0.01" 
+                      value={newExpense.amount} 
+                      onChange={(e) => handleInputChange("amount", e.target.value)} 
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date</Label>
+                    <Input 
+                      id="date" 
+                      type="date" 
+                      value={newExpense.date} 
+                      onChange={(e) => handleInputChange("date", e.target.value)} 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("category", value)
-                    }
-                    value={formData.category}
+                  <Select 
+                    value={newExpense.category} 
+                    onValueChange={(value) => handleInputChange("category", value)}
                   >
                     <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {expenseCategories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                      {expenseCategories.map(category => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="amount">Amount (₹)</Label>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("paymentMethod", value)
-                    }
-                    defaultValue={formData.paymentMethod}
-                  >
-                    <SelectTrigger id="paymentMethod">
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="bank">Bank Transfer</SelectItem>
-                      <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Expense details"
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Textarea 
+                    id="description" 
+                    value={newExpense.description} 
+                    onChange={(e) => handleInputChange("description", e.target.value)} 
+                    placeholder="Add any additional details"
                   />
                 </div>
               </div>
+              
               <DialogFooter>
-                <Button type="submit">Add Expense</Button>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddExpense}>
+                  Add Expense
+                </Button>
               </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Expenses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹{totalExpenses.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              All time expenses
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Monthly Average
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₹
-              {expenses.length
-                ? (totalExpenses / 
-                   Math.max(1, new Set(expenses.map(e => e.date.substring(0, 7))).size)
-                  ).toFixed(2)
-                : "0.00"}
+      
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Expense Tracker</CardTitle>
+              <CardDescription>
+                View and manage all your recorded expenses
+              </CardDescription>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Average monthly expenses
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Expense Categories
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Object.keys(expensesByCategory).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Number of different expense categories
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Expense History</CardTitle>
-                <CardDescription>
-                  View all expense transactions
-                </CardDescription>
-              </div>
-              <div className="relative w-64">
+            <div className="flex items-center gap-2">
+              <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search expenses..."
-                  className="pl-8"
+                  className="pl-8 w-[200px]"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {expenses.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-muted-foreground mb-4">No expenses recorded yet</p>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Record Your First Expense
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>{/* Same dialog content as above */}</DialogContent>
-                </Dialog>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead className="text-center">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredExpenses.map((expense) => (
-                      <TableRow key={expense.id}>
-                        <TableCell>{expense.date}</TableCell>
-                        <TableCell>{expense.category}</TableCell>
-                        <TableCell>{expense.description || "-"}</TableCell>
-                        <TableCell>₹{expense.amount}</TableCell>
-                        <TableCell>
-                          <span className="capitalize">{expense.paymentMethod}</span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteExpense(expense)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <div className="text-sm text-muted-foreground">
-              Showing {filteredExpenses.length} of {expenses.length} expenses
-            </div>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Expenses by Category</CardTitle>
-            <CardDescription>
-              Breakdown of expenses by category
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {Object.keys(expensesByCategory).length === 0 ? (
-              <div className="flex justify-center items-center py-10">
-                <PieChart className="h-16 w-16 text-muted-foreground" />
-              </div>
-            ) : (
-              <ul className="space-y-4">
-                {Object.entries(expensesByCategory)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([category, amount]) => (
-                    <li key={category} className="flex justify-between items-center">
-                      <span className="font-medium">{category}</span>
-                      <span>₹{amount.toFixed(2)}</span>
-                    </li>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-[150px]">
+                  <div className="flex items-center gap-1">
+                    <Filter className="h-4 w-4" />
+                    <span>Category</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {expenseCategories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
                   ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                </SelectContent>
+              </Select>
+              <Select value={filterDate} onValueChange={setFilterDate}>
+                <SelectTrigger className="w-[150px]">
+                  <div className="flex items-center gap-1">
+                    <Filter className="h-4 w-4" />
+                    <span>Date</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="thisWeek">This Week</SelectItem>
+                  <SelectItem value="thisMonth">This Month</SelectItem>
+                  <SelectItem value="lastMonth">Last Month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredExpenses.length > 0 ? (
+                  filteredExpenses.map((expense) => (
+                    <TableRow key={expense.id}>
+                      <TableCell className="font-medium">{expense.title}</TableCell>
+                      <TableCell>
+                        {expenseCategories.find(c => c.id === expense.category)?.name || expense.category}
+                      </TableCell>
+                      <TableCell className="text-right">₹{expense.amount.toFixed(2)}</TableCell>
+                      <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {expense.description || '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          className="h-8 w-8 p-0 text-destructive"
+                        >
+                          <span className="sr-only">Delete</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      No expenses found. {searchQuery || filterCategory !== "all" || filterDate !== "all" ? 'Try adjusting your filters.' : 'Add your first expense to get started.'}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <div className="mt-4 flex justify-end">
+            <div className="bg-primary-foreground p-4 rounded-md">
+              <span className="font-medium text-muted-foreground">Total:</span>
+              <span className="ml-2 font-bold text-lg">₹{totalExpenses.toFixed(2)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default Expenses;
+}

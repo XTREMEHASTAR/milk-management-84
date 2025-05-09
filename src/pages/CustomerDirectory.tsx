@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useData } from "@/contexts/DataContext";
+import { useData } from "@/contexts/data/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,10 +14,10 @@ export default function CustomerDirectory() {
 
   const filteredCustomers = customers.filter(
     (customer) =>
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.phone.includes(searchQuery) ||
+      customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.phone?.includes(searchQuery) ||
       (customer.email && customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      customer.address.toLowerCase().includes(searchQuery.toLowerCase())
+      customer.address?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const exportToCSV = () => {
@@ -29,7 +29,7 @@ export default function CustomerDirectory() {
         ? `${customer.lastPaymentAmount} on ${customer.lastPaymentDate}` 
         : "No payments";
       
-      csvContent += `"${customer.name}","${customer.phone}","${customer.address}","${customer.email || ""}","${customer.outstandingBalance}","${lastPaymentInfo}"\n`;
+      csvContent += `"${customer.name}","${customer.phone || ''}","${customer.address || ''}","${customer.email || ''}","${customer.outstandingBalance || 0}","${lastPaymentInfo}"\n`;
     });
     
     // Create a download link
@@ -100,20 +100,28 @@ export default function CustomerDirectory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{customer.phone}</TableCell>
-                    <TableCell>{customer.address}</TableCell>
-                    <TableCell>{customer.email || "-"}</TableCell>
-                    <TableCell className="text-right">₹{customer.outstandingBalance}</TableCell>
-                    <TableCell className="text-right">
-                      {customer.lastPaymentDate
-                        ? `₹${customer.lastPaymentAmount} on ${customer.lastPaymentDate}`
-                        : "No payments"}
+                {filteredCustomers.length > 0 ? (
+                  filteredCustomers.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell>{customer.phone || '-'}</TableCell>
+                      <TableCell>{customer.address || '-'}</TableCell>
+                      <TableCell>{customer.email || '-'}</TableCell>
+                      <TableCell className="text-right">₹{customer.outstandingBalance || 0}</TableCell>
+                      <TableCell className="text-right">
+                        {customer.lastPaymentDate
+                          ? `₹${customer.lastPaymentAmount} on ${customer.lastPaymentDate}`
+                          : "No payments"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      No customers found. {searchQuery ? 'Try a different search term.' : 'Add customers to see them here.'}
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
