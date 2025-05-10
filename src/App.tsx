@@ -1,10 +1,11 @@
 
-import { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "./components/ui/toaster";
+import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { DataProvider, useData } from "./contexts/data/DataContext";
 import { InvoiceProvider } from "./contexts/InvoiceContext";
+import { ThemeProvider } from "./contexts/ThemeProvider";
 
 // Layouts
 import { Layout } from "./components/Layout";
@@ -17,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import UISettings from "./pages/UISettings";
 import ProductRates from "./pages/ProductRates";
 import ProductCategories from "./pages/ProductCategories";
 import OrderList from "./pages/OrderList";
@@ -56,16 +58,19 @@ import FinancialYear from "./pages/FinancialYear";
 import Communication from "./pages/Communication";
 import StockManagement from "./pages/StockManagement";
 import BulkRates from "./pages/BulkRates";
+import Signup from "./pages/Signup";
 
 function App() {
   const [createInvoiceFunc, setCreateInvoiceFunc] = useState<Function | null>(null);
 
   return (
-    <AuthProvider>
-      <DataProvider createInvoiceFunc={createInvoiceFunc}>
-        <AppContent setCreateInvoiceFunc={setCreateInvoiceFunc} />
-      </DataProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <DataProvider createInvoiceFunc={createInvoiceFunc}>
+          <AppContent setCreateInvoiceFunc={setCreateInvoiceFunc} />
+        </DataProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
@@ -91,10 +96,16 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
             </LoginLayout>
           } />
           
+          <Route path="/signup" element={
+            <LoginLayout>
+              <Signup />
+            </LoginLayout>
+          } />
+          
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               {/* Dashboard and Main Routes */}
-              <Route index element={<Index />} />
+              <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               
               {/* Order Management */}
@@ -159,6 +170,7 @@ function AppContent({ setCreateInvoiceFunc }: AppContentProps) {
               
               {/* Settings */}
               <Route path="settings" element={<Settings />} />
+              <Route path="ui-settings" element={<UISettings />} />
               <Route path="company-profile" element={<CompanyProfile />} />
               
               <Route path="*" element={<NotFound />} />

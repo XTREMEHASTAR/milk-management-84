@@ -1,9 +1,10 @@
 
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-import { ElectronDetector } from './components/ElectronDetector.tsx'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+import { ElectronDetector } from './components/ElectronDetector.tsx';
+import { OfflineStorageService } from './services/OfflineStorageService.ts';
 
 // Enhanced global error handler with more details
 window.addEventListener('error', (event) => {
@@ -22,6 +23,9 @@ window.addEventListener('unhandledrejection', (event) => {
 console.log('Starting application initialization');
 console.log('React version:', React.version);
 console.log('Environment:', import.meta.env.MODE);
+
+// Initialize offline storage service
+OfflineStorageService.initialize();
 
 const rootElement = document.getElementById("root");
 
@@ -67,3 +71,8 @@ if (rootElement) {
     </div>
   `;
 }
+
+// Cleanup when application unloads
+window.addEventListener('beforeunload', () => {
+  OfflineStorageService.cleanup();
+});
