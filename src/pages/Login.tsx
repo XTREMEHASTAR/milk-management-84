@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeProvider';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -17,7 +16,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { theme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +32,7 @@ const Login = () => {
       
       if (success) {
         toast.success('Login successful');
-        navigate('/dashboard');
+        navigate('/');
       } else {
         toast.error('Invalid email or password');
       }
@@ -126,10 +124,6 @@ const Login = () => {
             </CardFooter>
           </form>
         </Card>
-        <div className="mt-4 text-center">
-          <p className="text-sm text-muted-foreground">Demo credentials:</p>
-          <p className="text-xs text-muted-foreground">Email: admin@example.com / Password: admin123</p>
-        </div>
       </div>
     </div>
   );

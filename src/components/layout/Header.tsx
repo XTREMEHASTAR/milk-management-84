@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Search,
@@ -8,7 +8,6 @@ import {
   Sun,
   Moon,
   Menu,
-  Settings,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,11 +20,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { useTheme } from '@/contexts/ThemeProvider';
-import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { useData } from '@/contexts/data/DataContext';
-import { OfflineIndicator } from '@/components/OfflineIndicator';
 
 interface HeaderProps {
   toggleSidebar?: () => void;
@@ -33,34 +27,25 @@ interface HeaderProps {
 
 const Header = ({ toggleSidebar }: HeaderProps) => {
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const { uiSettings } = useData();
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  useEffect(() => {
-    const handleOnlineStatusChange = () => {
-      setIsOnline(navigator.onLine);
-    };
-
-    window.addEventListener('online', handleOnlineStatusChange);
-    window.addEventListener('offline', handleOnlineStatusChange);
-
-    return () => {
-      window.removeEventListener('online', handleOnlineStatusChange);
-      window.removeEventListener('offline', handleOnlineStatusChange);
-    };
-  }, []);
-
-  // Toggle theme
+  // Toggle dark mode
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    toast({
-      title: `${newTheme === 'dark' ? 'Dark' : 'Light'} mode activated`,
-      description: `Application switched to ${newTheme} mode`,
-    });
+    setIsDarkMode(!isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+      toast({
+        title: "Light mode activated",
+        description: "Application switched to light mode",
+      });
+    } else {
+      document.documentElement.classList.add('dark');
+      toast({
+        title: "Dark mode activated",
+        description: "Application switched to dark mode",
+      });
+    }
   };
 
   return (
@@ -78,23 +63,11 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        {!isOnline && (
-          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-            Offline Mode
-          </Badge>
-        )}
         <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => navigate('/settings')}
-        >
-          <Settings className="h-5 w-5" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -103,24 +76,17 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>
-              {user ? user.name : 'My Account'}
-            </DropdownMenuLabel>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/settings')}>
-              Settings
-            </DropdownMenuItem>
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => {
-              logout();
-              navigate('/login');
-            }}>
+            <DropdownMenuItem onClick={() => logout()}>
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <OfflineIndicator />
     </header>
   );
 };
